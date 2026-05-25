@@ -1,0 +1,57 @@
+import joblib
+import numpy as np
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from preprocessing import resolve_model_dir
+
+class EnsembleModel:
+    def __init__(self):
+        self.model_dir = resolve_model_dir()
+        self.model_names = ['knn', 'svm', 'logreg', 'rf', 'small_nn']
+        self.models = {}
+        self.load_models()
+        self.label_encoder = joblib.load(f'{self.model_dir}/label_encoder.pkl')
+        self.weights = {'knn': 0.15, 'svm': 0.15, 'logreg': 0.20, 'rf': 0.25, 'small_nn': 0.25}
+        
+    def load_models(self):
+        for name in self.model_names:
+            path = f'{self.model_dir}/{name}.pkl'
+            if os.path.exists(path):
+                self.models[name] = joblib.load(path)
+                
+    def predict(self, X):
+        individual_preds = {}
+        individual_probs = {}
+        
+        for name, model in self.models.items():
+            probs = model.predict_proba(X)
+            individual_probs[name] = probs[0]
+            pred_indices = np.argmax(probs, axis=1)
+            individual_preds[name] = str(self.label_encoder.inverse_transform(pred_indices)[0])
+            
+        num_classes = list(individual_probs.values())[0].shape[0]
+        weighted_probs = np.zeros(num_classes)
+        
+        total_weight = 0
+        for name in self.models.keys():
+            w = self.weights.get(name, 1.0)
+            weighted_probs += individual_probs[name] * w
+            total_weight += w
+            
+        weighted_probs /= total_weight
+        final_pred_idx = np.argmax(weighted_probs)
+        final_pred = str(self.label_encoder.inverse_transform([final_pred_idx])[0])
+        confidence = float(np.max(weighted_probs))
+        
+        class_probs = {
+            str(self.label_encoder.inverse_transform([i])[0]): float(prob)
+            for i, prob in enumerate(weighted_probs)
+        }
+        
+        individual_conf = {
+            name: float(np.max(probs)) for name, probs in individual_probs.items()
+        }
+        
+        return final_pred, confidence, individual_preds, class_probs, self.weights, individual_conf

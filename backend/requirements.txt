@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+scikit-learn==1.8.0
+pandas
+numpy
+shap
+m2cgen
+huggingface-hub
+websockets
+aiosqlite
+python-multipart
