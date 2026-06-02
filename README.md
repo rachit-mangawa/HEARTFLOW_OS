@@ -33,7 +33,11 @@ pinned: false
 
 HeartFlow OS streams cardiovascular vitals, predicts anomalies using a soft-voting ensemble, and exports models to highly-constrained edge devices (ESP32/Arduino).
 
-## System Architecture
+## Architecture
+
+To see the complete pipeline and component structure, check out the **[Architecture Documentation](ARCHITECTURE.md)**. 
+
+### System Overview
 
 | Domain | Tech | Details |
 | :--- | :--- | :--- |
@@ -43,24 +47,24 @@ HeartFlow OS streams cardiovascular vitals, predicts anomalies using a soft-voti
 | **Edge Compiler** | Custom AST Transpiler | Exports trained ensembles to zero-dependency, INT8 quantized C headers. |
 | **Firmware** | PlatformIO, C++ | Ready-to-deploy hardware wrapper for ESP32/Arduino execution. |
 
-## Core Features
+## Core Capabilities
 
-- **Fault-Tolerant Telemetry**: Streams data via WebSockets to the React dashboard with exponential backoff and UI-level auto-reconnection.
-- **Automated MLOps Registry**: Upload batch CSV data to `/retrain`. The system evaluates the new models against a test set and will automatically roll back if performance (F1-score) degrades.
-- **Edge Compilation (TinyML)**: Converts trained models into standalone C code (`model.h`). The generated code requires no dynamic memory allocation (`malloc`-free) and uses integer quantization to cut memory footprint by 75%.
-- **Cross-Language Assurance**: Built-in test pipelines verify that the exported C logic perfectly matches the Python models before flashing to hardware.
+- **Fault-Tolerant Telemetry**: Streams data via WebSockets to the React dashboard with UI-level auto-reconnection.
+- **Automated MLOps Registry**: Upload batch CSV data to `/retrain`. The system evaluates new models against a test set and rolls back if performance degrades.
+- **Edge Compilation (TinyML)**: Converts trained models into standalone C code (`model.h`) without dynamic memory allocation (`malloc`-free).
+- **Cross-Language Assurance**: Test pipelines verify that the exported C logic matches the Python models before flashing to hardware.
 
-## Quickstart
+## Quickstart Guide
 
 ### Option 1: Docker Compose (Recommended)
 
-Run the entire full-stack platform (Frontend + Backend) with a single command:
+Run the entire full-stack platform (Frontend + Backend):
 
 ```bash
 docker compose up --build
 ```
-- UI available at: `http://localhost:3000`
-- API Docs available at: `http://localhost:8000/docs`
+- **UI**: `http://localhost:3000`
+- **API Docs**: `http://localhost:8000/docs`
 
 ### Option 2: Manual Local Setup
 
@@ -83,14 +87,15 @@ npm run dev
 
 ### Option 3: Hardware Firmware (Edge Deployment)
 
-Once you export your `model.h` from the UI or API, deploy to your microcontroller:
+Once you export your `model.h` from the UI or API, deploy it to your microcontroller:
 
 ```bash
 cd firmware
-# Copy your exported model.h to firmware/src/model.h
+# 1. Copy your exported model.h to firmware/src/model.h
+# 2. Upload to the connected ESP32/Arduino
 pio run -t upload
 ```
 
 ## License
 
-MIT License. See `LICENSE`.
+MIT License. See `LICENSE` for more information.

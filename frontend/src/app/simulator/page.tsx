@@ -47,7 +47,7 @@ export default function Analysis() {
     setLoading(true);
     setPrediction(null);
     setSubmittedData(null);
-    
+
     try {
       const res = await fetch((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000") + "/predict", {
         method: "POST",
@@ -65,10 +65,10 @@ export default function Analysis() {
   };
 
   return (
-    <main className="max-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
+    <main className="w-full flex-1 bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
       {/* Top Nav (Mechanical) */}
 
-      <motion.div 
+      <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="show"
@@ -77,7 +77,7 @@ export default function Analysis() {
         <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
           <div>
             <div className="text-[12px] text-hazard font-bold tracking-widest mb-4">
-              /// EXPLAINABLE_AI_MODULE
+              {"/// EXPLAINABLE_AI_MODULE"}
             </div>
             <h1 className="text-[clamp(3rem,6vw,6rem)]">
               MODEL<br />SIMULATOR
@@ -91,21 +91,21 @@ export default function Analysis() {
         </motion.header>
 
         <motion.div variants={staggerContainer} className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink">
-          
+
           {/* Input Panel */}
           <motion.div variants={fadeUp} className="lg:col-span-5 bg-canvas-cream flex flex-col">
             <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
               <h2 className="text-[14px] font-bold tracking-wider">{'< MANUAL_INPUT_MATRIX >'}</h2>
             </div>
-            
+
             <div className="p-8 flex flex-col gap-8 grow">
-              <InputControl label="HEART_RATE (BPM)" value={formData.Heart_Rate} min={40} max={200} onChange={(v: number) => setFormData({...formData, Heart_Rate: v})} />
-              <InputControl label="SPO2_LEVEL (%)" value={formData.SpO2_Level} min={70} max={100} onChange={(v: number) => setFormData({...formData, SpO2_Level: v})} />
-              <InputControl label="SYSTOLIC_BP (MMHG)" value={formData.Systolic_BP} min={80} max={220} onChange={(v: number) => setFormData({...formData, Systolic_BP: v})} />
-              <InputControl label="DIASTOLIC_BP (MMHG)" value={formData.Diastolic_BP} min={40} max={140} onChange={(v: number) => setFormData({...formData, Diastolic_BP: v})} />
-              <InputControl label="BODY_TEMP (°C)" value={formData.Body_Temp} min={30} max={42} step={0.1} onChange={(v: number) => setFormData({...formData, Body_Temp: v})} />
-              
-              <motion.button 
+              <InputControl label="HEART_RATE (BPM)" value={formData.Heart_Rate} min={40} max={200} onChange={(v: number) => setFormData({ ...formData, Heart_Rate: v })} />
+              <InputControl label="SPO2_LEVEL (%)" value={formData.SpO2_Level} min={70} max={100} onChange={(v: number) => setFormData({ ...formData, SpO2_Level: v })} />
+              <InputControl label="SYSTOLIC_BP (MMHG)" value={formData.Systolic_BP} min={80} max={220} onChange={(v: number) => setFormData({ ...formData, Systolic_BP: v })} />
+              <InputControl label="DIASTOLIC_BP (MMHG)" value={formData.Diastolic_BP} min={40} max={140} onChange={(v: number) => setFormData({ ...formData, Diastolic_BP: v })} />
+              <InputControl label="BODY_TEMP (°C)" value={formData.Body_Temp} min={30} max={42} step={0.1} onChange={(v: number) => setFormData({ ...formData, Body_Temp: v })} />
+
+              <motion.button
                 onClick={handlePredict}
                 disabled={loading}
                 whileHover={{ y: 2, x: 2, boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}
@@ -117,14 +117,15 @@ export default function Analysis() {
               </motion.button>
 
               {/* Terminal Readout */}
-                <div className="relative inset-0 pointer-events-none opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)] z-10" />
+              <div className="mt-8 grow border-[3px] border-ink bg-ink text-[#4AF626] p-0 flex flex-col min-h-37.5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
+                <div className="absolute inset-0 pointer-events-none opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)] z-10" />
                 <div className="text-[10px] font-bold tracking-[0.2em] text-ink bg-white border-b-[3px] border-ink px-4 py-3 flex justify-between uppercase">
                   <span>RAW_PAYLOAD_PREVIEW</span>
-                  <span>{JSON.stringify(formData).length} BYTES // SYS_READY</span>
+                  <span>{JSON.stringify(formData).length} BYTES {"// SYS_READY"}</span>
                 </div>
                 <div className="p-6 grow flex flex-col relative z-0">
                   <pre className="text-[12px] font-mono whitespace-pre-wrap grow overflow-auto leading-relaxed">
-{`{
+                    {`{
   "Heart_Rate": ${formData.Heart_Rate},
   "SpO2_Level": ${formData.SpO2_Level},
   "Systolic_BP": ${formData.Systolic_BP},
@@ -135,6 +136,7 @@ export default function Analysis() {
                   </pre>
                 </div>
               </div>
+            </div>
           </motion.div>
 
           {/* Results Panel */}
@@ -142,20 +144,20 @@ export default function Analysis() {
             <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
               <h2 className="text-[14px] font-bold tracking-wider">{'< INFERENCE_RESULTS_&_XAI >'}</h2>
             </div>
-            
+
             <div className="grow flex flex-col relative bg-white">
               <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(var(--ink-black) 1px, transparent 1px), linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-              
+
               <div className="z-10 p-8 flex flex-col h-full">
                 {prediction ? (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.6, ease: easeFluid }}
                   >
                     <div className="mb-12">
                       <div className="text-[11px] font-bold text-slate tracking-widest mb-4">MODEL_OUTPUT</div>
-                      
+
                       {(() => {
                         const getStatusStyles = (label: string) => {
                           const normalized = (label || "").toLowerCase();
@@ -164,9 +166,9 @@ export default function Analysis() {
                           if (normalized.includes('asthma')) return "bg-[#e0f2fe] text-[#075985] border-[#075985]";
                           if (normalized.includes('hypertension')) return "bg-[#f3e8ff] text-[#6b21a8] border-[#6b21a8]";
                           if (normalized.includes('diabetes')) return "bg-[#ffedd5] text-[#9a3412] border-[#9a3412]";
-                          return "bg-hazard text-white border-hazard"; 
+                          return "bg-hazard text-white border-hazard";
                         };
-                        
+
                         return (
                           <div className={`border-2 p-6 flex flex-col mb-4 ${getStatusStyles(prediction.prediction ? prediction.prediction_label : 'Healthy')}`}>
                             <div className="font-sans text-[clamp(28px,3vw,56px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-words">
@@ -188,7 +190,7 @@ export default function Analysis() {
                           </div>
                           <div className="divide-y-2 divide-ink">
                             {Object.keys(prediction.model_outputs).map((modelName, index) => (
-                              <motion.div 
+                              <motion.div
                                 key={modelName}
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
@@ -229,7 +231,7 @@ export default function Analysis() {
               </div>
             </div>
           </motion.div>
-          
+
         </motion.div>
       </motion.div>
     </main>
@@ -241,7 +243,7 @@ function InputControl({ label, value, min, max, step = 1, onChange }: any) {
     <div className="flex flex-col gap-3 group">
       <div className="flex justify-between items-end">
         <label className="text-[13px] font-bold text-slate tracking-widest group-hover:text-ink transition-colors">{label}</label>
-        <motion.span 
+        <motion.span
           key={value}
           initial={{ opacity: 0.5, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
@@ -251,12 +253,12 @@ function InputControl({ label, value, min, max, step = 1, onChange }: any) {
         </motion.span>
       </div>
       <div className="relative border-2 border-ink p-1 bg-white">
-        <input 
-          type="range" 
-          min={min} 
-          max={max} 
+        <input
+          type="range"
+          min={min}
+          max={max}
           step={step}
-          value={value} 
+          value={value}
           onChange={(e) => onChange(Number(e.target.value))}
           className="w-full appearance-none h-4 bg-ink/10 outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:bg-ink [&::-webkit-slider-thumb]:cursor-pointer relative z-10 block"
         />

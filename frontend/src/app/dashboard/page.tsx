@@ -23,7 +23,7 @@ export default function Dashboard() {
   const { data, stream, status } = useTelemetry();
 
   return (
-    <main className="max-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
+    <main className="w-full flex-1 bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
       {/* Top Nav (Mechanical) */}
 
       <motion.div 
@@ -40,7 +40,7 @@ export default function Dashboard() {
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 className="w-2 h-2 rounded-full bg-hazard"
               />
-              /// TELEMETRY_STREAM_ACTIVE
+              {"/// TELEMETRY_STREAM_ACTIVE"}
             </div>
             <h1 className="text-[clamp(3rem,6vw,6rem)] leading-[0.9]">
               PATIENT<br />TELEMETRY
