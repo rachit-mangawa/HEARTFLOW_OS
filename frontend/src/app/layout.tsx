@@ -35,11 +35,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 [ HEARTFLOW_OS ]
               </Link>
               <div className="flex gap-4 md:gap-8 items-center text-[12px] md:text-[13px] font-bold tracking-wider uppercase flex-wrap justify-center">
-                <Link href="/dashboard" className="text-ink hover:text-hazard transition-colors">SYS.MONITOR</Link>
+                <Link href="/monitor" className="text-ink hover:text-hazard transition-colors">SYS.MONITOR</Link>
                 <Link href="/simulator" className="text-ink hover:text-hazard transition-colors">AI.SIMULATOR</Link>
                 <Link href="/history" className="text-ink hover:text-hazard transition-colors">DATA.LOG</Link>
                 <Link href="/mlops" className="text-ink hover:text-hazard transition-colors">ML.OPS</Link>
                 <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
+                <Link href="/docs" className="text-ink hover:text-hazard transition-colors">API.DOCS</Link>
               </div>
             </div>
           </nav>
@@ -57,8 +58,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
               <Link href="/architecture" className="text-[12px] font-bold tracking-wider uppercase text-ink hover:text-hazard transition-colors">ARCHITECTURE.MD</Link>
-              <a href={`${process.env.NEXT_PUBLIC_API_URL || "https://idkhowtocodefr-tinyml-backend.hf.space"}/docs`} target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-wider uppercase text-ink hover:text-hazard transition-colors">API_DOCS</a>
-              <a href="https://github.com/IDKHowToCodeFR/HEARTFLOW_OS" target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-wider uppercase text-ink hover:text-hazard transition-colors">GITHUB_REPO</a>
+              <Link href="/docs" className="text-[12px] font-bold tracking-wider uppercase text-ink hover:text-hazard transition-colors">API_DOCS</Link>
+              <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS" target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-wider uppercase text-ink hover:text-hazard transition-colors">GITHUB_REPO</a>
             </div>
           </div>
         </footer>

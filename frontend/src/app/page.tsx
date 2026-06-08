@@ -51,7 +51,7 @@ export default function Home() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4">
-            <Link href="/dashboard" className="block w-full md:w-auto">
+            <Link href="/monitor" className="block w-full md:w-auto">
               <motion.div
                 whileHover={{ scale: 1.02, backgroundColor: "var(--color-hazard)", borderColor: "var(--color-hazard)" }}
                 whileTap={{ scale: 0.98 }}
@@ -59,6 +59,16 @@ export default function Home() {
                 className="inline-flex items-center justify-center h-12 px-8 bg-ink text-white text-[14px] font-bold uppercase tracking-widest border-2 border-ink w-full"
               >
                 [ INITIATE_STREAM ]
+              </motion.div>
+            </Link>
+            <Link href="/simulator" className="block w-full md:w-auto">
+              <motion.div
+                whileHover={{ scale: 1.02, backgroundColor: "var(--color-ink)", color: "var(--color-canvas-cream)" }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="inline-flex items-center justify-center h-12 px-8 bg-white text-ink text-[14px] font-bold uppercase tracking-widest border-2 border-ink w-full"
+              >
+                AI.SIMULATOR →
               </motion.div>
             </Link>
             <Link href="/edge" className="block w-full md:w-auto mt-2 md:mt-0">

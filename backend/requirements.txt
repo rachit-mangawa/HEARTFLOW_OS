@@ -6,7 +6,6 @@ pandas
 numpy
 shap
 m2cgen
-huggingface-hub
 websockets
 aiosqlite
 python-multipart

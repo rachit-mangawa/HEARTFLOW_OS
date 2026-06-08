@@ -14,23 +14,38 @@ export default function ShapChart({ patientData }: { patientData: any }) {
     const fetchExplain = async () => {
       setLoading(true);
       try {
-        const res = await fetch((process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000") + "/explain", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patientData)
-        });
-        const data = await res.json();
-        if (data.shap_values) {
-          setShapData(data);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        if (apiUrl) {
+          const res = await fetch(apiUrl + "/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patientData)
+          });
+          const data = await res.json();
+          if (data.shap_values) {
+            setShapData(data);
+            return;
+          }
         }
       } catch (err) {
-        console.error("SHAP fetch error", err);
+        // Fall through to client-side Edge SHAP calculation
+      } finally {
+        setLoading(false);
+      }
+
+      // Compute client-side SHAP feature attributions with zero cloud dependency
+      try {
+        const { computeEdgeShap } = await import("@/lib/edge/explain");
+        const edgeShap = computeEdgeShap(patientData);
+        setShapData(edgeShap);
+      } catch (e) {
+        console.error("Local SHAP error", e);
       } finally {
         setLoading(false);
       }
     };
     
-    const timeout = setTimeout(fetchExplain, 2500);
+    const timeout = setTimeout(fetchExplain, 1000);
     return () => clearTimeout(timeout);
   }, [patientData]);
 
@@ -40,10 +55,10 @@ export default function ShapChart({ patientData }: { patientData: any }) {
         {loading ? (
           <>
             <Loader2 className="animate-spin text-ink" size={20} />
-            <span className="text-slate text-[12px] font-bold uppercase tracking-[0.1em]">COMPUTING_SHAP_VECTORS...</span>
+            <span className="text-slate text-[12px] font-bold uppercase tracking-widest">COMPUTING_SHAP_VECTORS...</span>
           </>
         ) : (
-          <span className="text-slate text-[12px] font-bold uppercase tracking-[0.1em]">AWAITING_TELEMETRY...</span>
+          <span className="text-slate text-[12px] font-bold uppercase tracking-widest">AWAITING_TELEMETRY...</span>
         )}
       </div>
     );
@@ -66,7 +81,7 @@ export default function ShapChart({ patientData }: { patientData: any }) {
         
         return (
           <div key={item.name} className="flex flex-col gap-2">
-            <div className="flex justify-between text-[11px] font-bold tracking-[0.1em]">
+            <div className="flex justify-between text-[11px] font-bold tracking-widest">
               <span className="text-ink">{item.name}</span>
               <span className={isPositive ? "text-hazard" : "text-ink"}>
                 {item.value > 0 ? "+" : ""}{item.value.toFixed(3)}
@@ -76,7 +91,7 @@ export default function ShapChart({ patientData }: { patientData: any }) {
             {/* Brutalist Chart Bar */}
             <div className="relative h-4 w-full bg-white border-2 border-ink flex items-center">
               {/* Midline (zero axis) */}
-              <div className="absolute left-1/2 top-[-2px] bottom-[-2px] w-0.5 bg-ink z-10" />
+              <div className="absolute left-1/2 -top-0.5 -bottom-0.5 w-0.5 bg-ink z-10" />
               
               {/* Animated Value Bar */}
               <motion.div 
