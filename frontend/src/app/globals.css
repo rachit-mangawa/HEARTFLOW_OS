@@ -39,6 +39,25 @@ body {
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Industrial Brutalist Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--canvas-cream);
+  border-left: 1px solid var(--ink-black);
+  border-top: 1px solid var(--ink-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-black);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hazard-red);
 }
 
 /* Macro Typography Scaling */
@@ -58,3 +77,166 @@ h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
   text-transform: uppercase;
 }
+
+/* Tactile Physical Button Micro-Interactions (Emil Kowalski Physics) */
+.btn-tactile {
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+  box-shadow: 3px 3px 0px 0px var(--ink-black);
+}
+.btn-tactile:hover {
+  box-shadow: 4px 4px 0px 0px var(--ink-black);
+}
+.btn-tactile:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px var(--ink-black);
+}
+.btn-tactile:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-tactile-hazard {
+  background-color: var(--hazard-red);
+  color: #FFFFFF;
+  border: 2px solid var(--ink-black);
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out, background-color 150ms ease-out;
+  box-shadow: 3px 3px 0px 0px var(--ink-black);
+}
+.btn-tactile-hazard:hover {
+  background-color: #872624;
+  box-shadow: 4px 4px 0px 0px var(--ink-black);
+}
+.btn-tactile-hazard:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px var(--ink-black);
+}
+.btn-tactile-hazard:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Laboratory Calibrated Potentiometer Slider */
+.fader-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 24px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(20, 20, 19, 0.2) 0px,
+    rgba(20, 20, 19, 0.2) 1px,
+    transparent 1px,
+    transparent 12px
+  ), #FFFFFF;
+  border: 2px solid var(--ink-black);
+  outline: none;
+  cursor: pointer;
+}
+
+.fader-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 32px;
+  background: var(--ink-black);
+  border: 2px solid #FFFFFF;
+  box-shadow: 2px 2px 0px 0px var(--ink-black);
+  cursor: ew-resize;
+  position: relative;
+}
+
+.fader-slider:focus-visible::-webkit-slider-thumb {
+  background: var(--hazard-red);
+}
+
+.fader-slider::-moz-range-thumb {
+  width: 18px;
+  height: 32px;
+  background: var(--ink-black);
+  border: 2px solid #FFFFFF;
+  box-shadow: 2px 2px 0px 0px var(--ink-black);
+  cursor: ew-resize;
+}
+
+/* Clinical Report Print Engine */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #clinical-report-printable,
+  #clinical-report-printable * {
+    visibility: visible;
+  }
+
+  #clinical-report-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+    box-shadow: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Neo-Industrial Blueprint Grid Pattern */
+.bg-blueprint-grid {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(20, 20, 19, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 20, 19, 0.05) 1px, transparent 1px);
+}
+
+/* Machined Structural Framing (Swiss Engineering Architecture - Zero Visual Noise & Stable Framing) */
+.crosshair-corner {
+  position: relative;
+  box-shadow: 4px 4px 0px 0px var(--ink-black);
+}
+.crosshair-corner::before,
+.crosshair-corner::after {
+  content: none;
+}
+
+/* Technical Labeling */
+.tech-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid var(--ink-black);
+  background-color: #FFFFFF;
+  color: var(--ink-black);
+}
+
+.tech-tag-hazard {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid var(--hazard-red);
+  background-color: var(--hazard-red);
+  color: #FFFFFF;
+}
+

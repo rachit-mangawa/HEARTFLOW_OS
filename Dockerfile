@@ -14,11 +14,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all necessary files and directories
 COPY . .
 
-# Hugging Face Spaces mandates port 7860
+# Hugging Face Spaces mandates port 7860; can be overridden via PORT env var
 EXPOSE 7860
+EXPOSE 8000
 
 # Ensure Python knows where to find the backend module
 ENV PYTHONPATH=/app
 
-# Start the FastAPI server
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Start the FastAPI server with dynamic port support
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

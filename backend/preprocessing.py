@@ -7,7 +7,29 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 
 def resolve_model_dir():
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'model')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, '..', 'model'),
+        os.path.join(base_dir, 'model'),
+        '/app/model'
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return os.path.abspath(p)
+    return os.path.abspath(candidates[0])
+
+def resolve_data_path():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, '..', 'data', 'patient_dataset.csv'),
+        os.path.join(base_dir, 'data', 'patient_dataset.csv'),
+        os.path.join(base_dir, 'patient_dataset.csv'),
+        '/app/data/patient_dataset.csv'
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return os.path.abspath(p)
+    return os.path.abspath(candidates[0])
 
 def preprocess_data(df, is_training=True):
     model_dir = resolve_model_dir()
@@ -33,15 +55,15 @@ def preprocess_data(df, is_training=True):
         else:
             if os.path.exists(label_encoder_path):
                 label_encoder = joblib.load(label_encoder_path)
-                y = label_encoder.transform(y_raw)
+                try:
+                    y = label_encoder.transform(y_raw)
+                except Exception:
+                    y = None
             else:
                 y = y_raw 
     
     # Fix broken encoding column names safely
     X_raw.rename(columns=lambda x: x.replace('\ufffd', '°') if isinstance(x, str) else x, inplace=True)
-    
-    if 'Fall Detection' in X_raw.columns:
-        X_raw['Fall Detection'] = X_raw['Fall Detection'].map({'Yes': 1, 'No': 0}).fillna(0)
         
     # Engineered Feature
     X_raw['Risk_Severity'] = (X_raw['Heart Rate (bpm)'] > 105).astype(int) + (X_raw['SpO2 Level (%)'] < 94).astype(int)

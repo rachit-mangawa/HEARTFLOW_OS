@@ -3,15 +3,14 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - HF_TOKEN=${HF_TOKEN:-}
+      - PORT=8000
     volumes:
-      # Mount DB for persistence (in production use a volume, here bind-mount is okay for dev)
-      - backend_data:/app
+      - backend_data:/app/backend/data
 
   frontend:
     build:
@@ -20,8 +19,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Next.js will build this at build-time, but here it is for client-side API requests
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws/feed
     depends_on:
       - backend
 
