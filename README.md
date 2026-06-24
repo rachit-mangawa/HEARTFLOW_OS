@@ -69,4 +69,4 @@ Because of the architectural separation, deploying to platforms like **Render** 
 
 ## ⚙️ CI/CD
 
-A Github Actions Integration is bundled directly mapping to `.github/workflows/ci.yml`. This automatically tests dependency builds on Push actions to `main` branch.
+A Github Actions Integration is bundled directly mapping to `.github/workflows/ci.yml`. This automatically tests dependency builds on Push actions to `main` branch. 

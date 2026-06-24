@@ -31,4 +31,4 @@ jobs:
         
     - name: Docker Compose Build Test
       run: |
-        docker-compose build
+        docker compose build
