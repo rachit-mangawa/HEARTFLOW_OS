@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Sliders, Activity, Cpu } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Sliders, Activity, Cpu, Shuffle, Play, Square, Sparkles } from "lucide-react";
 import ShapChart from "@/components/ShapChart";
 import { PatientVitals } from "@/lib/edge/types";
 import { evaluateEdge } from "@/lib/edge/inference";
@@ -13,6 +13,25 @@ interface PredictionResult {
   model_outputs?: Record<string, string>;
   model_probs?: Record<string, number>;
   weights?: Record<string, number>;
+}
+
+// Clinically bounded randomized vitals generator
+function generateRandomVitals(): PatientVitals {
+  const hr = Math.floor(Math.random() * (162 - 48 + 1)) + 48; // 48 - 162 BPM
+  const spo2 = Math.floor(Math.random() * (99 - 78 + 1)) + 78; // 78 - 99 %
+  const sys = Math.floor(Math.random() * (190 - 86 + 1)) + 86; // 86 - 190 mmHg
+  const diaMax = Math.min(sys - 18, 120);
+  const diaMin = Math.max(Math.min(diaMax - 14, 52), 46);
+  const dia = Math.floor(Math.random() * (diaMax - diaMin + 1)) + diaMin;
+  const temp = Number((Math.random() * (39.3 - 35.8) + 35.8).toFixed(1));
+
+  return {
+    Heart_Rate: hr,
+    SpO2_Level: spo2,
+    Systolic_BP: sys,
+    Diastolic_BP: dia,
+    Body_Temp: temp,
+  };
 }
 
 const DEFAULT_VITALS: PatientVitals = {
@@ -38,6 +57,45 @@ export default function Analysis() {
     };
   });
   const [loading, setLoading] = useState(false);
+  const [autoStream, setAutoStream] = useState(false);
+
+  // Core evaluation function
+  const executeEvaluation = useCallback((data: PatientVitals) => {
+    const edgeResult = evaluateEdge(data);
+    setSubmittedData({ ...data });
+    setPrediction({
+      prediction: Boolean(edgeResult.is_at_risk),
+      prediction_label: edgeResult.label,
+      probability: edgeResult.confidence,
+      model_outputs: edgeResult.model_outputs,
+      model_probs: edgeResult.model_probs,
+      weights: edgeResult.weights,
+    });
+  }, []);
+
+  // Handler to throw randomized values for all features
+  const handleThrowRandomValues = useCallback(() => {
+    const randomVitals = generateRandomVitals();
+    setFormData(randomVitals);
+    executeEvaluation(randomVitals);
+  }, [executeEvaluation]);
+
+  // Throw initial random values on mount so the simulator is always dynamic
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      handleThrowRandomValues();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [handleThrowRandomValues]);
+
+  // Continuous auto-streaming simulation mode
+  useEffect(() => {
+    if (!autoStream) return;
+    const interval = setInterval(() => {
+      handleThrowRandomValues();
+    }, 2400);
+    return () => clearInterval(interval);
+  }, [autoStream, handleThrowRandomValues]);
 
   const handlePredict = async (inputData?: PatientVitals) => {
     const targetData = inputData || formData;
@@ -48,9 +106,9 @@ export default function Analysis() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       if (apiUrl) {
         const res = await fetch(`${apiUrl}/predict`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(targetData)
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(targetData),
         });
         if (res.ok) {
           const data = await res.json();
@@ -65,16 +123,7 @@ export default function Analysis() {
 
     // Client-side Zero-Cloud TinyML Ensemble Inference
     try {
-      const edgeResult = evaluateEdge(targetData);
-
-      setPrediction({
-        prediction: Boolean(edgeResult.is_at_risk),
-        prediction_label: edgeResult.label,
-        probability: edgeResult.confidence,
-        model_outputs: edgeResult.model_outputs,
-        model_probs: edgeResult.model_probs,
-        weights: edgeResult.weights,
-      });
+      executeEvaluation(targetData);
     } catch (e) {
       console.error("Local inference error", e);
     } finally {
@@ -82,19 +131,27 @@ export default function Analysis() {
     }
   };
 
+  // Real-time reactive slider adjustment
+  const handleSliderChange = (field: keyof PatientVitals, val: number) => {
+    const updated = { ...formData, [field]: val };
+    setFormData(updated);
+    executeEvaluation(updated);
+  };
+
   const handleSelectPreset = (presetData: PatientVitals) => {
     setFormData({ ...presetData });
-    handlePredict(presetData);
+    executeEvaluation(presetData);
   };
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
       <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col">
+        {/* Monolithic Header */}
         <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
             <div className="text-[12px] text-hazard font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
               <Sliders size={14} />
-              MODEL EXPLAINABILITY & SIMULATION BENCH
+              MODEL EXPLAINABILITY &amp; SIMULATION BENCH
             </div>
             <h1 className="text-[clamp(2.5rem,5vw,5.5rem)] leading-[0.9]">
               MODEL<br />SIMULATOR
@@ -105,13 +162,54 @@ export default function Analysis() {
               ENSEMBLE: 5 MODELS · SHAP EXPLAINABILITY
             </div>
             <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
-              Deterministic In-Browser Inference · Zero Cloud Latency
+              Deterministic In-Browser Inference · Dual-Polarity SHAP Signs
             </div>
           </div>
         </header>
 
-        <div className="crosshair-corner grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink items-stretch">
+        {/* Global Control Bar for Randomization */}
+        <div className="mb-6 border-2 border-ink bg-white p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-[4px_4px_0px_0px_#141413]">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-hazard" />
+            <span className="text-[12px] font-black uppercase tracking-wider text-ink">
+              TELEMETRY GENERATOR
+            </span>
+            <span className="text-[10px] font-bold text-slate uppercase bg-canvas-cream border border-ink/30 px-2 py-0.5 hidden sm:inline">
+              Random Physiologic Vector Sampling
+            </span>
+          </div>
 
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Throw Random Values Button */}
+            <button
+              type="button"
+              onClick={handleThrowRandomValues}
+              className="btn-tactile border-2 border-ink bg-hazard text-white hover:bg-black px-4 py-2 text-[12px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer flex-1 sm:flex-none"
+              title="Throw randomized physiological vitals"
+            >
+              <Shuffle size={14} />
+              <span>Throw Random Values</span>
+            </button>
+
+            {/* Auto Stream Toggle */}
+            <button
+              type="button"
+              onClick={() => setAutoStream(!autoStream)}
+              className={`border-2 border-ink px-3 py-2 text-[12px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer ${
+                autoStream
+                  ? "bg-emerald-600 text-white border-emerald-700 animate-pulse"
+                  : "bg-white text-ink hover:bg-canvas-cream"
+              }`}
+              title="Continuously throw random vitals every 2.4 seconds"
+            >
+              {autoStream ? <Square size={13} /> : <Play size={13} />}
+              <span>{autoStream ? "Streaming (Active)" : "Auto-Stream"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Main Workbench Grid */}
+        <div className="crosshair-corner grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink items-stretch">
           {/* Input Panel - 6 Columns */}
           <div className="lg:col-span-6 bg-canvas-cream flex flex-col justify-between">
             <div>
@@ -120,10 +218,20 @@ export default function Analysis() {
                   <Activity size={16} />
                   Patient Parameters
                 </h2>
-                <span className="text-[10px] text-slate uppercase font-bold">5 Telemetry Inputs</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleThrowRandomValues}
+                    className="text-[10px] font-black uppercase tracking-wider text-hazard border border-hazard px-2 py-0.5 hover:bg-hazard hover:text-white transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <Sparkles size={11} />
+                    <span>Randomize</span>
+                  </button>
+                  <span className="text-[10px] text-slate uppercase font-bold">5 Telemetry Inputs</span>
+                </div>
               </div>
 
-              {/* Quick Clinical Test Vector Presets - Enlarged & Tactile */}
+              {/* Quick Clinical Test Vector Presets */}
               <div className="p-5 sm:p-6 bg-canvas-cream border-b-2 border-ink flex flex-col gap-3">
                 <div className="text-[11px] font-bold tracking-widest text-slate uppercase flex justify-between items-center">
                   <span className="text-ink">Clinical Patient Profiles</span>
@@ -135,26 +243,26 @@ export default function Analysis() {
                       name: "Resting Normal",
                       tag: "NORMAL",
                       desc: "Normotensive baseline vitals",
-                      data: { Heart_Rate: 72, SpO2_Level: 98, Systolic_BP: 118, Diastolic_BP: 78, Body_Temp: 37.0 }
+                      data: { Heart_Rate: 72, SpO2_Level: 98, Systolic_BP: 118, Diastolic_BP: 78, Body_Temp: 37.0 },
                     },
                     {
                       name: "STEMI / Ischemia",
                       tag: "CRITICAL",
                       desc: "Acute ischemic anomaly",
-                      data: { Heart_Rate: 128, SpO2_Level: 91, Systolic_BP: 165, Diastolic_BP: 104, Body_Temp: 37.3 }
+                      data: { Heart_Rate: 128, SpO2_Level: 91, Systolic_BP: 165, Diastolic_BP: 104, Body_Temp: 37.3 },
                     },
                     {
                       name: "Hypoxic Bradycardia",
                       tag: "WARNING",
                       desc: "Hypoxemic rhythm depression",
-                      data: { Heart_Rate: 48, SpO2_Level: 82, Systolic_BP: 88, Diastolic_BP: 54, Body_Temp: 35.8 }
+                      data: { Heart_Rate: 48, SpO2_Level: 82, Systolic_BP: 88, Diastolic_BP: 54, Body_Temp: 35.8 },
                     },
                     {
                       name: "Hypertensive Crisis",
                       tag: "WARNING",
                       desc: "Acute arterial pressure surge",
-                      data: { Heart_Rate: 98, SpO2_Level: 96, Systolic_BP: 195, Diastolic_BP: 118, Body_Temp: 37.1 }
-                    }
+                      data: { Heart_Rate: 98, SpO2_Level: 96, Systolic_BP: 195, Diastolic_BP: 118, Body_Temp: 37.1 },
+                    },
                   ].map((preset) => {
                     const isActive =
                       formData.Heart_Rate === preset.data.Heart_Rate &&
@@ -202,24 +310,70 @@ export default function Analysis() {
                 </div>
               </div>
 
-              {/* Slider Inputs */}
+              {/* Slider Inputs with Live Scrubbing */}
               <div className="p-6 sm:p-8 flex flex-col gap-6">
-                <InputControl label="Heart Rate" unit="BPM" value={formData.Heart_Rate} min={40} max={200} onChange={(v: number) => setFormData({ ...formData, Heart_Rate: v })} />
-                <InputControl label="SpO2 Level" unit="%" value={formData.SpO2_Level} min={70} max={100} onChange={(v: number) => setFormData({ ...formData, SpO2_Level: v })} />
-                <InputControl label="Systolic BP" unit="mmHg" value={formData.Systolic_BP} min={80} max={220} onChange={(v: number) => setFormData({ ...formData, Systolic_BP: v })} />
-                <InputControl label="Diastolic BP" unit="mmHg" value={formData.Diastolic_BP} min={40} max={140} onChange={(v: number) => setFormData({ ...formData, Diastolic_BP: v })} />
-                <InputControl label="Body Temperature" unit="°C" value={formData.Body_Temp} min={30} max={42} step={0.1} onChange={(v: number) => setFormData({ ...formData, Body_Temp: v })} />
+                <InputControl
+                  label="Heart Rate"
+                  unit="BPM"
+                  value={formData.Heart_Rate}
+                  min={40}
+                  max={200}
+                  onChange={(v: number) => handleSliderChange("Heart_Rate", v)}
+                />
+                <InputControl
+                  label="SpO2 Level"
+                  unit="%"
+                  value={formData.SpO2_Level}
+                  min={70}
+                  max={100}
+                  onChange={(v: number) => handleSliderChange("SpO2_Level", v)}
+                />
+                <InputControl
+                  label="Systolic BP"
+                  unit="mmHg"
+                  value={formData.Systolic_BP}
+                  min={80}
+                  max={220}
+                  onChange={(v: number) => handleSliderChange("Systolic_BP", v)}
+                />
+                <InputControl
+                  label="Diastolic BP"
+                  unit="mmHg"
+                  value={formData.Diastolic_BP}
+                  min={40}
+                  max={140}
+                  onChange={(v: number) => handleSliderChange("Diastolic_BP", v)}
+                />
+                <InputControl
+                  label="Body Temperature"
+                  unit="°C"
+                  value={formData.Body_Temp}
+                  min={30}
+                  max={42}
+                  step={0.1}
+                  onChange={(v: number) => handleSliderChange("Body_Temp", v)}
+                />
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 pt-0">
+            <div className="p-6 sm:p-8 pt-0 flex gap-3">
+              <button
+                type="button"
+                onClick={handleThrowRandomValues}
+                className="btn-tactile py-4 px-5 border-2 border-ink bg-canvas-cream hover:bg-white text-ink font-bold text-[13px] tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                title="Throw random physiological values"
+              >
+                <Shuffle size={14} className="text-hazard" />
+                <span>Randomize</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => handlePredict()}
                 disabled={loading}
-                className="btn-tactile-hazard py-5 font-bold text-[15px] sm:text-[16px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 w-full cursor-pointer disabled:cursor-not-allowed"
+                className="btn-tactile-hazard py-4 font-bold text-[14px] sm:text-[15px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 flex-1 cursor-pointer disabled:cursor-not-allowed"
               >
-                {loading ? 'Evaluating Model...' : 'Run Inference'}
+                {loading ? "Evaluating Model..." : "Re-evaluate Model"}
               </button>
             </div>
           </div>
@@ -229,48 +383,66 @@ export default function Analysis() {
             <div className="h-14 px-4 sm:px-6 border-b-2 border-ink bg-white flex justify-between items-center">
               <h2 className="text-[14px] font-bold tracking-wider uppercase flex items-center gap-2">
                 <Cpu size={16} />
-                Classification & SHAP Attributions
+                Classification &amp; SHAP Attributions
               </h2>
               <span className="text-[10px] text-slate uppercase font-bold">Ensemble Explainability</span>
             </div>
 
             <div className="grow flex flex-col relative bg-white">
-              <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(var(--ink-black) 1px, transparent 1px), linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+              <div
+                className="absolute inset-0 z-0 opacity-10 pointer-events-none"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(var(--ink-black) 1px, transparent 1px), linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)",
+                  backgroundSize: "40px 40px",
+                }}
+              />
 
-              <div className="z-10 p-8 flex flex-col h-full">
+              <div className="z-10 p-6 sm:p-8 flex flex-col h-full gap-8">
                 {prediction ? (
-                  <div>
-                    <div className="mb-12">
-                      <div className="text-[11px] font-bold text-slate tracking-widest mb-4">Model Output</div>
+                  <>
+                    <div>
+                      <div className="text-[11px] font-bold text-slate tracking-widest mb-3 uppercase">
+                        Model Output &amp; Diagnosis
+                      </div>
 
                       {(() => {
                         const getStatusStyles = (label: string) => {
                           const normalized = (label || "").toLowerCase();
-                          if (normalized === 'healthy' || normalized === 'normal') return "bg-[#d1fae5] text-[#065f46] border-[#065f46]";
-                          if (normalized.includes('heart')) return "bg-[#fef08a] text-[#854d0e] border-[#854d0e]";
-                          if (normalized.includes('asthma')) return "bg-[#e0f2fe] text-[#075985] border-[#075985]";
-                          if (normalized.includes('hypertension')) return "bg-[#f3e8ff] text-[#6b21a8] border-[#6b21a8]";
-                          if (normalized.includes('diabetes')) return "bg-[#ffedd5] text-[#9a3412] border-[#9a3412]";
+                          if (normalized === "healthy" || normalized === "normal")
+                            return "bg-[#d1fae5] text-[#065f46] border-[#065f46]";
+                          if (normalized.includes("heart"))
+                            return "bg-[#fef08a] text-[#854d0e] border-[#854d0e]";
+                          if (normalized.includes("asthma"))
+                            return "bg-[#e0f2fe] text-[#075985] border-[#075985]";
+                          if (normalized.includes("hypertension"))
+                            return "bg-[#f3e8ff] text-[#6b21a8] border-[#6b21a8]";
+                          if (normalized.includes("diabetes"))
+                            return "bg-[#ffedd5] text-[#9a3412] border-[#9a3412]";
                           return "bg-hazard text-white border-hazard";
                         };
 
                         return (
-                          <div className={`border-2 p-6 flex flex-col mb-4 ${getStatusStyles(prediction.prediction ? prediction.prediction_label : 'Healthy')}`}>
-                            <div className="font-sans text-[clamp(28px,3vw,56px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-words">
-                              {prediction.prediction ? prediction.prediction_label : 'Normal'}
+                          <div
+                            className={`border-2 p-5 sm:p-6 flex flex-col mb-4 ${getStatusStyles(
+                              prediction.prediction ? prediction.prediction_label : "Healthy"
+                            )}`}
+                          >
+                            <div className="font-sans text-[clamp(28px,3vw,52px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-words">
+                              {prediction.prediction ? prediction.prediction_label : "Normal"}
                             </div>
-                            <div className="text-[14px] font-bold tracking-widest">
+                            <div className="text-[13px] font-bold tracking-widest">
                               CONFIDENCE: {(prediction.probability * 100).toFixed(1)}%
                             </div>
                           </div>
                         );
                       })()}
 
-                      {/* Ensemble Diagnostics */}
+                      {/* Ensemble Diagnostics Breakdown */}
                       {prediction.model_outputs && (() => {
                         const outputs = prediction.model_outputs;
                         return (
-                          <div className="border-2 border-ink bg-white flex flex-col text-[12px] font-bold uppercase tracking-wider">
+                          <div className="border-2 border-ink bg-white flex flex-col text-[11px] font-bold uppercase tracking-wider">
                             <div className="border-b-2 border-ink px-4 py-2 bg-ink text-canvas-cream flex justify-between">
                               <span>Ensemble Stack Diagnostics</span>
                               <span className="text-hazard">Weighted Voting</span>
@@ -279,16 +451,20 @@ export default function Analysis() {
                               {Object.keys(outputs).map((modelName) => (
                                 <div
                                   key={modelName}
-                                  className="flex justify-between items-center p-3 hover:bg-canvas-cream transition-colors"
+                                  className="flex justify-between items-center p-2.5 hover:bg-canvas-cream transition-colors"
                                 >
-                                  <div className="w-[20%] text-slate">{modelName}</div>
-                                  <div className={`w-[40%] ${outputs[modelName] !== 'Healthy' ? 'text-hazard' : ''}`}>
+                                  <div className="w-[25%] text-slate">{modelName}</div>
+                                  <div
+                                    className={`w-[35%] ${
+                                      outputs[modelName] !== "Healthy" ? "text-hazard font-black" : "text-emerald-700"
+                                    }`}
+                                  >
                                     {outputs[modelName]}
                                   </div>
-                                  <div className="w-[20%] text-right">
-                                    CONF: {(((prediction.model_probs?.[modelName] ?? prediction.probability ?? 0.95)) * 100).toFixed(1)}%
+                                  <div className="w-[20%] text-right tabular-nums">
+                                    {(((prediction.model_probs?.[modelName] ?? prediction.probability ?? 0.95)) * 100).toFixed(1)}%
                                   </div>
-                                  <div className="w-[20%] text-right text-slate">
+                                  <div className="w-[20%] text-right text-slate tabular-nums">
                                     W: {(prediction.weights?.[modelName] ?? 0.25).toFixed(2)}
                                   </div>
                                 </div>
@@ -299,24 +475,27 @@ export default function Analysis() {
                       })()}
                     </div>
 
-                    <div className="flex-1 border-2 border-ink bg-white p-8 flex flex-col min-h-75">
-                      <div className="text-[11px] font-bold text-slate tracking-widest mb-6 border-b-2 border-ink pb-2">SHAP Feature Attributions</div>
-                      <div className="flex-1">
+                    {/* SHAP Feature Attributions Container */}
+                    <div className="border-2 border-ink bg-white p-5 sm:p-6 flex flex-col">
+                      <div className="text-[12px] font-black uppercase text-ink tracking-wider mb-4 border-b-2 border-ink pb-2 flex justify-between items-center">
+                        <span>SHAP Attributions &amp; Directional Signs</span>
+                        <span className="text-[10px] text-slate font-mono">Kernel / TreeSHAP ABI</span>
+                      </div>
+                      <div className="w-full">
                         <ShapChart patientData={submittedData} />
                       </div>
                     </div>
-                  </div>
+                  </>
                 ) : (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-slate text-[14px] font-bold tracking-widest uppercase border-2 border-slate px-6 py-4">
-                      {loading ? 'Evaluating Model...' : 'Awaiting Input...'}
+                      {loading ? "Evaluating Model..." : "Awaiting Input..."}
                     </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </main>
