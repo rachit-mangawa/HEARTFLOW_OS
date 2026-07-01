@@ -1,0 +1,11 @@
+# --- STREAMLIT CLOUD DEPLOYMENT REQUIREMENTS ---
+# (Merged backend + frontend libs to satisfy Streamlit Commmunity Cloud deployment)
+fastapi>=0.111.0
+uvicorn>=0.30.1
+scikit-learn>=1.5.1
+pandas>=2.2.2
+numpy>=1.26.4
+joblib>=1.4.2
+streamlit>=1.36.0
+plotly>=5.22.0
+requests>=2.32.3

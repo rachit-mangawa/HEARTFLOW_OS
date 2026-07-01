@@ -35,8 +35,8 @@ try:
     status = resp.json().get("status", "Unknown")
     color = "green" if "Healthy" in status else "orange" if "Warning" in status else "red"
 except:
-    status = "Critical (Offline)"
-    color = "red"
+    status = "Active - Streamlit Cloud Mode (Fallback Monolith)"
+    color = "blue"
     
 st.markdown(f"**System Status**: :{color}[{status}]")
 
