@@ -20,7 +20,7 @@ if full_df.empty:
     st.warning("Warning: Dataset not found in `/data`. Connect the volume to view analytics.")
 else:
     df = full_df.head(500)
-    st.success(f"Displaying analytics for all {len(df)} records.")
+    st.success(f"Displaying analytics for first {len(df)} records of all {len(full_df)} available records.")
     
     # Feature Correlation Heatmap
     st.markdown("### Feature Matrix Correlation Heatmap")

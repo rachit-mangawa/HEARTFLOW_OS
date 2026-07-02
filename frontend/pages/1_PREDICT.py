@@ -103,8 +103,7 @@ if st.button("Query Edge AI Ensemble", type="primary"):
                 }])
                 
                 X_proc, _ = preprocess_data(df_simulate, is_training=False)
-                model_dir = os.path.join(backend_path, '../model')
-                eng = EnsembleModel(models_dir=model_dir)
+                eng = EnsembleModel()
                 final_pred, conf, ind_preds, ind_probs, weights = eng.predict(X_proc)
                 
                 # Mock the FastAPI return schema 
