@@ -96,8 +96,8 @@ if st.button("Query Edge AI Ensemble", type="primary"):
                 df_simulate = pd.DataFrame([{
                     "Heart Rate (bpm)": payload["Heart_Rate"],
                     "SpO2 Level (%)": payload["SpO2_Level"],
-                    "Systolic BP (mmHg)": payload["Systolic_BP"],
-                    "Diastolic BP (mmHg)": payload["Diastolic_BP"],
+                    "Systolic Blood Pressure (mmHg)": payload["Systolic_BP"],
+                    "Diastolic Blood Pressure (mmHg)": payload["Diastolic_BP"],
                     "Body Temperature (°C)": payload["Body_Temp"],
                     "Fall Detection": payload["Fall_Detection"]
                 }])
