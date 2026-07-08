@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Activity, Clock } from "lucide-react";
+import { useState } from "react";
 
 const NAV_LINKS = [
+  { href: "/", label: "OVERVIEW" },
   { href: "/monitor", label: "MONITOR" },
   { href: "/simulator", label: "SIMULATOR" },
   { href: "/history", label: "HISTORY" },
@@ -16,21 +16,7 @@ const NAV_LINKS = [
 
 export default function Navigation() {
   const pathname = usePathname();
-  const [clock, setClock] = useState<string>("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, "0");
-      const m = String(now.getMinutes()).padStart(2, "0");
-      const s = String(now.getSeconds()).padStart(2, "0");
-      setClock(`${h}:${m}:${s}`);
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <nav className="w-full border-b-2 border-ink bg-canvas-cream sticky top-0 z-50">
@@ -44,17 +30,6 @@ export default function Navigation() {
             <span className="inline-block w-2.5 h-2.5 bg-hazard" />
             <span>HEARTFLOW_OS</span>
           </Link>
-
-          {/* System Telemetry Pill (Desktop) */}
-          <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 bg-white border border-ink/40 text-[11px] font-mono font-bold tracking-wider uppercase text-slate">
-            <Activity size={12} className="text-hazard" />
-            <span>STREAM: ACTIVE</span>
-            <span className="text-ink/30">|</span>
-            <span className="flex items-center gap-1 text-ink tabular-nums">
-              <Clock size={11} className="text-slate" />
-              {clock || "READY"}
-            </span>
-          </div>
         </div>
 
         {/* Desktop Navigation Links */}
@@ -79,11 +54,6 @@ export default function Navigation() {
 
         {/* Mobile Menu Toggle Button */}
         <div className="flex md:hidden items-center gap-2">
-          {clock && (
-            <span className="text-[10px] font-mono font-bold tabular-nums text-slate bg-white px-2 py-1 border border-ink/40">
-              {clock}
-            </span>
-          )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="px-3 py-1 border-2 border-ink bg-white text-ink text-[11px] font-bold tracking-widest uppercase hover:bg-ink hover:text-white transition-colors"

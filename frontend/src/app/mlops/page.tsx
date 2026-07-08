@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Download,
   FileSpreadsheet,
@@ -98,6 +98,21 @@ export default function MLOps() {
   const [validation, setValidation] = useState<ValidationReport | null>(null);
   const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+
+  const stagingWorkbenchRef = useRef<HTMLDivElement>(null);
+  const statusBannerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToWorkbench = () => {
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        stagingWorkbenchRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 50);
+    });
+  };
 
   const parseAndValidateCSV = async (fileToValidate: File) => {
     try {
@@ -201,6 +216,7 @@ export default function MLOps() {
     setFile(newFile);
     if (newFile) {
       parseAndValidateCSV(newFile);
+      scrollToWorkbench();
     } else {
       setValidation(null);
       setStatus("idle");
@@ -229,6 +245,9 @@ export default function MLOps() {
   const handleUpload = async () => {
     if (!file) return;
     setStatus("uploading");
+    setTimeout(() => {
+      statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 60);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -245,6 +264,9 @@ export default function MLOps() {
         if (data.status === "success" || !data.error) {
           setStatus("success");
           setMessage(data.message || "Dataset merged and ensemble models successfully retrained!");
+          setTimeout(() => {
+            statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }, 80);
           return;
         } else {
           throw new Error(data.error || "Retraining failed");
@@ -263,6 +285,9 @@ export default function MLOps() {
       setStatus("error");
       setMessage("Validation failed. Please verify that all 5 continuous physiological features are present.");
     }
+    setTimeout(() => {
+      statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 80);
   };
 
   return (
@@ -359,7 +384,11 @@ export default function MLOps() {
         </section>
 
         {/* Upload & Staging Workspace - Unified Monolithic Workbench */}
-        <div className="border-2 border-ink bg-white grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x-2 divide-ink shadow-[4px_4px_0px_0px_#141413]">
+        <div
+          ref={stagingWorkbenchRef}
+          id="staging-workbench"
+          className="scroll-mt-24 border-2 border-ink bg-white grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x-2 divide-ink shadow-[4px_4px_0px_0px_#141413]"
+        >
           {/* Dropzone Panel */}
           <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between">
             <div>
@@ -422,7 +451,8 @@ export default function MLOps() {
 
               {status !== "idle" && (
                 <div
-                  className={`p-3 border-2 text-[12px] font-bold uppercase tracking-wider ${
+                  ref={statusBannerRef}
+                  className={`p-3 border-2 text-[12px] font-bold uppercase tracking-wider scroll-mt-24 ${
                     status === "success"
                       ? "bg-[#d1fae5] border-[#065f46] text-[#065f46]"
                       : status === "error"
