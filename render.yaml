@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: tinyml-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    plan: free
+
+  - type: web
+    name: tinyml-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    plan: free
+    envVars:
+      - key: API_URL
+        fromService:
+          type: web
+          name: tinyml-backend
+          envVarKey: RENDER_EXTERNAL_URL

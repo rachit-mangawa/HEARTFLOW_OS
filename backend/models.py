@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from preprocessing import get_train_test_split, resolve_model_dir
 
 def train_models():
-    data_path = '/app/data/Synthetic_patient-HealthCare-Monitoring_dataset.csv' if os.path.exists('/app/data') else '../data/Synthetic_patient-HealthCare-Monitoring_dataset.csv' if os.path.exists('../data') else 'data/Synthetic_patient-HealthCare-Monitoring_dataset.csv'
+    data_path = '/app/data/patient_dataset.csv' if os.path.exists('/app/data') else '../data/patient_dataset.csv' if os.path.exists('../data') else 'data/patient_dataset.csv'
     model_dir = resolve_model_dir()
     os.makedirs(model_dir, exist_ok=True)
     
