@@ -15,23 +15,41 @@ st.markdown("---")
 
 st.markdown("### 🏗️ System Architecture")
 # Create a Graphviz flowchart for the About page
-graph = graphviz.Digraph(node_attr={'shape': 'box', 'style': 'rounded,filled', 'fillcolor': '#f2f2f2', 'fontname': 'Helvetica'})
-graph.attr(rankdir='LR') # Left to Right layout
+graph = graphviz.Digraph(node_attr={'shape': 'box', 'style': 'rounded,filled', 'fontname': 'Helvetica', 'margin': '0.2'}, graph_attr={'rankdir': 'TB', 'splines': 'ortho', 'nodesep': '0.8'})
 
-# Define nodes
-graph.node('UI', '🖥️ Streamlit UI', fillcolor='#ffcccc')
-graph.node('API', '⚙️ FastAPI Backend', fillcolor='#ccffcc')
-graph.node('ENS', '🧠 Ensemble Engine\n(RF, SVM, NN, LogReg, KNN)', fillcolor='#ccccff')
-graph.node('SHAP', '🔍 SHAP Explainer', fillcolor='#ffffcc')
-graph.node('EXPORT', '⚡ TinyML Transpiler\n(INT8 Quantization)', fillcolor='#ffccff')
-graph.node('MCU', '📟 Edge Device\n(ESP32 / Arduino)', fillcolor='#e6ccff')
+# Define UI & API nodes at the top
+graph.node('UI', '🖥️ Streamlit Frontend\nInteractive Dashboard', fillcolor='#ff4b4b', fontcolor='white', color='#a30000', penwidth='2')
+graph.node('API', '⚙️ FastAPI Backend\nRouting & API Logic', fillcolor='#009688', fontcolor='white', color='#004d40', penwidth='2')
+graph.node('DB', '🗄️ SQLite DB\nPatient History', shape='cylinder', fillcolor='#9b59b6', fontcolor='white', color='#4a235a', penwidth='2')
 
-# Define edges
-graph.edge('UI', 'API', label=' REST JSON')
-graph.edge('API', 'ENS', label=' Predict')
-graph.edge('API', 'SHAP', label=' Explain')
-graph.edge('API', 'EXPORT', label=' Export C-Code')
-graph.edge('EXPORT', 'MCU', label=' Flash Firmware')
+# Core connections
+graph.edge('UI', 'API', label=' REST JSON', color='#666666', fontcolor='#666666')
+graph.edge('API', 'DB', label=' Read/Write', color='#666666', fontcolor='#666666')
+
+# Machine Learning Subgraph
+with graph.subgraph(name='cluster_ml') as ml:
+    ml.attr(label='🧠 Machine Learning & Inference Pipeline', style='dashed', color='#aaaaaa', fontcolor='#888888')
+    ml.node('ENS', 'Ensemble Engine\nSoft-Voting Aggregator', shape='diamond', fillcolor='#f2c94c', fontcolor='black', color='#b28900', penwidth='2')
+    ml.node('MODELS', 'Classifiers\n(RF, SVM, LogReg, NN, KNN)', fillcolor='#f2c94c', fontcolor='black', color='#b28900', penwidth='2')
+    ml.node('SHAP', '🔍 SHAP Explainer\nFeature Impact Analysis', fillcolor='#f2c94c', fontcolor='black', color='#b28900', penwidth='2')
+
+# Hardware Export Subgraph
+with graph.subgraph(name='cluster_edge') as edge:
+    edge.attr(label='⚡ Hardware & Edge AI Export', style='dashed', color='#aaaaaa', fontcolor='#888888')
+    edge.node('TRANS', 'C-Code Transpiler\nINT8 Quantization', fillcolor='#2d9cdb', fontcolor='white', color='#106093', penwidth='2')
+    edge.node('HEADER', 'tinyml_model.h\nOptimized Header File', shape='note', fillcolor='#2d9cdb', fontcolor='white', color='#106093', penwidth='2')
+    edge.node('MCU', '📟 ESP32 / ARM Cortex-M\nMicrocontroller Node', fillcolor='#2d9cdb', fontcolor='white', color='#106093', penwidth='2')
+
+# Map Cross-cluster edges
+graph.edge('API', 'ENS', label=' Predict', color='#333333')
+graph.edge('ENS', 'MODELS', color='#333333')
+
+graph.edge('API', 'SHAP', label=' Explain', color='#333333')
+graph.edge('SHAP', 'MODELS', style='dashed', label=' Analyzes Trees', fontcolor='#555555', color='#555555')
+
+graph.edge('API', 'TRANS', label=' Export Config', color='#333333')
+graph.edge('TRANS', 'HEADER', label=' Scale FP32 to INT8', fontcolor='#555555', color='#555555')
+graph.edge('HEADER', 'MCU', label=' Flash Firmware', color='#333333')
 
 st.graphviz_chart(graph, use_container_width=True)
 

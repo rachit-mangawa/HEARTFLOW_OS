@@ -15,29 +15,45 @@ The system follows a separated frontend/backend architecture, enabling scaling f
 
 ```mermaid
 flowchart TD
-    UI[Streamlit UI - Frontend] <-->|REST API JSON| API[FastAPI Service - Backend]
-    
-    subgraph ML_Core["Machine Learning Core"]
-        ENS{Ensemble Engine}
-        RF[Random Forest]
-        SVM[SVM]
-        NN[Neural Network]
+    %% Define styles
+    classDef frontend fill:#ff4b4b,stroke:#a30000,stroke-width:2px,color:#fff;
+    classDef backend fill:#009688,stroke:#004d40,stroke-width:2px,color:#fff;
+    classDef ml_node fill:#f2c94c,stroke:#b28900,stroke-width:2px,color:#333;
+    classDef edge_tech fill:#2d9cdb,stroke:#106093,stroke-width:2px,color:#fff;
+    classDef db fill:#9b59b6,stroke:#4a235a,stroke-width:2px,color:#fff;
+
+    %% Core Components
+    UI[🖥️ Streamlit Frontend<br/>Interactive Dashboard]:::frontend
+    API[⚙️ FastAPI Backend<br/>Routing & API Logic]:::backend
+    DB[(🗄️ SQLite DB<br/>Patient History)]:::db
+
+    UI <-->|REST API JSON| API
+    API <-->|Read / Write| DB
+
+    %% ML Subgraph
+    subgraph ML [🧠 Machine Learning & Inference Pipeline]
+        ENS{Ensemble Engine<br/>Soft-Voting Aggregator}:::ml_node
+        Models[Classifiers:<br/>RF, SVM, LogReg, NN, KNN]:::ml_node
+        SHAP[🔍 SHAP Explainer<br/>Feature Impact Analysis]:::ml_node
     end
+
+    %% Edge Quantization Subgraph
+    subgraph Quantization [⚡ Hardware & Edge AI Export]
+        TRANS[C-Code Transpiler<br/>INT8 Quantization]:::edge_tech
+        HEADER((tinyml_model.h<br/>Optimized Header File)):::edge_tech
+        MCU>📟 ESP32 / ARM Cortex-M<br/>Microcontroller Node]:::edge_tech
+    end
+
+    %% Routing Connections
+    API -->|Predict Request| ENS
+    ENS --> Models
     
-    API -->|Predict| ENS
-    ENS --> RF & SVM & NN
+    API -->|Explain Request| SHAP
+    SHAP -.->|Analyzes Decision Trees| Models
     
-    SHAP[SHAP Explainer - Interpretability]
-    API -->|Explain| SHAP
-    SHAP -.->|Analyzes| RF
-    
-    TRANS[TinyML Transpiler]
-    C_CODE((tinyml_model.h))
-    MCU[Edge Device: ESP32 / Cortex-M]
-    
-    API -->|Export| TRANS
-    TRANS -->|INT8 Quantization| C_CODE
-    C_CODE -->|Flash Firmware| MCU
+    API -->|Export Request| TRANS
+    TRANS -->|Scales FP32 to INT8| HEADER
+    HEADER -->|Flash Firmware| MCU
 ```
 
 ---
