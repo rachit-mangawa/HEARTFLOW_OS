@@ -29,7 +29,7 @@ class EnsembleModel:
             probs = model.predict_proba(X)
             individual_probs[name] = probs[0]
             pred_indices = np.argmax(probs, axis=1)
-            individual_preds[name] = self.label_encoder.inverse_transform(pred_indices)[0]
+            individual_preds[name] = str(self.label_encoder.inverse_transform(pred_indices)[0])
             
         num_classes = list(individual_probs.values())[0].shape[0]
         weighted_probs = np.zeros(num_classes)
@@ -42,7 +42,7 @@ class EnsembleModel:
             
         weighted_probs /= total_weight
         final_pred_idx = np.argmax(weighted_probs)
-        final_pred = self.label_encoder.inverse_transform([final_pred_idx])[0]
-        confidence = np.max(weighted_probs)
+        final_pred = str(self.label_encoder.inverse_transform([final_pred_idx])[0])
+        confidence = float(np.max(weighted_probs))
         
         return final_pred, confidence, individual_preds, individual_probs, self.weights

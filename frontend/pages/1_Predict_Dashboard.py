@@ -127,7 +127,8 @@ def render_results(data):
     with st.expander("🔍 Explain AI Prediction (SHAP Explainability)", expanded=False):
         st.markdown("##### How each vital sign influenced the AI's decision:")
         try:
-            exp_resp = requests.post(f"{API_URL}/explain", json=payload, timeout=10)
+            url_exp = f"{API_URL.rstrip('/')}/explain"
+            exp_resp = requests.post(url_exp, json=payload, timeout=30)
             if exp_resp.status_code == 200:
                 exp_data = exp_resp.json()
                 if "error" in exp_data:
@@ -267,7 +268,8 @@ if st.button("Query Edge AI Ensemble", type="primary"):
     
     with st.spinner("Processing through TinyML Nodes..."):
         try:
-            resp = requests.post(f"{API_URL}/predict", json=payload, timeout=5)
+            url = f"{API_URL.rstrip('/')}/predict"
+            resp = requests.post(url, json=payload, timeout=30)
             if resp.status_code == 200:
                 data = resp.json()
                 if "error" in data:
@@ -275,8 +277,8 @@ if st.button("Query Edge AI Ensemble", type="primary"):
                 else:
                     render_results(data)
             else:
-                st.error("API returned an error code.")
-        except requests.exceptions.ConnectionError:
+                st.error(f"API returned an error: {resp.status_code} — {resp.text[:500]}")
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as conn_err:
             try:
                 import sys
                 import os

@@ -8,6 +8,7 @@ import os
 import m2cgen as m2c
 import shap
 from database import log_prediction, get_history
+import numpy as np
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from preprocessing import preprocess_data
@@ -47,43 +48,52 @@ def health_check():
 
 @app.post("/predict")
 async def predict(data: PatientData):
-    eng = get_ensemble()
-    if not eng:
-        return {"error": "Models untrained. Ensure python backend/models.py executes."}
-            
-    df = pd.DataFrame([{
-        'Heart Rate (bpm)': data.Heart_Rate,
-        'SpO2 Level (%)': data.SpO2_Level,
-        'Systolic Blood Pressure (mmHg)': data.Systolic_BP,
-        'Diastolic Blood Pressure (mmHg)': data.Diastolic_BP,
-        'Body Temperature (°C)': data.Body_Temp,
-        'Fall Detection': data.Fall_Detection
-    }])
-    
-    X_proc, _ = await asyncio.to_thread(preprocess_data, df, False)
-    final_pred, conf, ind_preds, ind_probs, weights = await asyncio.to_thread(eng.predict, X_proc)
-    
-    is_at_risk = 0 if final_pred == "Healthy" else 1
-    
-    # Critical Alert System
-    alert_triggered = False
-    if is_at_risk == 1 and float(conf) > 0.80:
-        alert_triggered = True
-        with open("alerts.log", "a") as f:
-            f.write(f"ALERT: Patient at risk! HR: {data.Heart_Rate}, SpO2: {data.SpO2_Level}, Confidence: {conf:.2f}\n")
-            
-    # Log to SQLite History
-    await asyncio.to_thread(log_prediction, data, final_pred, float(conf))
-    
-    return {
-        "prediction": is_at_risk,
-        "prediction_label": final_pred,
-        "probability": float(conf),
-        "ensemble_prediction": is_at_risk,
-        "model_outputs": ind_preds,
-        "model_probs": {k: float(max(v)) for k, v in ind_probs.items()},
-        "weights": weights
-    }
+    try:
+        eng = get_ensemble()
+        if not eng:
+            return {"error": "Models untrained. Ensure python backend/models.py executes."}
+                
+        df = pd.DataFrame([{
+            'Heart Rate (bpm)': data.Heart_Rate,
+            'SpO2 Level (%)': data.SpO2_Level,
+            'Systolic Blood Pressure (mmHg)': data.Systolic_BP,
+            'Diastolic Blood Pressure (mmHg)': data.Diastolic_BP,
+            'Body Temperature (°C)': data.Body_Temp,
+            'Fall Detection': data.Fall_Detection
+        }])
+        
+        X_proc, _ = await asyncio.to_thread(preprocess_data, df, False)
+        final_pred, conf, ind_preds, ind_probs, weights = await asyncio.to_thread(eng.predict, X_proc)
+        
+        is_at_risk = 0 if final_pred == "Healthy" else 1
+        
+        # Critical Alert System — fault-tolerant
+        if is_at_risk == 1 and float(conf) > 0.80:
+            try:
+                with open("alerts.log", "a") as f:
+                    f.write(f"ALERT: Patient at risk! HR: {data.Heart_Rate}, SpO2: {data.SpO2_Level}, Confidence: {conf:.2f}\n")
+            except Exception:
+                pass
+                
+        # Log to SQLite History — fault-tolerant
+        try:
+            await asyncio.to_thread(log_prediction, data, final_pred, float(conf))
+        except Exception as db_e:
+            print(f"DB logging skipped: {db_e}")
+        
+        return {
+            "prediction": is_at_risk,
+            "prediction_label": final_pred,
+            "probability": float(conf),
+            "ensemble_prediction": is_at_risk,
+            "model_outputs": ind_preds,
+            "model_probs": {k: float(np.max(v)) for k, v in ind_probs.items()},
+            "weights": weights
+        }
+    except Exception as e:
+        import traceback
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Backend Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}")
 
 @app.get("/history")
 def history():
