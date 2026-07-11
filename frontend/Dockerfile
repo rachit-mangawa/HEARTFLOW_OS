@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 WORKDIR /app/frontend
 EXPOSE 8501
-CMD sh -c "streamlit run HOME.py --server.port=${PORT:-8501} --server.address=0.0.0.0"
+CMD sh -c "streamlit run Home.py --server.port=${PORT:-8501} --server.address=0.0.0.0"
