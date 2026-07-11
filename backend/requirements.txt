@@ -7,3 +7,4 @@ joblib
 shap
 m2cgen
 matplotlib
+python-multipart
