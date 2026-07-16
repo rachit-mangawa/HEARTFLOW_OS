@@ -78,7 +78,7 @@ System performance over time heavily correlates with dataset drift. The integrat
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/IDKHowToCodeFR/TinyML-Heart-Health-Monitoring-Dashboard.git
    cd TinyML-Heart-Health-Monitoring-Dashboard
    ```
 
