@@ -99,6 +99,21 @@ async def predict(data: PatientData):
 def history():
     return get_history()
 
+@app.get("/dataset")
+async def get_dataset():
+    data_path = '/app/data/patient_dataset.csv' if os.path.exists('/app/data') else '../data/patient_dataset.csv' if os.path.exists('../data') else 'data/patient_dataset.csv'
+    if os.path.exists(data_path):
+        df = pd.read_csv(data_path)
+        # Return summary or partial data to avoid huge payloads
+        return df.to_dict(orient="records")
+    return {"error": "Dataset not found"}
+
+@app.get("/sync")
+def force_sync():
+    from database import sync_from_hub, sync_to_hub
+    sync_from_hub()
+    return {"status": "Sync attempted"}
+
 @app.post("/explain")
 async def explain(data: PatientData):
     eng = get_ensemble()

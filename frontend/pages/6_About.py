@@ -3,13 +3,48 @@ import graphviz
 
 st.set_page_config(page_title="About Project", page_icon="ℹ️", layout="wide")
 
-st.title("ℹ️ About the Project")
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+
+.tech-badge {
+    display: inline-block; padding: 4px 12px; margin: 0 6px 8px 0;
+    border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+    color: #e0e0e0; transition: all 0.2s ease;
+}
+.tech-badge:hover { 
+    background: rgba(0, 242, 254, 0.1); 
+    border-color: #00f2fe; color: #00f2fe; 
+    transform: translateY(-1px);
+}
+.live-link {
+    text-decoration: none; font-weight: 500; color: #00f2fe;
+}
+.live-link:hover { text-decoration: underline; }
+</style>
+""", unsafe_allow_html=True)
+
+st.title("ℹ️ About the Platform")
 
 st.markdown("""
-### TinyML Heart Health Monitoring Dashboard
+This platform is a prototype of an end-to-end Machine Learning pipeline specifically designed to operate natively on resource-constrained embedded edge hardware (**TinyML**), targeting microcontrollers such as the **ESP32** or **ARM Cortex-M** architectures.
 
-This dashboard is a prototype of an end-to-end Machine Learning pipeline specifically designed to operate natively on resource-constrained embedded edge hardware ("TinyML"), targeting microcontrollers such as the ESP32 or ARM Cortex-M architecture.
-""")
+**Live Environments:**
+* 🖥️ **Frontend Suite:** <a href="https://tinyml-heart-health-monitoring-dashboard-8xqogy2hibtlayt7popvs.streamlit.app/" target="_blank" class="live-link">Streamlit Cloud Deployment</a>
+* ⚙️ **Backend Hub:** <a href="https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend" target="_blank" class="live-link">Hugging Face Spaces API</a>
+
+<div style="margin-top: 15px;">
+    <span class="tech-badge">Python 3.9+</span>
+    <span class="tech-badge">FastAPI</span>
+    <span class="tech-badge">Streamlit</span>
+    <span class="tech-badge">Scikit-Learn</span>
+    <span class="tech-badge">SHAP</span>
+    <span class="tech-badge">Docker</span>
+    <span class="tech-badge">PyTest</span>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -81,8 +116,9 @@ with col2:
     System robustness requires adaptability. The **MLOps settings** permit uploading newly captured CSV datasets spanning emerging patient patterns. Submitting retraining logic prompts the backend pipeline to independently spin up `Scikit-Learn` algorithms to overwrite `.pkl` binary files, seamlessly refreshing the intelligence available on the dashboard.
     """)
 
-st.markdown("---")
-
 st.markdown("""
-*Developed as an educational implementation demonstrating scalable, fully interpretable Edge-based Machine Learning platforms for modern Healthcare telemetry.*
-""")
+<div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); font-size: 0.85rem;">
+    Designed as a scalable, fully interpretable Edge-based Machine Learning architecture for modern Healthcare telemetry.<br>
+    MIT License
+</div>
+""", unsafe_allow_html=True)

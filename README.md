@@ -1,17 +1,26 @@
 # TinyML Heart Health Monitoring Dashboard
 
-![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?logo=fastapi)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.25%2B-FF4B4B?logo=streamlit)
-![License](https://img.shields.io/badge/license-MIT-green)
+A production-ready application for real-time heart health analytics, ensemble prediction modeling, and automated C-code transpilation for resource-constrained embedded systems.
 
-A scalable, end-to-end Machine Learning ecosystem designed to provide heart health analytics, ensemble modeling predictions, and Edge AI deployment capabilities for resource-constrained microcontrollers.
+**Live Environments:**
+- 🖥️ **Frontend UI:** [Streamlit Cloud](https://tinyml-heart-health-monitoring-dashboard-8xqogy2hibtlayt7popvs.streamlit.app/)
+- ⚙️ **Backend API:** [Hugging Face Spaces](https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend)
 
----
+## Overview
 
-## 🏗️ System Architecture
+This application bridges the gap between high-level cloud machine learning and low-level embedded hardware. It evaluates patient vitals using an ensemble of classifiers, provides strict clinical explainability, and compresses these Python-trained models into raw C-code ready to be flashed onto IoT devices.
 
-The system follows a separated frontend/backend architecture, enabling scaling flexibility and clean separation of concerns.
+### Key Engineering Features
+
+- **Edge Computing & TinyML**: Transpiles complex Scikit-Learn models into highly optimized, dependency-free **C-code headers**. This allows predictive intelligence to be deployed directly to the edge, enabling offline, ultra-low latency, and privacy-preserving inference.
+- **INT8 Quantization Engine**: Mathematically scales 64-bit floating-point weights down to 8-bit integers, effectively shrinking the flash memory payload by **~75%** for resource-constrained microcontrollers.
+- **Dynamic Hardware Profiling**: The deployment suite actively simulates target hardware (e.g., *ESP32, Arduino Nano 33 BLE, Raspberry Pi Pico*) to calculate expected inference latency metrics (in µs) and final byte-size footprints prior to flashing.
+- **Interpretable AI (SHAP)**: Solves the medical "black box" concern by generating real-time SHAP feature impact analyses. This visualization proves exactly *why* the AI assigned a specific risk score based on individual patient variables.
+- **Soft-Voting Ensemble**: Rather than relying on a single algorithm, the backend aggregates outputs across five independent models (Random Forest, SVM, KNN, Logistic Regression, Neural Network) to output the highest-confidence predictions.
+
+## Architecture
+
+The project follows a decoupled, modular design pattern separating the client interface from the ML processing pipeline.
 
 ```mermaid
 flowchart TD
@@ -32,87 +41,108 @@ flowchart TD
 
     %% ML Subgraph
     subgraph ML [🧠 Machine Learning & Inference Pipeline]
-        ENS{Ensemble Engine<br/>Soft-Voting Aggregator}:::ml_node
+        ENS{Ensemble Engine<br/>Soft-Voting}:::ml_node
         Models[Classifiers:<br/>RF, SVM, LogReg, NN, KNN]:::ml_node
-        SHAP[🔍 SHAP Explainer<br/>Feature Impact Analysis]:::ml_node
+        SHAP[🔍 SHAP Explainer]:::ml_node
     end
 
     %% Edge Quantization Subgraph
-    subgraph Quantization [⚡ Hardware & Edge AI Export]
+    subgraph Quantization [⚡ Hardware Export]
         TRANS[C-Code Transpiler<br/>INT8 Quantization]:::edge_tech
-        HEADER((tinyml_model.h<br/>Optimized Header File)):::edge_tech
-        MCU>📟 ESP32 / ARM Cortex-M<br/>Microcontroller Node]:::edge_tech
+        HEADER((tinyml_model.h)):::edge_tech
+        MCU>ESP32 / Cortex-M Node]:::edge_tech
     end
 
-    %% Routing Connections
     API -->|Predict Request| ENS
     ENS --> Models
-    
     API -->|Explain Request| SHAP
-    SHAP -.->|Analyzes Decision Trees| Models
-    
+    SHAP -.-> Models
     API -->|Export Request| TRANS
-    TRANS -->|Scales FP32 to INT8| HEADER
+    TRANS --> HEADER
     HEADER -->|Flash Firmware| MCU
 ```
 
----
+### Modular Repository Structure
 
-## ✨ Key Technical Features
+```text
+TinyML-Dashboard/
+├── backend/               # FastAPI server, ML pipelines, SQLite API, C-code logic
+├── frontend/              # Streamlit UI mapping, Plotly charts, web routing
+├── model/                 # Local cache of serialized SciKit-Learn .pkl weights
+├── data/                  # Patient cohort CSVs for MLOps retraining pipelines
+├── tests/                 # Full PyTest suite for backend continuous integration
+├── .github/workflows/     # CI/CD actions for auto-syncing to Hugging Face
+└── docker-compose.yml     # Orchestration spec for local containerized deployment
+```
 
-### 1. TinyML Edge Deployment & INT8 Quantization 📉
-The core value proposition is executing model inference offline on devices like the ESP32 and ARM Cortex-M. The backend transpiler natively parses trained models (Logistic Regression, Support Vector Machines, Neural Networks, K-Nearest Neighbors) into portable `stdint.h` C-code binaries.
+## Setup & Installation
 
-Crucially, an automated **INT8 Quantization pipeline** is available. This procedure calculates appropriate linear scaling factors globally across Neural Network layers or SVM hyperplanes to convert 64-bit Floating Point (`double`) weights into constrained 8-bit Integer (`int8_t`) representations. This technique drastically reduces firmware flash size requirements (by approximately 75%) and limits execution to low-power integer arithmetic operations.
+### Requirements
+- Python 3.9 or higher
+- Git
 
-### 2. Clinical Model Interpretability (Explainable AI) 🧠
-Predictive medical systems cannot function as black boxes. By employing **SHAP (SHapley Additive exPlanations)**, the FastAPI backend interprets Random Forest decision trees, resolving the algebraic impact weights of individual clinical variables (e.g. SpO2 vs Heart Rate) over the final prediction. These explanations are visually charted on the frontend to explicitly map risk-increasing or protective physiological factors.
-
-### 3. Ensemble Prediction Algorithm 🤝
-The framework combines the predictive strengths of various fundamental Machine Learning techniques. Instead of relying on a singular hypothesis, an ensemble pipeline coordinates inferences from KNN, SVM, Logistic Regression, Random Forest, and a Multi-layer Perceptron. A soft-voting probability aggregator dictates the final classification, balancing variance and bias.
-
-### 4. MLOps CI/CD and Drift Adjustment 🔄
-System performance over time heavily correlates with dataset drift. The integrated MLOps framework facilitates straightforward uploading of new Patient CSV cohorts payload schemas. The system will asynchronously restart the Scikit-Learn training pipelines across all active supervised learning models, store updated `.pkl` binaries, and seamlessly refresh caching layers to serve the updated ecosystem in realtime.
-
-## Installation & Setup
+### Installation Steps
 
 1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/IDKHowToCodeFR/TinyML-Heart-Health-Monitoring-Dashboard.git
-   cd TinyML-Heart-Health-Monitoring-Dashboard
-   ```
+```bash
+git clone https://github.com/IDKHowToCodeFR/TinyML-Heart-Health-Monitoring-Dashboard.git
+cd TinyML-Heart-Health-Monitoring-Dashboard
+```
 
-2. **Initialize Python environments and dependencies:**
-   Ensure Python 3.9+ is installed.
-   ```bash
-   python -m pip install -r requirements.txt
-   pip install -r backend/requirements.txt
-   pip install -r frontend/requirements.txt
-   ```
+2. **Install global requirements:**
+```bash
+pip install -r requirements.txt
+pip install -r backend/requirements.txt
+pip install -r frontend/requirements.txt
+```
 
-3. **Train initial `.pkl` Models:**
-   The dashboard requires foundational model states to establish the FastAPI ensemble arrays. 
-   ```bash
-   cd backend
-   python models.py
-   cd ..
-   ```
+3. **Train the baseline local `.pkl` models (Required on first run):**
+```bash
+cd backend
+python models.py 
+cd ..
+```
 
-## Running the Application Locally
+## Usage
 
-1. **Start the FastAPI Backend Service:**
-   ```bash
-   cd backend
-   uvicorn main:app --host 0.0.0.0 --port 8000
-   ```
+### 🚀 Quick Start (Windows)
+We've bundled an automated startup script that boots both environments natively:
+```bash
+run.bat
+```
 
-2. **Launch the Streamlit Frontend Client:** (In a separate terminal)
-   ```bash
-   cd frontend
-   streamlit run Home.py
-   ```
+### 🐳 Docker Deployment
+To avoid local python pathing issues, you can spin up the application via Docker Compose:
+```bash
+docker-compose up --build
+```
+*The Streamlit interface will bind automatically to `http://localhost:8501`, connecting directly to the internal API.*
 
-The Streamlit UI will bind to `localhost:8501`. Navigate through the sidebar implementations to access prediction simulation, SHAP interpretation, or Edge specific transpilation outputs.
+### 🛠️ Manual Startup
+If you prefer running the stack manually in separate terminal instances:
 
-## License
-MIT License. See `LICENSE` for details.
+**Start the Backend:**
+```bash
+cd backend
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+**Start the Frontend:**
+```bash
+cd frontend
+streamlit run Home.py
+```
+
+## Development & Automation
+
+### API Documentation
+FastAPI serves auto-generated interactive documentation. While the backend is running, you can hit the endpoints directly at:
+- **Swagger UI:** `http://localhost:8000/docs`
+- **ReDoc:** `http://localhost:8000/redoc`
+
+### CI/CD Pipelines
+The project utilizes GitHub actions natively located in `.github/workflows/`:
+1. **PyTest Validation**: Verifies endpoint data sanitization and schema parameters immediately on Push/Pull Requests.
+2. **Hugging Face Sync**: Auto-deploys `main` branch updates precisely to the Hugging Face Space Docker container ensuring CI/CD alignment.
+
+## Support & License
+This project is licensed under the MIT License. Designed as a scalable, educational, and fully interpretable Edge-based Machine Learning architecture.

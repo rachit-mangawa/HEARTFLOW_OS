@@ -79,11 +79,15 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ──────── System Status ────────
 try:
-    resp = requests.get(f"{API_URL}/health", timeout=2)
-    status = resp.json().get("status", "Unknown")
-    is_online = "Healthy" in status
-except Exception:
-    status = "Cloud Mode (Monolith Fallback)"
+    resp = requests.get(f"{API_URL}/health", timeout=5)
+    if resp.status_code == 200:
+        status = resp.json().get("status", "Unknown")
+        is_online = "Healthy" in status
+    else:
+        status = f"Backend Error ({resp.status_code})"
+        is_online = False
+except Exception as e:
+    status = f"Offline / Monolith Fallback ({str(e)[:50]})"
     is_online = False
 
 badge_class = "status-online" if is_online else "status-fallback"
@@ -176,7 +180,7 @@ def live_metrics():
     ad_c = "#00cc96" if ad_good else "#ef553b"
     ad_d = "delta-good" if ad_good else "delta-bad"
     ad_i = "▼" if ad_good else "▲"
-    ad_txt = f"{abs(alert_delta)} fewer" if ad_good else f"+{alert_delta} more"
+    ad_txt = f"{abs(alert_delta)} fewer" if ad_good else f"{alert_delta} more"
 
     hr_c = "#00cc96" if hr_ok else "#ef553b"
     hr_d = "delta-good" if hr_ok else "delta-bad"
@@ -212,45 +216,50 @@ def live_metrics():
     </div>
     """, unsafe_allow_html=True)
 
-    # ──── Candlestick chart: tracks alert level changes ────
-    st.markdown("##### 📡 Live Alert Activity (Candlestick + Moving Average)")
+    # ──── Smoothed Activity Area Chart: tracks average heart-rate & alerts ────
+    st.markdown("##### 📡 Live Patient Emulation Trace")
 
     cd = st.session_state.chart_candles
     ts = [x["time"] for x in cd]
-    op = [x["open"] for x in cd]
-    hi = [x["high"] for x in cd]
-    lo = [x["low"] for x in cd]
+    # Represent the primary metric as the close/current state
     cl = [x["close"] for x in cd]
 
     fig = go.Figure()
-    fig.add_trace(go.Candlestick(
-        x=ts, open=op, high=hi, low=lo, close=cl,
-        increasing=dict(line=dict(color="#ef553b"), fillcolor="rgba(239,85,59,0.4)"),
-        decreasing=dict(line=dict(color="#00cc96"), fillcolor="rgba(0,204,150,0.4)"),
-        name="Alerts"
+
+    # Main Area Waveform
+    fig.add_trace(go.Scatter(
+        x=ts, y=cl,
+        mode='lines',
+        line=dict(color='#00f2fe', width=3, shape='spline', smoothing=1.3),
+        fill='tozeroy',
+        fillcolor='rgba(0, 242, 254, 0.15)',
+        name="Activity Index"
     ))
 
-    w = min(7, len(cl))
+    # Add a thin secondary baseline trend
+    w = min(10, len(cl))
     ma = pd.Series(cl).rolling(window=w, min_periods=1).mean().tolist()
     fig.add_trace(go.Scatter(
         x=ts, y=ma, mode='lines',
-        line=dict(color='rgba(79,172,254,0.9)', width=2.5, shape='spline'),
-        name="MA-7"
+        line=dict(color='rgba(255, 255, 255, 0.4)', width=1.5, dash='dot'),
+        name="Moving Average"
     ))
-
-    vol = [abs(cv - ov) * 2 + 1 for ov, cv in zip(op, cl)]
-    vc = ["rgba(239,85,59,0.2)" if cv >= ov else "rgba(0,204,150,0.2)" for ov, cv in zip(op, cl)]
-    fig.add_trace(go.Bar(x=ts, y=vol, marker=dict(color=vc), yaxis="y2", showlegend=False, hoverinfo='skip'))
 
     fig.update_layout(
         template="plotly_dark", height=320,
         margin=dict(l=0, r=50, t=10, b=0),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(gridcolor='rgba(255,255,255,0.03)', showgrid=False, rangeslider=dict(visible=False)),
-        yaxis=dict(title="Alert Level", gridcolor='rgba(255,255,255,0.05)', title_font=dict(size=11), side="right", range=[0, ALERT_MAX + 10]),
-        yaxis2=dict(overlaying="y", side="left", showgrid=False, showticklabels=False, range=[0, max(vol)*5] if vol else [0, 20]),
+        xaxis=dict(gridcolor='rgba(255,255,255,0.03)', showgrid=True, rangeslider=dict(visible=False)),
+        yaxis=dict(
+            title="Relative Activity",
+            gridcolor='rgba(255,255,255,0.05)',
+            title_font=dict(size=11),
+            side="right",
+            range=[0, ALERT_MAX + 15]
+        ),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=10)),
-        showlegend=True
+        showlegend=True,
+        hovermode="x unified"
     )
     st.plotly_chart(fig, use_container_width=True)
 

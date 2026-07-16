@@ -1,10 +1,44 @@
 import sqlite3
 import os
 from datetime import datetime
+from huggingface_hub import HfApi, hf_hub_download
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'patient_history.db')
+REPO_ID = "IDKHowToCodeFr/tinyml-logs"
+DB_NAME = 'patient_history.db'
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), DB_NAME)
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+api = HfApi()
+
+def sync_from_hub():
+    if not HF_TOKEN:
+        print("No HF_TOKEN found. Skipping sync.")
+        return
+    try:
+        print(f"Downloading {DB_NAME} from Hub...")
+        path = hf_hub_download(repo_id=REPO_ID, filename=DB_NAME, repo_type="dataset", token=HF_TOKEN)
+        import shutil
+        shutil.copy(path, DB_PATH)
+        print("Sync from Hub complete.")
+    except Exception as e:
+        print(f"Sync from Hub failed (maybe first run?): {e}")
+
+def sync_to_hub():
+    if not HF_TOKEN:
+        return
+    try:
+        api.upload_file(
+            path_or_fileobj=DB_PATH,
+            path_in_repo=DB_NAME,
+            repo_id=REPO_ID,
+            repo_type="dataset",
+            token=HF_TOKEN
+        )
+    except Exception as e:
+        print(f"Sync to Hub failed: {e}")
 
 def init_db():
+    sync_from_hub()
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
@@ -43,23 +77,21 @@ def log_prediction(data, prediction_label, confidence):
     ))
     conn.commit()
     conn.close()
+    sync_to_hub()
 
 def get_history():
+    if not os.path.exists(DB_PATH):
+        return []
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM predictions ORDER BY timestamp DESC LIMIT 100')
     rows = cursor.fetchall()
-    
-    # Get column names
     col_names = [description[0] for description in cursor.description]
-    
     conn.close()
     
-    # Format as list of dicts
     history = []
     for row in rows:
         history.append(dict(zip(col_names, row)))
-        
     return history
 
 # Initialize db when this module is loaded
