@@ -80,7 +80,7 @@ P(\\text{Class}_c \\mid X) = \\frac{\\sum_{i=1}^{M=5} w_i \\cdot P_i(\\text{Clas
 z_j = \\frac{x_j - \\mu_j}{\\sigma_j} \\quad \\text{for } j \\in \\{0, 1, 2, 3, 4, 5\\}
 
 % 3. Clinical Risk Severity Interaction Feature
-\\text{Risk}_{\\text{Severity}} = \\mathbb{I}(\\text{Heart}_{\\text{Rate}} > 105) + \\mathbb{I}(\\text{SpO2}_{\\text{Level}} < 94)
+\\text{Risk\\textunderscore Severity} = \\mathbb{I}(\\text{Heart\\textunderscore Rate} > 105) + \\mathbb{I}(\\text{SpO2\\textunderscore Level} < 94)
 
 % 4. INT8 Fixed-Point Affine Quantization
 Q = \\text{clamp}\\left( \\left\\lfloor \\frac{W}{\\text{scale}} \\right\\rceil, -128, 127 \\right), \\quad \\text{scale} = \\frac{\\max(|W|)}{127}

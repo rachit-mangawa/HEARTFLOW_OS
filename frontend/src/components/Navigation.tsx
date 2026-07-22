@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { href: "/monitor", label: "MONITOR" },
   { href: "/simulator", label: "SIMULATOR" },
   { href: "/history", label: "HISTORY" },
-  { href: "/analytics", label: "DATASET" },
+  { href: "/dataset", label: "DATASET" },
   { href: "/mlops", label: "MLOPS" },
   { href: "/edge", label: "COMPILER" },
 ];
@@ -35,7 +35,10 @@ export default function Navigation() {
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center gap-1.5 lg:gap-2 text-[11px] lg:text-[12px] font-bold tracking-wider uppercase">
           {NAV_LINKS.map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/" && pathname.startsWith(link.href)) ||
+              (link.href === "/dataset" && pathname.startsWith("/analytics"));
             return (
               <Link
                 key={link.href}
@@ -56,10 +59,10 @@ export default function Navigation() {
         <div className="flex md:hidden items-center gap-2">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="px-3 py-1 border-2 border-ink bg-white text-ink text-[11px] font-bold tracking-widest uppercase hover:bg-ink hover:text-white transition-colors"
+            className="min-h-11 px-3.5 py-1.5 border-2 border-ink bg-white text-ink text-[11px] font-bold tracking-widest uppercase hover:bg-ink hover:text-white transition-colors flex items-center justify-center"
             aria-label="Toggle Navigation Menu"
           >
-            {mobileMenuOpen ? "CLOSE" : "MENU"}
+            {mobileMenuOpen ? "CLOSE [×]" : "MENU [≡]"}
           </button>
         </div>
       </div>
@@ -72,20 +75,23 @@ export default function Navigation() {
             <span className="text-hazard">{NAV_LINKS.length} ROUTES</span>
           </div>
           {NAV_LINKS.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/" && pathname.startsWith(link.href)) ||
+              (link.href === "/dataset" && pathname.startsWith("/analytics"));
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`px-3 py-2 text-[12px] font-bold tracking-wider uppercase flex justify-between items-center transition-colors ${
+                className={`min-h-11 px-3 py-2.5 text-[12px] font-bold tracking-wider uppercase flex justify-between items-center transition-colors border ${
                   isActive
-                    ? "bg-ink text-white font-black"
-                    : "text-ink hover:bg-canvas-cream hover:text-hazard"
+                    ? "bg-ink text-white font-black border-ink shadow-[2px_2px_0px_#9F2F2D]"
+                    : "text-ink border-transparent hover:bg-canvas-cream hover:text-hazard"
                 }`}
               >
                 <span>{link.label}</span>
-                {isActive && <span className="text-hazard text-[10px]">● ACTIVE</span>}
+                {isActive && <span className="text-hazard text-[10px] font-mono font-bold">● ACTIVE</span>}
               </Link>
             );
           })}

@@ -129,7 +129,7 @@ $$z_j = \frac{x_j - \mu_j}{\sigma_j} \quad \text{for } j \in \{0, 1, 2, 3, 4, 5\
 ### 3.3. Synthetic Clinical Interaction Feature (Risk Severity)
 To capture non-linear cardiogenic shock risk without expanding deep tree depth, a deterministic clinical heuristic is synthesized prior to inference:
 
-$$\text{Risk}_{\text{Severity}} = \mathbb{I}(\text{Heart}_{\text{Rate}} > 105) + \mathbb{I}(\text{SpO2}_{\text{Level}} < 94)$$
+$$\text{Risk\textunderscore Severity} = \mathbb{I}(\text{Heart\textunderscore Rate} > 105) + \mathbb{I}(\text{SpO2\textunderscore Level} < 94)$$
 
 Where $\mathbb{I}(\cdot)$ is the indicator function:
 
@@ -216,6 +216,31 @@ int predict(const float *features);
 | **Logistic Regression** | 3,072 bytes | 768 bytes | **-75.0%** | 1.2 µs | ✅ Compatible | ✅ Compatible | ✅ Compatible |
 | **KNN (k=5)** | 4,400 bytes | 600 bytes | **-86.4%** | 3.3 µs | ✅ Compatible | ✅ Compatible | ✅ Compatible |
 | **Composite Ensemble** | **34,608 bytes** | **8,152 bytes** | **-76.4%** | **18.4 µs** | ✅ **Full Target** | ✅ **Full Target** | ✅ **Full Target** |
+
+---
+
+## 6. Ground-Truth Telemetry Profiling & Cloud Ingest Gateway
+
+```
+[ 60k Patient Vitals CSV (4.49 MB) ]
+               │
+               ▼
+   [ Fast In-Memory Profiler ]
+               │
+       ┌───────┴───────┐
+       ▼               ▼
+[ 9x9 Pearson r ] [ 12-Bin Histograms ]
+       │               │
+       └───────┬───────┘
+               ▼
+[ GET /dataset/summary (~8.2 KB) ] ──> 99.8% Payload Compression (< 5 ms latency)
+```
+
+- **Hugging Face Spaces Cloud Gateway**: [https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend](https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend)
+- **Direct API & WebSocket URLs**:
+  - REST Base: `https://idkhowtocodefr-tinyml-backend.hf.space`
+  - Swagger UI: `https://idkhowtocodefr-tinyml-backend.hf.space/docs`
+  - WebSocket Stream: `wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed`
 
 ---
 

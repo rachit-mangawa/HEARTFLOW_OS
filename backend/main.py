@@ -27,7 +27,9 @@ from inference import evaluate
 from schemas import PatientData
 from mlops import MLOpsEngine
 from simulator import PatientDataSimulator
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
+from typing import Optional
+from dataset_analytics import get_dataset_profile, get_paginated_rows
 
 # Setup standard logging for critical fault alerts (console stream)
 logging.basicConfig(level=logging.WARNING, 
@@ -133,10 +135,48 @@ async def websocket_feed(websocket: WebSocket):
 async def history():
     return await db.get_history()
 
+@app.get("/dataset/summary")
+def get_dataset_summary():
+    """High-performance telemetry dataset profiling & correlation engine."""
+    if ml_engine and os.path.exists(ml_engine.dataset_path):
+        prof = get_dataset_profile(ml_engine.dataset_path)
+        if prof:
+            return prof
+    return {"error": "Dataset not found or profile unavailable"}
+
+@app.get("/dataset/download")
+def download_dataset():
+    """Stream raw clinical ground-truth CSV directly."""
+    if ml_engine and os.path.exists(ml_engine.dataset_path):
+        return FileResponse(
+            path=ml_engine.dataset_path,
+            filename="heartflow_ground_truth_60k.csv",
+            media_type="text/csv"
+        )
+    return {"error": "Dataset file not found"}
+
 @app.get("/dataset")
-def get_dataset():
+def get_dataset(
+    page: Optional[int] = None,
+    limit: Optional[int] = None,
+    disease: Optional[str] = None,
+    search: Optional[str] = None,
+    all: bool = False
+):
+    """Telemetry records explorer supporting unparameterized list & paginated queries."""
     if ml_engine and os.path.exists(ml_engine.dataset_path):
         try:
+            # If explicit pagination is requested
+            if page is not None or limit is not None or disease is not None or search is not None:
+                return get_paginated_rows(
+                    ml_engine.dataset_path,
+                    page=page or 1,
+                    limit=min(limit or 25, 100),
+                    disease=disease,
+                    search=search
+                )
+
+            # Unparameterized call (backward compatibility with API consumers & tests)
             df = pd.read_csv(ml_engine.dataset_path, encoding='utf-8')
             df.columns = [c.strip() for c in df.columns]
             return df.to_dict(orient="records")
