@@ -11,3 +11,4 @@ plotly>=5.22.0
 requests>=2.32.3
 m2cgen
 shap
+huggingface_hub
