@@ -10,6 +10,8 @@ st.set_page_config(page_title="Advanced Analytics", page_icon="📊", layout="wi
 st.title("📊 Population Analytics Deep Dive")
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+if "hf.space" in os.getenv("SPACE_ID", ""):
+    API_URL = "http://localhost:8000"
 
 @st.cache_data(ttl=3600)
 def load_data():

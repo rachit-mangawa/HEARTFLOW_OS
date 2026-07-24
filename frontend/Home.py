@@ -7,6 +7,10 @@ import plotly.graph_objects as go
 import numpy as np
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+if "hf.space" in os.getenv("SPACE_ID", ""):
+    # On HF Spaces, the backend might be on a subpath or the same port
+    # But for this setup, we assume it's running on localhost:8000 internally as per app.py
+    API_URL = "http://localhost:8000"
 
 st.set_page_config(page_title="TinyML Heart Health Monitoring", page_icon="🫀", layout="wide")
 
