@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 import os
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Patient History", page_icon="🗄️", layout="wide")
 API_URL = os.getenv("API_URL", "http://localhost:8000")
@@ -9,7 +10,15 @@ if "hf.space" in os.getenv("SPACE_ID", ""):
     API_URL = "http://localhost:8000"
 
 st.title("🗄️ Patient Prediction History")
-st.markdown("Live database of all patient predictions and vitals logged by the system. Auto-refreshes every 5 seconds.")
+st.markdown("Live database of all patient predictions and vitals logged by the system. Times shown in **IST (UTC+5:30)**.")
+
+def convert_to_ist(utc_time_str):
+    try:
+        utc_dt = datetime.strptime(utc_time_str, "%Y-%m-%d %H:%M:%S")
+        ist_dt = utc_dt + timedelta(hours=5, minutes=30)
+        return ist_dt.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        return utc_time_str
 
 DISEASE_COLORS = {
     "Healthy":           "background-color: rgba(0, 204, 150, 0.15); color: #00cc96;",
@@ -43,6 +52,9 @@ def live_history_table():
                 return
             
             df = pd.DataFrame(history_data)
+            if "timestamp" in df.columns:
+                df["timestamp"] = df["timestamp"].apply(convert_to_ist)
+            
             cols = ['id', 'timestamp', 'prediction_label', 'confidence', 'heart_rate', 'spo2', 'sys_bp', 'dia_bp', 'temp', 'fall_detection']
             df = df[[c for c in cols if c in df.columns]]
             df.rename(columns=COLUMN_RENAME, inplace=True)

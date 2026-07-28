@@ -65,7 +65,7 @@ def log_prediction(data, prediction_label, confidence):
         INSERT INTO predictions (timestamp, heart_rate, spo2, sys_bp, dia_bp, temp, fall_detection, prediction_label, confidence)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
         data.Heart_Rate,
         data.SpO2_Level,
         data.Systolic_BP,

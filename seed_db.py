@@ -33,9 +33,9 @@ def seed_data():
     labels = ["Healthy", "At Risk"]
     fall_options = ["No Fall", "Fall Detected"]
     
-    now = datetime.now()
+    now = datetime.utcnow()
     
-    print("Seeding 30 sample predictions...")
+    print("Seeding 30 sample predictions (UTC)...")
     for i in range(30):
         timestamp = (now - timedelta(minutes=i*15)).strftime("%Y-%m-%d %H:%M:%S")
         hr = round(random.uniform(60, 110), 1)
