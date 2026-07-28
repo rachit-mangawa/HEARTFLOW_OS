@@ -5,6 +5,8 @@ import os
 
 st.set_page_config(page_title="Patient History", page_icon="🗄️", layout="wide")
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+if "hf.space" in os.getenv("SPACE_ID", ""):
+    API_URL = "http://localhost:8000"
 
 st.title("🗄️ Patient Prediction History")
 st.markdown("Live database of all patient predictions and vitals logged by the system. Auto-refreshes every 5 seconds.")

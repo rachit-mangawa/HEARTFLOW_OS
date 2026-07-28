@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Predict Patient Health", page_icon="🩺", layout="wide")
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+if "hf.space" in os.getenv("SPACE_ID", ""):
+    API_URL = "http://localhost:8000"
 
 st.title("🩺 Patient Edge Prediction Simulation")
 
