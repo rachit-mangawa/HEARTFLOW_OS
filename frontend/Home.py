@@ -127,7 +127,8 @@ def _candle_at(t_epoch, prev_alerts, curr_alerts):
     l = max(l, 0)
     
     # Convert UTC timestamp to IST for display
-    ts = pd.Timestamp.fromtimestamp(t_epoch)
+    # Use pandas to handle the epoch conversion and then add offset
+    ts = pd.to_datetime(t_epoch, unit='s')
     if "hf.space" in os.getenv("SPACE_ID", ""):
         ts = ts + timedelta(hours=5, minutes=30)
         
