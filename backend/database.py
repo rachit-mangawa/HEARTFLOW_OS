@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import time
 from datetime import datetime
 from huggingface_hub import HfApi, hf_hub_download
 
@@ -15,18 +16,26 @@ def sync_from_hub():
         print("No HF_TOKEN found. Skipping sync.")
         return
     try:
+        # Download with cache-busting logic if possible or just fresh download
         print(f"Downloading {DB_NAME} from Hub...")
-        path = hf_hub_download(repo_id=REPO_ID, filename=DB_NAME, repo_type="dataset", token=HF_TOKEN)
+        path = hf_hub_download(
+            repo_id=REPO_ID, 
+            filename=DB_NAME, 
+            repo_type="dataset", 
+            token=HF_TOKEN,
+            force_download=True
+        )
         import shutil
         shutil.copy(path, DB_PATH)
         print("Sync from Hub complete.")
     except Exception as e:
-        print(f"Sync from Hub failed (maybe first run?): {e}")
+        print(f"Sync from Hub failed: {e}")
 
 def sync_to_hub():
     if not HF_TOKEN:
         return
     try:
+        # Uploading back to Hub centralizes it for other instances
         api.upload_file(
             path_or_fileobj=DB_PATH,
             path_in_repo=DB_NAME,
@@ -59,6 +68,9 @@ def init_db():
     conn.close()
 
 def log_prediction(data, prediction_label, confidence):
+    # Pull latest before writing to avoid overwriting others' work
+    sync_from_hub()
+    
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
@@ -77,9 +89,14 @@ def log_prediction(data, prediction_label, confidence):
     ))
     conn.commit()
     conn.close()
+    
+    # Push immediately
     sync_to_hub()
 
 def get_history():
+    # Fresh pull for history view
+    sync_from_hub()
+    
     if not os.path.exists(DB_PATH):
         return []
     conn = sqlite3.connect(DB_PATH)

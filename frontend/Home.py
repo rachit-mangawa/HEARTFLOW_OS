@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
+from datetime import timedelta
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 if "hf.space" in os.getenv("SPACE_ID", ""):
@@ -124,7 +125,13 @@ def _candle_at(t_epoch, prev_alerts, curr_alerts):
     l = min(o, c) - rng.uniform(0.5, spread * 0.6)
     h = min(h, ALERT_MAX + 5)
     l = max(l, 0)
-    return {"time": pd.Timestamp.fromtimestamp(t_epoch), "open": round(o, 1), "high": round(h, 1), "low": round(l, 1), "close": round(c, 1)}
+    
+    # Convert UTC timestamp to IST for display
+    ts = pd.Timestamp.fromtimestamp(t_epoch)
+    if "hf.space" in os.getenv("SPACE_ID", ""):
+        ts = ts + timedelta(hours=5, minutes=30)
+        
+    return {"time": ts, "open": round(o, 1), "high": round(h, 1), "low": round(l, 1), "close": round(c, 1)}
 
 # ──────── Initialize: pre-fill chart as if running since startup ────────
 if "chart_candles" not in st.session_state:
