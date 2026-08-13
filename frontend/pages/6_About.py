@@ -53,13 +53,15 @@ st.markdown("### 🏗️ System Architecture")
 graph = graphviz.Digraph(node_attr={'shape': 'box', 'style': 'rounded,filled', 'fontname': 'Helvetica', 'margin': '0.2'}, graph_attr={'rankdir': 'TB', 'splines': 'ortho', 'nodesep': '0.8'})
 
 # Define UI & API nodes at the top
-graph.node('UI', '🖥️ Streamlit Frontend\nInteractive Dashboard', fillcolor='#ff4b4b', fontcolor='white', color='#a30000', penwidth='2')
-graph.node('API', '⚙️ FastAPI Backend\nRouting & API Logic', fillcolor='#009688', fontcolor='white', color='#004d40', penwidth='2')
-graph.node('DB', '🗄️ SQLite DB\nPatient History', shape='cylinder', fillcolor='#9b59b6', fontcolor='white', color='#4a235a', penwidth='2')
+graph.node('UI', '🖥️ Streamlit Frontend\nInteractive Dashboard (IST)', fillcolor='#ff4b4b', fontcolor='white', color='#a30000', penwidth='2')
+graph.node('API', '⚙️ FastAPI Backend\nInternal Routing (UTC)', fillcolor='#009688', fontcolor='white', color='#004d40', penwidth='2')
+graph.node('HUB', '🤗 HF Hub Dataset\nCentralized History Store', shape='folder', fillcolor='#ffcc00', fontcolor='black', color='#d4a017', penwidth='2')
+graph.node('DB', '🗄️ SQLite DB\nLocal Instance Cache', shape='cylinder', fillcolor='#9b59b6', fontcolor='white', color='#4a235a', penwidth='2')
 
 # Core connections
-graph.edge('UI', 'API', label=' REST JSON', color='#666666', fontcolor='#666666')
+graph.edge('UI', 'API', label=' internal localhost:8000', color='#666666', fontcolor='#666666')
 graph.edge('API', 'DB', label=' Read/Write', color='#666666', fontcolor='#666666')
+graph.edge('API', 'HUB', label=' HfApi Sync (Persistent)', color='#666666', fontcolor='#666666')
 
 # Machine Learning Subgraph
 with graph.subgraph(name='cluster_ml') as ml:
@@ -107,8 +109,9 @@ with col1:
 
 with col2:
     st.warning("""
-    **🔍 SHAP Clinical Explainability**\n
-    In the medical space, a black-box model is often untrusted. The project leverages SHapley Additive exPlanations (**SHAP**) natively connected to the Random Forest model layer. SHAP assigns absolute baseline impact scores to every incoming feature, interpreting *why* the AI predicted a specific condition and quantifying mathematically whether individual factors act as risk vectors or protective measures.
+    **🔍 Data Synchronization & Localization**\n
+    To support a distributed architecture, the system centralizes its **Patient History** on the Hugging Face Hub as a persistent storage layer. 
+    The platform is fully time-zone aware: while the **Backend API** operates on a robust **UTC** standard for data integrity, the **Frontend Dashboard** automatically localizes all telemetry and history logs to **IST (Indian Standard Time, UTC+5:30)**.
     """)
     
     st.error("""
