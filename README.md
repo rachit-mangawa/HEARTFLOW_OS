@@ -33,26 +33,39 @@ flowchart TD
     classDef hf fill:#ffcc00,stroke:#d4a017,stroke-width:2px,color:#333;
 
     %% Core Components
-    UI[🖥️ Streamlit UI<br/>(IST Display)]:::frontend
-    API[⚙️ FastAPI Backend<br/>(UTC Storage)]:::backend
-    HUB[(🤗 HF Hub Dataset<br/>tinyml-logs)]:::hf
+    UI[Streamlit UI - IST Display]:::frontend
+    API[FastAPI Backend - UTC Storage]:::backend
+    HUB[(HF Hub Dataset - tinyml-logs)]:::hf
 
-    subgraph "🚀 Hugging Face Space (Container)"
+    subgraph "Hugging Face Space Container"
         UI <-->|Internal localhost:8000| API
-        DB_LOCAL[(🗄️ SQLite DB<br/>Local Cache)]:::backend
+        DB_LOCAL[(SQLite DB - Local Cache)]:::backend
         API <--> DB_LOCAL
     end
 
-    API <-->|🔒 HfApi Sync| HUB
+    API <-->|HfApi Sync| HUB
     
     %% ML Subgraph
-    subgraph ML [🧠 Machine Learning & Inference Pipeline]
-        ENS{Ensemble Engine<br/>Soft-Voting}:::ml_node
-        Models[Classifiers:<br/>RF, SVM, LogReg, NN, KNN]:::ml_node
-        SHAP[🔍 SHAP Explainer]:::ml_node
+    subgraph ML [Ensemble & Inference Pipeline]
+        ENS{Ensemble Engine}:::ml_node
+        Models[Classifiers: RF, SVM, LogReg, NN, KNN]:::ml_node
+        SHAP[SHAP Explainer]:::ml_node
     end
-    
-    %% ... rest of the diagram unchanged ...
+
+    %% Edge Quantization Subgraph
+    subgraph Quantization [Hardware Export]
+        TRANS[C-Code Transpiler]:::edge_tech
+        HEADER((tinyml_model.h)):::edge_tech
+        MCU[ESP32 / Cortex-M Node]:::edge_tech
+    end
+
+    API -->|Predict| ENS
+    ENS --> Models
+    API -->|Explain| SHAP
+    SHAP -.-> Models
+    API -->|Export| TRANS
+    TRANS --> HEADER
+    HEADER -->|Flash| MCU
 ```
 
 ### Modular Repository Structure
