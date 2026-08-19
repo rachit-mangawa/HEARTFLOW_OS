@@ -281,7 +281,7 @@ Before feeding raw signals into estimators, the pipeline executes deterministic 
 2. **Encoding Normalization**: Replaces corrupt degree characters (`\ufffd` or ISO artifacts) with UTF-8 `°C`.
 3. **Synthetic Clinical Interaction Feature (`Risk_Severity`)**:
 
-$$\text{Risk\_Severity} = \mathbb{I}(\text{Heart\_Rate} > 105) + \mathbb{I}(\text{SpO2\_Level} < 94)$$
+$$\text{Risk Severity} = \mathbb{I}(\text{Heart Rate} > 105) + \mathbb{I}(\text{SpO2 Level} < 94)$$
 
 Where $\mathbb{I}(\cdot)$ is the binary indicator evaluation function:
 

@@ -168,7 +168,7 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
       </div>
 
       {/* Main View Area */}
-      <div className={`relative overflow-auto p-4 md:p-6 bg-canvas-cream flex items-center justify-center min-h-115 ${isFullscreen ? "flex-1" : ""}`}>
+      <div className={`relative overflow-auto p-4 md:p-6 bg-canvas-cream flex items-center justify-center min-h-75 max-h-145 ${isFullscreen ? "flex-1 max-h-none!" : ""}`}>
         {isLoading && (
           <div className="flex flex-col items-center justify-center gap-3 text-slate py-12">
             <div className="w-6 h-6 border-2 border-hazard border-t-transparent animate-spin rounded-full" />
