@@ -2,6 +2,13 @@
 
 A production-ready application for real-time heart health analytics, ensemble prediction modeling, and automated C-code transpilation for resource-constrained embedded systems.
 
+![Python](https://img.shields.io/badge/python-3.10+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0+-009688.svg?style=flat&logo=fastapi)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.36.0+-FF4B4B.svg?style=flat&logo=streamlit)
+![Scikit-Learn](https://img.shields.io/badge/scikit--learn-1.5.1+-F7931E.svg?style=flat&logo=scikit-learn)
+![HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-yellow)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 **Live Environments:**
 - 🖥️ **Full App (Dashboard + API):** [Hugging Face Spaces](https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend)
 - ⚙️ **Legacy Frontend UI:** [Streamlit Cloud](https://tinyml-heart-health-monitoring-dashboard-8xqogy2hibtlayt7popvs.streamlit.app/)
@@ -78,8 +85,30 @@ TinyML-Dashboard/
 ├── data/                  # Patient cohort CSVs for MLOps retraining pipelines
 ├── tests/                 # Full PyTest suite for backend continuous integration
 ├── .github/workflows/     # CI/CD actions for auto-syncing to Hugging Face
+├── app.py                 # Multi-service entry point for Hugging Face Spaces
 └── docker-compose.yml     # Orchestration spec for local containerized deployment
 ```
+
+## Configuration
+
+### Environment Variables
+To enable the full feature set (Sync, Localized Time), configure the following:
+
+| Variable | Description |
+| :--- | :--- |
+| `HF_TOKEN` | Hugging Face Read/Write token for dataset synchronization. |
+| `SPACE_ID` | Automatically set by HF Spaces; used for IST time zone triggers. |
+| `API_URL` | Internal/External URL for the FastAPI backend (Default: `http://localhost:8000`). |
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/predict` | Soft-voting ensemble inference on patient vitals. |
+| `POST` | `/explain` | SHAP feature impact analysis for clinicial explainability. |
+| `GET` | `/history` | Fetch live patient prediction history from centralized DB. |
+| `GET` | `/export_tinyml` | Transpile Scikit-Learn models to dependency-free C headers. |
+| `POST` | `/retrain` | MLOps pipeline for live model ensemble retraining. |
 
 ## Setup & Installation
 
