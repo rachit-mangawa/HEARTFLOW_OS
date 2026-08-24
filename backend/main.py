@@ -103,9 +103,13 @@ def history():
 async def get_dataset():
     data_path = '/app/data/patient_dataset.csv' if os.path.exists('/app/data') else '../data/patient_dataset.csv' if os.path.exists('../data') else 'data/patient_dataset.csv'
     if os.path.exists(data_path):
-        df = pd.read_csv(data_path)
-        # Return summary or partial data to avoid huge payloads
-        return df.to_dict(orient="records")
+        try:
+            # Force UTF-8 and strip column whitespace
+            df = pd.read_csv(data_path, encoding='utf-8')
+            df.columns = [c.strip() for c in df.columns]
+            return df.to_dict(orient="records")
+        except Exception as e:
+            return {"error": f"Failed to read dataset: {str(e)}"}
     return {"error": "Dataset not found"}
 
 @app.get("/sync")
@@ -485,17 +489,41 @@ async def retrain(file: UploadFile = File(...)):
     data_path = '/app/data/patient_dataset.csv' if os.path.exists('/app/data') else '../data/patient_dataset.csv' if os.path.exists('../data') else 'data/patient_dataset.csv'
     os.makedirs(os.path.dirname(data_path), exist_ok=True)
     
-    content = await file.read()
-    with open(data_path, "wb") as f:
-        f.write(content)
-        
     try:
+        content = await file.read()
+        import io
+        new_df = pd.read_csv(io.BytesIO(content))
+        new_df.columns = [c.strip() for c in new_df.columns]
+        
+        if os.path.exists(data_path):
+            existing_df = pd.read_csv(data_path)
+            existing_df.columns = [c.strip() for c in existing_df.columns]
+            
+            # Validate schema
+            required_cols = set(existing_df.columns)
+            provided_cols = set(new_df.columns)
+            
+            if not required_cols.issubset(provided_cols):
+                missing = required_cols - provided_cols
+                return {"error": f"Schema mismatch. Missing columns: {list(missing)}"}
+            
+            # Ensure columns are in the same order and select only necessary ones
+            new_df = new_df[existing_df.columns]
+            
+            # Append data
+            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+        else:
+            combined_df = new_df
+            
+        # Save validated and combined dataset
+        combined_df.to_csv(data_path, index=False, encoding='utf-8')
+        
         from models import train_models
         await asyncio.to_thread(train_models)
         
         global ensemble_system
         ensemble_system = None
         
-        return {"status": "success", "message": "Ensemble retrained successfully!"}
+        return {"status": "success", "message": f"Dataset updated (now {len(combined_df)} records) and ensemble retrained successfully!"}
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": f"Retraining failed: {str(e)}"}

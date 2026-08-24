@@ -20,7 +20,12 @@ def load_data():
         if resp.status_code == 200:
             data = resp.json()
             if isinstance(data, list):
-                return pd.DataFrame(data)
+                df = pd.DataFrame(data)
+                # Normalize column names: strip whitespace and ensure common naming
+                df.columns = [c.strip() for c in df.columns]
+                # Fix common encoding issues for temperature
+                df.columns = [c.replace('Â°C', '°C') for c in df.columns]
+                return df
             st.error(f"Backend Error: {data.get('error', 'Unknown')}")
     except Exception as e:
         st.error(f"Failed to connect to backend: {e}")
@@ -42,14 +47,34 @@ else:
     df = full_df
     st.success(f"Loaded **{len(full_df):,}** patient records from backend.")
     
-    # ... rest of the file stays same ...
+    # ── Safety Check for Column Names ──
+    available_cols = df.columns.tolist()
+    target_x = "Predicted Disease"
+    
+    if target_x not in available_cols:
+        # Fallback to similar name if exact match fails
+        matches = [c for c in available_cols if "Disease" in c or "Condition" in c]
+        if matches:
+            target_x = matches[0]
+        else:
+            st.error(f"Required column '{target_x}' missing from dataset. Found: {available_cols}")
+            st.stop()
+
     st.markdown("### 🫀 Vital Signs Distribution by Condition")
-    vitals = ["Heart Rate (bpm)", "SpO2 Level (%)", "Systolic Blood Pressure (mmHg)", "Diastolic Blood Pressure (mmHg)", "Body Temperature (°C)"]
+    
+    # Define possible vitals and filter by what's actually in the DF
+    vitals_all = ["Heart Rate (bpm)", "SpO2 Level (%)", "Systolic Blood Pressure (mmHg)", "Diastolic Blood Pressure (mmHg)", "Body Temperature (°C)"]
+    vitals = [v for v in vitals_all if v in available_cols]
+    
+    if not vitals:
+        st.error(f"No clinical vital sign columns found in dataset. Found: {available_cols}")
+        st.stop()
+        
     selected_vital = st.selectbox("Select Vital Sign", vitals)
     
     fig_box = px.box(
-        df, x="Predicted Disease", y=selected_vital,
-        color="Predicted Disease",
+        df, x=target_x, y=selected_vital,
+        color=target_x,
         color_discrete_map=DISEASE_COLORS,
         title=f"{selected_vital} Distribution Across Conditions",
         template="plotly_dark",
@@ -67,44 +92,56 @@ else:
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("##### Heart Rate vs SpO2 (Scatter Matrix)")
-        fig_scatter = px.scatter(
-            df, x="Heart Rate (bpm)", y="SpO2 Level (%)",
-            color="Predicted Disease",
-            color_discrete_map=DISEASE_COLORS,
-            opacity=0.4, size_max=6,
-            title="Heart Rate vs SpO2 Levels",
-            template="plotly_dark",
-            marginal_x="histogram",
-            marginal_y="histogram"
-        )
-        fig_scatter.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            height=450, legend=dict(orientation="h", yanchor="bottom", y=-0.35)
-        )
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        # Safety check for scatter columns
+        x_scatter = "Heart Rate (bpm)" if "Heart Rate (bpm)" in available_cols else None
+        y_scatter = "SpO2 Level (%)" if "SpO2 Level (%)" in available_cols else None
+        
+        if x_scatter and y_scatter:
+            fig_scatter = px.scatter(
+                df, x=x_scatter, y=y_scatter,
+                color=target_x,
+                color_discrete_map=DISEASE_COLORS,
+                opacity=0.4, size_max=6,
+                title="Heart Rate vs SpO2 Levels",
+                template="plotly_dark",
+                marginal_x="histogram",
+                marginal_y="histogram"
+            )
+            fig_scatter.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                height=450, legend=dict(orientation="h", yanchor="bottom", y=-0.35)
+            )
+            st.plotly_chart(fig_scatter, use_container_width=True)
+        else:
+            st.warning("Scatter plot unavailable: Required columns missing.")
         
     with c2:
         st.markdown("##### Temperature by Condition (Violin Plot)")
-        fig_violin = px.violin(
-            df, x="Predicted Disease", y="Body Temperature (°C)",
-            color="Predicted Disease",
-            color_discrete_map=DISEASE_COLORS,
-            box=True, points=False,
-            title="Body Temperature Distribution",
-            template="plotly_dark"
-        )
-        fig_violin.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            height=450, showlegend=False, xaxis_title="Condition", yaxis_title="Temperature (°C)"
-        )
-        st.plotly_chart(fig_violin, use_container_width=True)
+        y_violin = "Body Temperature (°C)" if "Body Temperature (°C)" in available_cols else None
+        
+        if y_violin:
+            fig_violin = px.violin(
+                df, x=target_x, y=y_violin,
+                color=target_x,
+                color_discrete_map=DISEASE_COLORS,
+                box=True, points=False,
+                title="Body Temperature Distribution",
+                template="plotly_dark"
+            )
+            fig_violin.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                height=450, showlegend=False, xaxis_title="Condition", yaxis_title="Temperature (°C)"
+            )
+            st.plotly_chart(fig_violin, use_container_width=True)
+        else:
+            st.warning("Violin plot unavailable: Temperature column missing.")
     
     st.markdown("---")
     
     c3, c4 = st.columns(2)
     with c3:
         st.markdown("##### 🏥 Disease Distribution (Population Count)")
-        counts = df["Predicted Disease"].value_counts().reset_index()
+        counts = df[target_x].value_counts().reset_index()
         counts.columns = ["Condition", "Patient Count"]
         fig_bar = px.bar(
             counts, x="Condition", y="Patient Count",
@@ -123,33 +160,44 @@ else:
     
     with c4:
         st.markdown("##### 🩸 Blood Pressure Density (Systolic vs Diastolic)")
-        fig_density = px.density_heatmap(
-            df, x="Systolic Blood Pressure (mmHg)", y="Diastolic Blood Pressure (mmHg)",
-            color_continuous_scale="Turbo",
-            title="Blood Pressure Population Heatmap",
-            template="plotly_dark",
-            nbinsx=30, nbinsy=30
-        )
-        fig_density.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            height=420
-        )
-        st.plotly_chart(fig_density, use_container_width=True)
+        x_heat = "Systolic Blood Pressure (mmHg)" if "Systolic Blood Pressure (mmHg)" in available_cols else None
+        y_heat = "Diastolic Blood Pressure (mmHg)" if "Diastolic Blood Pressure (mmHg)" in available_cols else None
+        
+        if x_heat and y_heat:
+            fig_density = px.density_heatmap(
+                df, x=x_heat, y=y_heat,
+                color_continuous_scale="Turbo",
+                title="Blood Pressure Population Heatmap",
+                template="plotly_dark",
+                nbinsx=30, nbinsy=30
+            )
+            fig_density.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                height=420
+            )
+            st.plotly_chart(fig_density, use_container_width=True)
+        else:
+            st.warning("Density heatmap unavailable: Blood Pressure columns missing.")
     
     st.markdown("---")
     st.markdown("### 📈 Patient-Specific Real-Time Monitoring")
-    p_id = st.selectbox("Select Patient ID to view live telemetry:", df['Patient Number'].unique()[:50])
+    # Use Patient Number if available
+    id_col = "Patient Number" if "Patient Number" in available_cols else available_cols[0]
+    p_id = st.selectbox("Select Patient ID to view live telemetry:", df[id_col].unique()[:50])
+    
     if p_id:
-        patient_data = df[df['Patient Number'] == p_id].iloc[0]
-        disease = patient_data['Predicted Disease']
+        patient_data = df[df[id_col] == p_id].iloc[0]
+        disease = patient_data[target_x]
         d_color = DISEASE_COLORS.get(disease, "#636efa")
         st.markdown(f"**Patient Condition:** <span style='color:{d_color}; font-weight:bold'>{disease}</span>", unsafe_allow_html=True)
         
         periods = 60
         dates = pd.date_range(end=pd.Timestamp.now(), periods=periods, freq='25s')
-        base_hr = patient_data['Heart Rate (bpm)']
-        base_spo2 = patient_data['SpO2 Level (%)']
-        base_temp = patient_data['Body Temperature (°C)']
+        
+        # Safe access for real-time emulation
+        base_hr = patient_data.get('Heart Rate (bpm)', 75)
+        base_spo2 = patient_data.get('SpO2 Level (%)', 98)
+        base_temp = patient_data.get('Body Temperature (°C)', 37.0)
         sim_hr = base_hr + np.random.normal(0, 1.2, periods).cumsum()
         sim_spo2 = np.clip(base_spo2 + np.random.normal(0, 0.3, periods).cumsum(), 85, 100)
         sim_temp = base_temp + np.random.normal(0, 0.05, periods).cumsum()
