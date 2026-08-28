@@ -1,11 +1,20 @@
-FROM python:3.11-slim
+FROM node:20-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-RUN apt-get update && apt-get install -y graphviz && rm -rf /var/lib/apt/lists/*
-
-COPY frontend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-WORKDIR /app/frontend
-EXPOSE 8501
-CMD sh -c "streamlit run Home.py --server.port=${PORT:-8501} --server.address=0.0.0.0"
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+EXPOSE 3000
+ENV PORT=3000
+CMD ["node", "server.js"]

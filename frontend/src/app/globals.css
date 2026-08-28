@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --canvas-cream: #FBFBFA;
+  --ink-black: #141413;
+  --slate-gray: #696969;
+  --hazard-red: #9F2F2D;
+  --white: #FFFFFF;
+  --whisper: #EAEAEA;
+  --risk-bg: #FDEBEC;
+  --healthy-bg: #EDF3EC;
+  --healthy-text: #346538;
+  --soft-bone: #F4F4F4;
+}
+
+@theme inline {
+  --color-canvas-cream: var(--canvas-cream);
+  --color-ink: var(--ink-black);
+  --color-slate: var(--slate-gray);
+  --color-hazard: var(--hazard-red);
+  --color-whisper: var(--whisper);
+  --color-risk-bg: var(--risk-bg);
+  --color-healthy-bg: var(--healthy-bg);
+  --color-healthy-text: var(--healthy-text);
+  --color-soft-bone: var(--soft-bone);
+  
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  border-radius: 0 !important;
+}
+
+body {
+  background-color: var(--canvas-cream);
+  color: var(--ink-black);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Macro Typography Scaling */
+h1 {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  color: var(--ink-black);
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: var(--ink-black);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}

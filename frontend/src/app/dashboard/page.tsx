@@ -1,0 +1,218 @@
+"use client";
+
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useTelemetry } from "@/context/TelemetryContext";
+
+export default function Dashboard() {
+  const { data, stream } = useTelemetry();
+
+  return (
+    <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
+      {/* Top Nav (Mechanical) */}
+      <nav className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50">
+        <div className="max-w-[1400px] mx-auto w-full flex justify-between items-center">
+          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase">
+            [ HEARTFLOW_OS ]
+          </Link>
+          <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase">
+            <Link href="/dashboard" className="text-hazard border-b-2 border-hazard pb-1">SYS.MONITOR</Link>
+            <Link href="/simulator" className="text-ink hover:text-hazard transition-colors">AI.SIMULATOR</Link>
+            <Link href="/history" className="text-ink hover:text-hazard transition-colors">DATA.LOG</Link>
+            <Link href="/mlops" className="text-ink hover:text-hazard transition-colors">ML.OPS</Link>
+            <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-[1400px] mx-auto w-full px-8 py-16 flex-1 flex flex-col">
+        <header className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
+          <div>
+            <div className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4">
+              /// TELEMETRY_STREAM_ACTIVE
+            </div>
+            <h1 className="text-[clamp(3rem,6vw,6rem)]">
+              PATIENT<br />TELEMETRY
+            </h1>
+          </div>
+          <div className="text-right hidden md:block">
+            <div className="text-[14px] font-bold uppercase tracking-[0.05em] border-2 border-ink px-4 py-2 bg-ink text-canvas-cream">
+              STATUS: {data ? "CONNECTED" : "AWAITING SIGNAL"}
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Grid - Brutalist Tables */}
+        <div className="grid grid-cols-1 bg-ink border-2 border-ink" aria-live="polite">
+          
+          {/* Main Status Panel */}
+          <div className="bg-canvas-cream flex flex-col">
+            <div className="border-b-2 border-ink p-4 flex justify-between items-center bg-white">
+              <h2 className="text-[14px] font-bold tracking-[0.05em]">{'< LIVE_VITALS >'}</h2>
+              {data?.prediction ? (
+                (() => {
+                  const getStatusStyles = (label: string) => {
+                    const normalized = (label || "").toLowerCase();
+                    if (normalized === 'healthy' || normalized === 'normal') return "bg-[#d1fae5] text-[#065f46] border-[#065f46]";
+                    if (normalized.includes('heart')) return "bg-[#fef08a] text-[#854d0e] border-[#854d0e]";
+                    if (normalized.includes('asthma')) return "bg-[#e0f2fe] text-[#075985] border-[#075985]";
+                    if (normalized.includes('hypertension')) return "bg-[#f3e8ff] text-[#6b21a8] border-[#6b21a8]";
+                    if (normalized.includes('diabetes')) return "bg-[#ffedd5] text-[#9a3412] border-[#9a3412]";
+                    return "bg-hazard text-white border-hazard"; 
+                  };
+                  return (
+                    <div className={`px-4 py-2 text-[14px] font-bold uppercase tracking-[0.05em] border-2 ${getStatusStyles(data.prediction.label)}`}>
+                      {data.prediction.is_at_risk ? '[!]' : '[OK]'} {data.prediction.label} ({(data.prediction.confidence * 100).toFixed(1)}%)
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="px-4 py-2 text-[14px] font-bold tracking-[0.05em] border-2 border-ink text-slate">
+                  INITIALIZING...
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-ink border-b-2 border-ink">
+              <VitalCard label="HEART_RATE" value={data?.sensor_data?.Heart_Rate ? Math.round(data.sensor_data.Heart_Rate) : "---"} unit="BPM" />
+              <VitalCard label="O2_SATURATION" value={data?.sensor_data?.SpO2_Level ? Math.round(data.sensor_data.SpO2_Level) : "---"} unit="%" />
+              <VitalCard label="BLOOD_PRESSURE" value={data?.sensor_data ? `${Math.round(data.sensor_data.Systolic_BP)}/${Math.round(data.sensor_data.Diastolic_BP)}` : null} unit="MMHG" />
+              <VitalCard label="CORE_TEMP" value={data?.sensor_data?.Body_Temp ? data.sensor_data.Body_Temp.toFixed(1) : "---"} unit="°C" />
+            </div>
+            
+            {/* 2-Column Mini Graphs */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-ink border-b-2 border-ink h-[160px]">
+              <div className="bg-white p-3 flex flex-col"><div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-2">HR_STREAM</div><div className="flex-1 min-h-0 relative"><TelemetryGraph stream={stream.hr} min={60} max={150} color="var(--color-ink)" fill="rgba(5,5,5,0.05)" /></div></div>
+              <div className="bg-white p-3 flex flex-col"><div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-2">TEMP_STREAM</div><div className="flex-1 min-h-0 relative"><TelemetryGraph stream={stream.temp} min={36.0} max={39.0} color="var(--color-ink)" fill="rgba(5,5,5,0.05)" /></div></div>
+            </div>
+
+            {/* Diagnostic Probabilities */}
+            <div className="bg-white flex flex-col min-h-[280px]">
+              <div className="border-b-2 border-ink p-3 px-6 flex justify-between items-center bg-canvas-cream">
+                <h2 className="text-[12px] font-bold tracking-[0.1em] uppercase">{'< DIAGNOSTIC_PROBABILITIES >'}</h2>
+                <div className="text-[11px] font-bold tracking-[0.05em] text-hazard uppercase">CLASS / LIKELIHOOD</div>
+              </div>
+              <div className="flex-grow p-6 bg-white flex flex-col justify-center gap-6">
+                {data?.prediction?.disease_probs ? (
+                   Object.entries(data.prediction.disease_probs)
+                     .sort((a, b) => (b[1] as number) - (a[1] as number))
+                     .map(([disease, prob]) => {
+                        const pct = ((prob as number) * 100).toFixed(1);
+                        const isRisk = (prob as number) > 0.4 && disease.toLowerCase() !== 'normal' && disease.toLowerCase() !== 'healthy';
+                        return (
+                          <div key={disease} className="flex flex-col gap-2">
+                            <div className="flex justify-between text-[12px] font-bold uppercase tracking-[0.1em]">
+                               <span className={isRisk ? "text-hazard drop-shadow-[0_0_2px_rgba(230,25,25,0.5)]" : "text-ink"}>{disease}</span>
+                               <span className="tabular-nums">{pct}%</span>
+                            </div>
+                            <div className="h-6 bg-canvas-cream border-2 border-ink overflow-hidden relative">
+                              {/* Blueprint tick marks */}
+                              <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '10% 100%' }}></div>
+                              <motion.div 
+                                className={`h-full relative z-10 ${isRisk ? 'bg-hazard shadow-[0_0_8px_var(--hazard-red)]' : 'bg-ink'}`}
+                                initial={{ width: "0%" }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ duration: 0.5, ease: "easeOut" }}
+                              />
+                            </div>
+                          </div>
+                        )
+                     })
+                ) : (
+                  <div className="h-full flex items-center justify-center text-[12px] font-bold text-slate tracking-[0.1em] animate-pulse">
+                    AWAITING CLASSIFICATION DATA...
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function VitalCard({ label, value, unit }: { label: string, value: string | number | null | undefined, unit: string }) {
+  return (
+    <div className="bg-canvas-cream p-8 flex flex-col hover:bg-white transition-colors cursor-default overflow-hidden">
+      <div className="text-[11px] font-bold text-slate tracking-[0.1em] border-b border-ink/20 pb-2 mb-4">
+        {label}
+      </div>
+      <div>
+        <div className="font-sans text-[clamp(40px,3.5vw,60px)] font-black tracking-tighter tabular-nums leading-none mb-1 break-all">
+          {value !== null && value !== undefined ? value : "---"}
+        </div>
+        <div className="text-[12px] font-bold tracking-[0.05em] text-hazard">
+          [{unit}]
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TelemetryGraph({ stream, min, max, color, fill }: { stream: number[], min: number, max: number, color: string, fill: string }) {
+  const range = max - min;
+  
+  const points = stream.map((val, i) => {
+    const x = (i / (stream.length - 1)) * 100;
+    const y = Math.max(0, Math.min(100, 100 - (((val - min) / range) * 100)));
+    return `${x},${y}`;
+  });
+
+  const firstY = points[0] ? points[0].split(',')[1] : 100;
+  const pathD = `M 0,100 L 0,${firstY} L ${points.join(" L ")} L 100,100 Z`;
+  const lineD = `M 0,${firstY} L ${points.join(" L ")}`;
+  const lastPoint = points[points.length - 1];
+  const lastY = lastPoint ? lastPoint.split(',')[1] : 100;
+
+  return (
+    <div className="w-full h-full absolute inset-0 border-2 border-ink overflow-hidden bg-white group relative">
+      {/* Blueprint Grid lines */}
+      <div className="absolute inset-0 z-0 opacity-[0.1]" style={{ backgroundImage: 'linear-gradient(var(--ink-black) 1px, transparent 1px), linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+      
+      {/* Signal trace */}
+      <div className="absolute inset-0 z-10 overflow-hidden">
+        <svg className="w-full h-full block" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {/* Fill Area */}
+          <path 
+            d={pathD} 
+            fill={fill} 
+            className="transition-all duration-300 ease-linear"
+          />
+          {/* Stroke Line (Glow) */}
+          <path 
+            d={lineD} 
+            fill="none" 
+            stroke={color} 
+            strokeWidth="1.5" 
+            vectorEffect="non-scaling-stroke"
+            className="transition-all duration-300 ease-linear"
+            style={{ filter: `drop-shadow(0 0 4px ${color})` }}
+          />
+          {/* Leading Dot */}
+          <circle 
+            cx="100" 
+            cy={lastY} 
+            r="1.5" 
+            fill={color} 
+            className="transition-all duration-300 ease-linear"
+            style={{ filter: `drop-shadow(0 0 4px ${color})` }}
+          />
+        </svg>
+      </div>
+
+      {/* Sweeping Radar Line */}
+      <motion.div 
+        className="absolute top-0 bottom-0 w-[2px] z-20 opacity-40 pointer-events-none"
+        style={{ backgroundColor: color, boxShadow: `0 0 12px 2px ${color}` }}
+        initial={{ left: "0%" }}
+        animate={{ left: "100%" }}
+        transition={{ duration: 1.5, ease: "linear", repeat: Infinity }}
+      />
+      
+      {/* Terminal Scanline Overlay */}
+      <div className="absolute inset-0 pointer-events-none z-30 opacity-40 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px]"></div>
+    </div>
+  );
+}

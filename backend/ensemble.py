@@ -45,4 +45,9 @@ class EnsembleModel:
         final_pred = str(self.label_encoder.inverse_transform([final_pred_idx])[0])
         confidence = float(np.max(weighted_probs))
         
-        return final_pred, confidence, individual_preds, individual_probs, self.weights
+        class_probs = {
+            str(self.label_encoder.inverse_transform([i])[0]): float(prob)
+            for i, prob in enumerate(weighted_probs)
+        }
+        
+        return final_pred, confidence, individual_preds, class_probs, self.weights

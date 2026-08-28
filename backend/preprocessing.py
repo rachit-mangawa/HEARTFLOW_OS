@@ -4,17 +4,18 @@ import os
 import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.impute import SimpleImputer
 
 def resolve_model_dir():
-    # Resolve relative paths universally whether Docker or local execution
-    return '/app/model' if os.path.exists('/app/model') else '../model' if os.path.exists('../model') else 'model'
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'model')
 
 def preprocess_data(df, is_training=True):
     model_dir = resolve_model_dir()
     scaler_path = f'{model_dir}/scaler.pkl'
     label_encoder_path = f'{model_dir}/label_encoder.pkl'
+    imputer_path = f'{model_dir}/imputer.pkl'
         
-    columns_to_drop = ['Patient Number', 'Data Accuracy (%)', 'Heart Rate Alert', 'SpO2 Level Alert', 'Blood Pressure Alert', 'Temperature Alert']
+    columns_to_drop = ['Patient Number', 'Data Accuracy (%)', 'Heart Rate Alert', 'SpO2 Level Alert', 'Blood Pressure Alert', 'Temperature Alert', 'Fall Detection']
     cols_drop = [c for c in columns_to_drop if c in df.columns]
     X_raw = df.drop(columns=cols_drop)
     
@@ -36,21 +37,30 @@ def preprocess_data(df, is_training=True):
             else:
                 y = y_raw 
     
+    # Fix broken encoding column names safely
+    X_raw.rename(columns=lambda x: x.replace('', '°') if isinstance(x, str) else x, inplace=True)
+    
     if 'Fall Detection' in X_raw.columns:
         X_raw['Fall Detection'] = X_raw['Fall Detection'].map({'Yes': 1, 'No': 0}).fillna(0)
         
-    X_raw.fillna(X_raw.mean(), inplace=True)
-    
     # Engineered Feature
     X_raw['Risk_Severity'] = (X_raw['Heart Rate (bpm)'] > 105).astype(int) + (X_raw['SpO2 Level (%)'] < 94).astype(int)
     
     continuous_features = ['Heart Rate (bpm)', 'SpO2 Level (%)', 'Systolic Blood Pressure (mmHg)', 'Diastolic Blood Pressure (mmHg)', 'Body Temperature (°C)', 'Risk_Severity']
     
     if is_training:
+        imputer = SimpleImputer(strategy='mean')
+        X_raw[continuous_features] = imputer.fit_transform(X_raw[continuous_features])
+        joblib.dump(imputer, imputer_path)
+        
         scaler = StandardScaler()
         X_raw[continuous_features] = scaler.fit_transform(X_raw[continuous_features])
         joblib.dump(scaler, scaler_path)
     else:
+        if os.path.exists(imputer_path):
+            imputer = joblib.load(imputer_path)
+            X_raw[continuous_features] = imputer.transform(X_raw[continuous_features])
+            
         if os.path.exists(scaler_path):
             scaler = joblib.load(scaler_path)
             X_raw[continuous_features] = scaler.transform(X_raw[continuous_features])

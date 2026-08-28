@@ -1,0 +1,19 @@
+name: Keep Space Alive
+
+on:
+  schedule:
+    # Runs every 24 hours at a random obscure time (e.g., 03:22 UTC)
+    # This ensures the Space never hits the 48-hour inactivity sleep rule
+    - cron: '22 3 * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  ping-space:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Hugging Face Space
+        run: |
+          echo "Pinging Space to keep it awake..."
+          # Using -sf for silent/fail on error, and ignoring the output
+          curl -sf https://idkhowtocodefr-tinyml-backend.hf.space/ > /dev/null
+          echo "Ping successful!"
