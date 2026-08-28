@@ -23,8 +23,13 @@ jobs:
           fetch-depth: 0
           lfs: true
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
       - name: Install Hugging Face Hub CLI
-        run: pip install huggingface_hub[cli]
+        run: pip install -U "huggingface_hub[cli]"
 
       - name: Sync to Hugging Face Space
         env:
@@ -32,7 +37,7 @@ jobs:
         # We upload the root, but exclude the frontend logic and git folders.
         # This will use the Dockerfile at the root to deploy the FastAPI server.
         run: |
-          huggingface-cli upload IDKHowToCodeFr/tinyml-backend . \
+          python -m huggingface_hub.cli upload IDKHowToCodeFr/tinyml-backend . \
             --repo-type space \
             --exclude "frontend/node_modules/*" \
             --exclude "frontend/.next/*" \
