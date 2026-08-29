@@ -1,13 +1,5 @@
 import pytest
-import asyncio
-import sys
-import os
-
-backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend'))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
-
-from simulator import PatientDataSimulator
+from heartflow_backend.simulator import PatientDataSimulator
 
 @pytest.mark.asyncio
 async def test_simulator_initialization():
@@ -20,15 +12,12 @@ async def test_simulator_initialization():
 
 @pytest.mark.asyncio
 async def test_simulator_clamping_limits():
-    """Verify that extreme physiological values are strictly clamped to realistic bounds."""
-    # Test upper clamping bounds
     sim_upper = PatientDataSimulator(initial_hr=250.0, initial_spo2=120.0, initial_temp=45.0)
     sim_upper._step_physics()
     assert sim_upper.hr <= 180.0
     assert sim_upper.spo2 <= 100.0
     assert sim_upper.temp <= 39.0
 
-    # Test lower clamping bounds
     sim_lower = PatientDataSimulator(initial_hr=20.0, initial_spo2=50.0, initial_temp=30.0)
     sim_lower._step_physics()
     assert sim_lower.hr >= 50.0
@@ -37,11 +26,8 @@ async def test_simulator_clamping_limits():
 
 @pytest.mark.asyncio
 async def test_simulator_all_clinical_state_transitions():
-    """Verify that every clinical state sets exact prescribed target vitals."""
     sim = PatientDataSimulator()
-    import random
     
-    # Test state targets directly
     states_and_targets = {
         "normal": (75.0, 98.0, 120.0, 80.0),
         "asthma": (115.0, 88.0, 135.0, 85.0),
@@ -51,7 +37,6 @@ async def test_simulator_all_clinical_state_transitions():
     }
 
     for state, (exp_hr, exp_spo2, exp_sys, exp_dia) in states_and_targets.items():
-        # Force the state assignment as in _shift_state
         if state == "normal":
             sim.target_hr, sim.target_spo2, sim.target_sys, sim.target_dia = 75.0, 98.0, 120.0, 80.0
         elif state == "asthma":
@@ -70,11 +55,9 @@ async def test_simulator_all_clinical_state_transitions():
 
 @pytest.mark.asyncio
 async def test_simulator_physics_convergence():
-    """Verify that physics stepping continuously converges towards target values."""
     sim = PatientDataSimulator(initial_hr=75.0)
     sim.target_hr = 140.0
     
-    # After 30 physics iterations, hr should have drifted significantly towards 140
     for _ in range(30):
         sim._step_physics()
         
@@ -93,7 +76,6 @@ async def test_simulator_run_yields_dict_with_rounding():
     assert "Diastolic_BP" in data
     assert "Body_Temp" in data
     
-    # Ensure rounded float representations
     for k in ["Heart_Rate", "SpO2_Level", "Systolic_BP", "Diastolic_BP", "Body_Temp"]:
         val = data[k]
         assert isinstance(val, (int, float))

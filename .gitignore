@@ -88,3 +88,4 @@ next-env.d.ts
 *.log
 backend/patient_history.db
 backend/alerts.log
+!backend/pyproject.toml

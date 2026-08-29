@@ -1,7 +1,8 @@
 import os
 import math
-import pandas as pd
-import numpy as np
+import logging
+
+logger = logging.getLogger("heartflow")
 
 _CACHED_PROFILE = None
 _CACHED_MTIME = None
@@ -17,6 +18,9 @@ def get_dataset_profile(dataset_path: str):
         return _CACHED_PROFILE
         
     try:
+        import pandas as pd
+        import numpy as np
+
         df = pd.read_csv(dataset_path, encoding='utf-8', encoding_errors='replace')
         cols = list(df.columns)
         for i, c in enumerate(cols):
@@ -27,7 +31,6 @@ def get_dataset_profile(dataset_path: str):
         total_records = len(df)
         columns_list = df.columns.tolist()
         
-        # Target distribution
         disease_counts = df['Predicted Disease'].value_counts() if 'Predicted Disease' in df.columns else {}
         disease_colors = {
             'Diabetes Mellitus': '#2563EB',
@@ -46,7 +49,6 @@ def get_dataset_profile(dataset_path: str):
                 'color': disease_colors.get(disease, '#5A5A57')
             })
             
-        # Alert prevalence
         alerts = [
             {'name': 'Blood Pressure Alert', 'col': 'Blood Pressure Alert', 'target': 'ABNORMAL'},
             {'name': 'Heart Rate Alert', 'col': 'Heart Rate Alert', 'target': 'ABNORMAL'},
@@ -67,7 +69,6 @@ def get_dataset_profile(dataset_path: str):
                     'abnormal_pct': round(abnormal_count / total_records * 100, 2)
                 })
                 
-        # Numerical specs
         num_features = [
             {
                 'key': 'Heart Rate (bpm)',
@@ -171,7 +172,6 @@ def get_dataset_profile(dataset_path: str):
                 'means_by_disease': {str(k2): round(float(v2), 2) for k2, v2 in means_by_disease.items()}
             })
             
-        # Correlations
         df_corr = df.copy()
         if 'Predicted Disease' in df.columns:
             df_corr['Is_Heart_Disease'] = (df['Predicted Disease'] == 'Heart Disease').astype(int)
@@ -200,7 +200,6 @@ def get_dataset_profile(dataset_path: str):
             'matrix': matrix
         }
         
-        # Target feature dependency
         corrs_with_target = []
         if 'Is_Heart_Disease' in df_corr.columns:
             for f in num_features:
@@ -241,13 +240,16 @@ def get_dataset_profile(dataset_path: str):
         _CACHED_MTIME = mtime
         return profile
     except Exception as e:
-        print(f"Error computing dataset profile: {e}")
+        logger.warning(f"Error computing dataset profile: {e}")
         return None
 
 def get_paginated_rows(dataset_path: str, page: int = 1, limit: int = 25, disease: str = None, search: str = None):
     if not os.path.exists(dataset_path):
         return {"error": "Dataset not found", "total": 0, "rows": []}
         
+    import pandas as pd
+    import numpy as np
+
     df = pd.read_csv(dataset_path, encoding='utf-8', encoding_errors='replace')
     cols = list(df.columns)
     for i, c in enumerate(cols):

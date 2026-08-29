@@ -1,28 +1,29 @@
 import os
-import joblib
-import numpy as np
 
 def _get_scaler_and_classes(eng):
+    import joblib
+    from .paths import resolve_model_dir, resolve_model_path
     model_dir = getattr(eng, 'model_dir', None)
     if not model_dir:
-        from preprocessing import resolve_model_dir
         model_dir = resolve_model_dir()
     
     means = [85.0, 96.67, 125.0, 85.0, 37.2, 0.0]
     scales = [4.08, 1.25, 4.08, 4.08, 0.21, 1.0]
     class_names = ["Class_0", "Class_1"]
 
-    if os.path.exists(os.path.join(model_dir, 'scaler.pkl')):
+    scaler_path = os.path.join(model_dir, 'scaler.pkl') if os.path.exists(os.path.join(model_dir, 'scaler.pkl')) else resolve_model_path('scaler.pkl')
+    if os.path.exists(scaler_path):
         try:
-            scaler = joblib.load(os.path.join(model_dir, 'scaler.pkl'))
+            scaler = joblib.load(scaler_path)
             means = [float(v) for v in scaler.mean_]
             scales = [float(v) for v in scaler.scale_]
         except Exception:
             pass
 
-    if os.path.exists(os.path.join(model_dir, 'classes.pkl')):
+    classes_path = os.path.join(model_dir, 'classes.pkl') if os.path.exists(os.path.join(model_dir, 'classes.pkl')) else resolve_model_path('classes.pkl')
+    if os.path.exists(classes_path):
         try:
-            classes = joblib.load(os.path.join(model_dir, 'classes.pkl'))
+            classes = joblib.load(classes_path)
             class_names = [str(c) for c in classes]
         except Exception:
             pass
@@ -35,9 +36,9 @@ def _get_scaler_and_classes(eng):
     return means, scales, class_names
 
 def _emit_tree_ast_c(tree, node_id, indent="    ", quantize=False, scale_factor=16.0):
+    import numpy as np
     lines = []
     if tree.children_left[node_id] == -1:
-        # Leaf node: return argmax class
         class_idx = int(np.argmax(tree.value[node_id][0]))
         lines.append(f"{indent}return {class_idx};")
         return lines
@@ -58,6 +59,7 @@ def _emit_tree_ast_c(tree, node_id, indent="    ", quantize=False, scale_factor=
     return lines
 
 def generate_c_code(eng, model_name: str, quantize: bool):
+    import numpy as np
     if not eng or model_name not in eng.models:
         return {"error": f"Model {model_name} not found"}
 
@@ -85,19 +87,16 @@ def generate_c_code(eng, model_name: str, quantize: bool):
     L.append(f"#define N_SCALED_FEATURES 6")
     L.append("")
 
-    # Class names string array
     c_names_str = ", ".join([f'"{name}"' for name in class_names])
     L.append(f"static const char *CLASS_NAMES[N_CLASSES] = {{{c_names_str}}};")
     L.append("")
 
-    # Preprocessing constants (StandardScaler parameters)
     means_str = ", ".join([f"{m:.6f}" for m in means])
     scales_str = ", ".join([f"{s:.6f}" for s in scales])
     L.append(f"static const double SCALER_MEAN[N_SCALED_FEATURES] = {{{means_str}}};")
     L.append(f"static const double SCALER_SCALE[N_SCALED_FEATURES] = {{{scales_str}}};")
     L.append("")
 
-    # Preprocessing helpers
     L.append("/* Normalizes 5 raw telemetry vitals and appends engineered Risk_Severity */")
     L.append("static inline void preprocess_vitals(const float *raw, double *out) {")
     L.append("    for (int i = 0; i < 5; i++) {")
@@ -122,14 +121,12 @@ def generate_c_code(eng, model_name: str, quantize: bool):
         L.append("}")
         L.append("")
 
-    # 1. RANDOM FOREST
     if model_name == "rf":
         n_trees = len(model.estimators_)
         L.append(f"#define N_TREES {n_trees}")
         L.append("")
 
         if quantize:
-            # Fixed-point decision trees
             for i, est in enumerate(model.estimators_):
                 L.append(f"static inline int tree_vote_{i}(const int8_t *f) {{")
                 L.extend(_emit_tree_ast_c(est.tree_, 0, indent="    ", quantize=True, scale_factor=16.0))
@@ -155,7 +152,6 @@ def generate_c_code(eng, model_name: str, quantize: bool):
             L.append("    return predict_from_int8(q_features);")
             L.append("}")
         else:
-            # FP32 decision trees
             for i, est in enumerate(model.estimators_):
                 L.append(f"static inline int tree_vote_{i}(const double *f) {{")
                 L.extend(_emit_tree_ast_c(est.tree_, 0, indent="    ", quantize=False))
@@ -181,7 +177,6 @@ def generate_c_code(eng, model_name: str, quantize: bool):
             L.append("    return predict_from_norm(norm);")
             L.append("}")
 
-    # 2. LINEAR SVM
     elif model_name == "svm" and hasattr(model, 'coef_'):
         coefs = model.coef_
         intercepts = model.intercept_
@@ -261,7 +256,6 @@ def generate_c_code(eng, model_name: str, quantize: bool):
             L.append("    return best;")
             L.append("}")
 
-    # 3. LOGISTIC REGRESSION
     elif model_name == "logreg" and hasattr(model, 'coef_'):
         coefs = model.coef_
         intercepts = model.intercept_
@@ -335,7 +329,6 @@ def generate_c_code(eng, model_name: str, quantize: bool):
                 L.append("    return best;")
             L.append("}")
 
-    # 4. SMALL NEURAL NETWORK (MLP)
     elif model_name == "small_nn" and hasattr(model, 'coefs_'):
         layers = model.coefs_
         biases = model.intercepts_
@@ -427,7 +420,6 @@ def generate_c_code(eng, model_name: str, quantize: bool):
             L.append("    return best;")
             L.append("}")
 
-    # 5. K-NEAREST NEIGHBORS (KNN)
     elif model_name == "knn" and hasattr(model, '_fit_X'):
         n_samples = min(model._fit_X.shape[0], 80)
         n_feats = model._fit_X.shape[1]

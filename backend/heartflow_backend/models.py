@@ -1,25 +1,23 @@
 import os
-import joblib
-import json
-import numpy as np
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import f1_score
-import pandas as pd
-import sys
+import logging
+from .paths import resolve_dataset_path, get_p1_dir
+from .preprocessing import get_train_test_split
 
-backend_dir = os.path.dirname(os.path.abspath(__file__))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
+logger = logging.getLogger("heartflow")
 
-from preprocessing import get_train_test_split, resolve_model_dir, resolve_data_path
+def train_models(data_path: str | None = None, model_dir: str | None = None):
+    import json
+    import joblib
+    import pandas as pd
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.svm import SVC
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.neural_network import MLPClassifier
+    from sklearn.metrics import f1_score
 
-def train_models():
-    data_path = resolve_data_path()
-    model_dir = resolve_model_dir()
+    data_path = data_path or resolve_dataset_path()
+    model_dir = model_dir or str(get_p1_dir())
     os.makedirs(model_dir, exist_ok=True)
     registry_path = os.path.join(model_dir, 'registry.json')
     
@@ -29,7 +27,6 @@ def train_models():
     else:
         registry = {"active_version": "v1", "versions": {"v1": {"score": 0.0}}}
         
-    print("Loading data...")
     df = pd.read_csv(data_path, encoding='utf-8')
     X_train, X_test, y_train, y_test = get_train_test_split(df)
     
@@ -45,7 +42,6 @@ def train_models():
     scores = []
     
     for name, model in models.items():
-        print(f"Training {name}...")
         model.fit(X_train, y_train)
         trained_models[name] = model
         
@@ -56,24 +52,15 @@ def train_models():
     avg_score = sum(scores) / len(scores)
     new_version_num = len(registry["versions"]) + 1
     new_version = f"v{new_version_num}"
-    print(f"New Version {new_version} Average F1 Score: {avg_score:.4f}")
     
     registry["versions"][new_version] = {"score": avg_score}
     active_version = registry["active_version"]
     active_score = registry["versions"].get(active_version, {}).get("score", 0.0)
     
     if avg_score >= active_score:
-        print(f"Score improved ({avg_score:.4f} >= {active_score:.4f}). Overwriting active models.")
         for name, model in trained_models.items():
             joblib.dump(model, os.path.join(model_dir, f'{name}.pkl'))
         registry["active_version"] = new_version
-    else:
-        print(f"Score degraded ({avg_score:.4f} < {active_score:.4f}). Rollback initiated: keeping existing models.")
         
     with open(registry_path, 'w') as f:
         json.dump(registry, f, indent=4)
-        
-    print("Training Complete.")
-
-if __name__ == '__main__':
-    train_models()

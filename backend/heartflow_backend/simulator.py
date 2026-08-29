@@ -16,7 +16,6 @@ class PatientDataSimulator:
         self.target_dia = self.dia_bp
 
     def _shift_state(self):
-        # 5% chance every second to shift patient state
         if random.random() < 0.05:
             state = random.choice(["normal", "normal", "normal", "asthma", "hypertension", "heart_disease", "diabetes"])
             if state == "normal":
@@ -31,14 +30,12 @@ class PatientDataSimulator:
                 self.target_hr, self.target_spo2, self.target_sys, self.target_dia = 85.0, 96.0, 140.0, 90.0
 
     def _step_physics(self):
-        # Interpolate towards target with noise
         self.hr += (self.target_hr - self.hr) * 0.1 + random.uniform(-2, 2)
         self.spo2 += (self.target_spo2 - self.spo2) * 0.1 + random.uniform(-0.5, 0.5)
         self.sys_bp += (self.target_sys - self.sys_bp) * 0.1 + random.uniform(-1, 1)
         self.dia_bp += (self.target_dia - self.dia_bp) * 0.1 + random.uniform(-1, 1)
         self.temp = max(36.0, min(39.0, self.temp + random.uniform(-0.1, 0.1)))
         
-        # Clamp values
         self.hr = max(50.0, min(180.0, self.hr))
         self.spo2 = max(80.0, min(100.0, self.spo2))
 

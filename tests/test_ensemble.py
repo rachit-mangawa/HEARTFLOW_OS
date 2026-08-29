@@ -1,11 +1,7 @@
 import pytest
 import numpy as np
-import os
-import sys
 from unittest.mock import patch, MagicMock
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend')))
-from ensemble import EnsembleModel
+from heartflow_backend.ensemble import EnsembleModel
 
 @patch('joblib.load')
 @patch('os.path.exists')

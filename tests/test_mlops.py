@@ -1,14 +1,6 @@
 import pytest
-import os
-import sys
 import pandas as pd
-import io
-
-backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend'))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
-
-from mlops import MLOpsEngine, RetrainResult, COLUMN_ALIASES, CANONICAL_COLUMNS
+from heartflow_backend.mlops import MLOpsEngine, RetrainResult, COLUMN_ALIASES, CANONICAL_COLUMNS
 
 @pytest.fixture
 def mlops_engine(tmp_path):
@@ -17,7 +9,6 @@ def mlops_engine(tmp_path):
     return engine
 
 def test_normalize_batch_alias_resolution(mlops_engine):
-    # Test permutations of all key vital signs
     raw_df = pd.DataFrame({
         'HR': [78, 85],
         'OXYGEN': [99, 96],
@@ -38,7 +29,6 @@ def test_normalize_batch_alias_resolution(mlops_engine):
     assert normalized['Predicted Disease'].iloc[0] == 'Healthy'
 
 def test_normalize_batch_degree_encoding_repair(mlops_engine):
-    # Corrupt ISO-8859 degree symbol
     raw_df = pd.DataFrame({
         'Heart Rate': [80],
         'SpO2 Level': [98],
@@ -70,7 +60,6 @@ def test_normalize_batch_auto_populates_canonical_columns(mlops_engine):
     assert normalized['Predicted Disease'].iloc[0] == 'Healthy'
 
 def test_normalize_batch_missing_required_signals_raises_error(mlops_engine):
-    # Missing Blood pressure and temperature
     raw_df = pd.DataFrame({
         'Heart Rate (bpm)': [80],
         'SpO2 Level (%)': [98]

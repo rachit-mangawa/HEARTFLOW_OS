@@ -1,9 +1,12 @@
-import os
 import io
+import os
 import threading
+import logging
 from dataclasses import dataclass
-import pandas as pd
 from typing import Optional
+from .paths import get_p1_dir, resolve_dataset_path
+
+logger = logging.getLogger("heartflow")
 
 @dataclass
 class RetrainResult:
@@ -26,7 +29,6 @@ CANONICAL_COLUMNS = [
     'Temperature Alert'
 ]
 
-# Case-insensitive alias map for telemetry and label columns
 COLUMN_ALIASES = {
     'heart rate (bpm)': 'Heart Rate (bpm)',
     'heart rate': 'Heart Rate (bpm)',
@@ -70,12 +72,6 @@ COLUMN_ALIASES = {
 }
 
 class MLOpsEngine:
-    """
-    Encapsulates the MLOps Lifecycle:
-    - Normalizes and sanitizes telemetry schemas with alias resolution.
-    - Handles data ingestion and schema validation.
-    - Orchestrates model retraining and hot-swapping.
-    """
     def __init__(self, dataset_path: str):
         self.dataset_path = dataset_path
         self.active_ensemble = None
@@ -84,17 +80,16 @@ class MLOpsEngine:
 
     def _load_active_models(self):
         try:
-            from ensemble import EnsembleModel
+            from .ensemble import EnsembleModel
             self.active_ensemble = EnsembleModel()
         except Exception as e:
-            print(f"MLOps: Model loading failed (likely untrained): {e}")
+            logger.warning(f"MLOps: Model loading failed: {e}")
 
     def get_ensemble(self):
         return self.active_ensemble
 
-    def normalize_batch(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Standardizes column names, patches encoding issues, and fills missing non-essential metadata."""
-        # Clean column names
+    def normalize_batch(self, df):
+        import pandas as pd
         cleaned_cols = {}
         for col in df.columns:
             normalized_key = str(col).strip().lower().replace('\ufffd', '°')
@@ -102,7 +97,6 @@ class MLOpsEngine:
             cleaned_cols[col] = matched_canonical
         df = df.rename(columns=cleaned_cols)
 
-        # Check required continuous physiological signals
         required_signals = [
             'Heart Rate (bpm)',
             'SpO2 Level (%)',
@@ -114,11 +108,9 @@ class MLOpsEngine:
         if missing_signals:
             raise ValueError(f"Missing required physiological signals: {', '.join(missing_signals)}")
 
-        # Ensure target label exists; default to 'Healthy' if not specified
         if 'Predicted Disease' not in df.columns:
             df['Predicted Disease'] = 'Healthy'
 
-        # Auto-populate optional canonical fields with consistent values
         if 'Patient Number' not in df.columns:
             df['Patient Number'] = range(1, len(df) + 1)
         if 'Data Accuracy (%)' not in df.columns:
@@ -134,17 +126,15 @@ class MLOpsEngine:
         if 'Temperature Alert' not in df.columns:
             df['Temperature Alert'] = 'NORMAL'
 
-        # Ensure numeric types for continuous signals
         for sig in required_signals:
             df[sig] = pd.to_numeric(df[sig], errors='coerce')
 
-        # Drop rows where all signals are NaN
         df = df.dropna(subset=required_signals, how='all')
 
-        # Align columns to canonical ordering
         return df[[c for c in CANONICAL_COLUMNS if c in df.columns]]
 
     def ingest_batch_sync(self, csv_bytes: bytes) -> RetrainResult:
+        import pandas as pd
         with self._lock:
             try:
                 raw_df = pd.read_csv(io.BytesIO(csv_bytes), encoding_errors='replace')
@@ -153,10 +143,12 @@ class MLOpsEngine:
                 if len(new_df) == 0:
                     return RetrainResult(False, "Uploaded CSV contains no valid telemetry rows.")
 
-                if os.path.exists(self.dataset_path):
-                    existing_df = pd.read_csv(self.dataset_path, encoding='utf-8', encoding_errors='replace')
+                dest_dataset = str(get_p1_dir() / "patient_dataset.csv")
+
+                src_path = self.dataset_path if os.path.exists(self.dataset_path) else resolve_dataset_path()
+                if os.path.exists(src_path):
+                    existing_df = pd.read_csv(src_path, encoding='utf-8', encoding_errors='replace')
                     existing_df.columns = [c.replace('\ufffd', '°') for c in existing_df.columns]
-                    # Adjust Patient Number to maintain continuous increment
                     if 'Patient Number' in existing_df.columns:
                         start_id = int(existing_df['Patient Number'].max() or 0) + 1
                         new_df['Patient Number'] = range(start_id, start_id + len(new_df))
@@ -165,14 +157,13 @@ class MLOpsEngine:
                 else:
                     combined_df = new_df
 
-                os.makedirs(os.path.dirname(self.dataset_path), exist_ok=True)
-                combined_df.to_csv(self.dataset_path, index=False, encoding='utf-8')
+                os.makedirs(os.path.dirname(dest_dataset), exist_ok=True)
+                combined_df.to_csv(dest_dataset, index=False, encoding='utf-8')
+                self.dataset_path = dest_dataset
 
-                # Re-train models synchronously
-                from models import train_models
-                train_models()
+                from .models import train_models
+                train_models(data_path=dest_dataset, model_dir=str(get_p1_dir()))
 
-                # Hot-swap the live models
                 self._load_active_models()
 
                 return RetrainResult(True, f"Dataset successfully updated ({len(combined_df)} total observations) and ensemble hot-swapped.")

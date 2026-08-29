@@ -1,14 +1,10 @@
 import pytest
 import pytest_asyncio
 import os
-import sys
 import aiosqlite
 from collections import namedtuple
+import heartflow_backend.database as database
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend')))
-import database
-
-# Mock settings to avoid real huggingface calls
 database.settings.hf_token = None
 database.DB_PATH = "test_patient_history.db"
 
@@ -22,7 +18,7 @@ async def setup_teardown():
         try:
             os.remove(database.DB_PATH)
         except PermissionError:
-            pass # Windows file lock fallback
+            pass
 
 @pytest.mark.asyncio
 async def test_init_db():

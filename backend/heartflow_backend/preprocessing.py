@@ -1,37 +1,6 @@
-import pandas as pd
-import numpy as np
 import os
-import joblib
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.impute import SimpleImputer
+from .paths import resolve_model_dir as _default_model_dir, resolve_dataset_path as _default_data_path
 
-def resolve_model_dir():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(base_dir, '..', 'model'),
-        os.path.join(base_dir, 'model'),
-        '/app/model'
-    ]
-    for p in candidates:
-        if os.path.exists(p):
-            return os.path.abspath(p)
-    return os.path.abspath(candidates[0])
-
-def resolve_data_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(base_dir, '..', 'data', 'patient_dataset.csv'),
-        os.path.join(base_dir, 'data', 'patient_dataset.csv'),
-        os.path.join(base_dir, 'patient_dataset.csv'),
-        '/app/data/patient_dataset.csv'
-    ]
-    for p in candidates:
-        if os.path.exists(p):
-            return os.path.abspath(p)
-    return os.path.abspath(candidates[0])
-
-# Canonical Column Alias Mapping
 COLUMN_ALIASES = {
     'heart rate (bpm)': 'Heart Rate (bpm)',
     'heart rate': 'Heart Rate (bpm)',
@@ -73,7 +42,18 @@ COLUMN_ALIASES = {
     'label': 'Predicted Disease',
 }
 
+def resolve_model_dir():
+    return _default_model_dir()
+
+def resolve_data_path():
+    return _default_data_path()
+
 def preprocess_data(df, is_training=False, model_dir=None):
+    import joblib
+    import numpy as np
+    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.impute import SimpleImputer
+
     if model_dir is None:
         model_dir = resolve_model_dir()
     os.makedirs(model_dir, exist_ok=True)
@@ -82,7 +62,6 @@ def preprocess_data(df, is_training=False, model_dir=None):
     label_encoder_path = os.path.join(model_dir, 'label_encoder.pkl')
     imputer_path = os.path.join(model_dir, 'imputer.pkl')
     
-    # 1. Normalize column names to canonical forms
     col_map = {}
     for col in df.columns:
         norm_key = str(col).strip().lower().replace('\ufffd', '°')
@@ -117,7 +96,6 @@ def preprocess_data(df, is_training=False, model_dir=None):
             else:
                 y = y_raw 
     
-    # Ensure all canonical continuous features exist (defaults for missing inputs)
     defaults = {
         'Heart Rate (bpm)': 75.0,
         'SpO2 Level (%)': 98.0,
@@ -129,7 +107,6 @@ def preprocess_data(df, is_training=False, model_dir=None):
         if col not in X_raw.columns:
             X_raw[col] = default_val
             
-    # Engineered Feature: Risk_Severity
     X_raw['Risk_Severity'] = (X_raw['Heart Rate (bpm)'] > 105).astype(int) + (X_raw['SpO2 Level (%)'] < 94).astype(int)
     
     continuous_features = ['Heart Rate (bpm)', 'SpO2 Level (%)', 'Systolic Blood Pressure (mmHg)', 'Diastolic Blood Pressure (mmHg)', 'Body Temperature (°C)', 'Risk_Severity']
@@ -160,5 +137,6 @@ def preprocess_data(df, is_training=False, model_dir=None):
     return X_raw, y
 
 def get_train_test_split(df):
+    from sklearn.model_selection import train_test_split
     X, y = preprocess_data(df, is_training=True)
     return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)

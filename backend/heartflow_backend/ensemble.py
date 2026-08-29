@@ -1,42 +1,44 @@
-import joblib
-import numpy as np
 import os
-import sys
+import logging
+from .paths import resolve_model_dir, resolve_model_path
 
-backend_dir = os.path.dirname(os.path.abspath(__file__))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
-
-from preprocessing import resolve_model_dir
+logger = logging.getLogger("heartflow")
 
 CANONICAL_CLASSES = ['Asthma', 'Diabetes Mellitus', 'Healthy', 'Heart Disease', 'Hypertension']
 
 class EnsembleModel:
-    def __init__(self):
-        self.model_dir = resolve_model_dir()
+    def __init__(self, model_dir=None):
+        import joblib
+        import warnings
+        try:
+            from sklearn.exceptions import InconsistentVersionWarning
+            warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+        except ImportError:
+            pass
+        self.model_dir = model_dir or resolve_model_dir()
         self.model_names = ['knn', 'svm', 'logreg', 'rf', 'small_nn']
         self.models = {}
         self.load_models()
         self.label_encoder = None
-        le_path = os.path.join(self.model_dir, 'label_encoder.pkl')
+        le_path = os.path.join(self.model_dir, 'label_encoder.pkl') if model_dir else resolve_model_path('label_encoder.pkl')
         if os.path.exists(le_path):
             try:
                 self.label_encoder = joblib.load(le_path)
             except Exception as e:
-                print(f"Warning: Failed to load label encoder: {e}")
+                logger.warning(f"Failed to load label encoder: {e}")
         self.weights = {'knn': 0.15, 'svm': 0.15, 'logreg': 0.20, 'rf': 0.25, 'small_nn': 0.25}
         
     def load_models(self):
+        import joblib
         for name in self.model_names:
-            path = os.path.join(self.model_dir, f'{name}.pkl')
+            path = os.path.join(self.model_dir, f'{name}.pkl') if self.model_dir and os.path.exists(os.path.join(self.model_dir, f'{name}.pkl')) else resolve_model_path(f'{name}.pkl')
             if os.path.exists(path):
                 try:
                     self.models[name] = joblib.load(path)
                 except Exception as e:
-                    print(f"Warning: Failed to load model {name}: {e}")
+                    logger.warning(f"Failed to load model {name}: {e}")
 
     def decode_label(self, idx: int) -> str:
-        """Safely maps class index to clinical label without throwing on unseen labels."""
         if self.label_encoder is not None:
             if hasattr(self.label_encoder, 'classes_'):
                 classes = self.label_encoder.classes_
@@ -52,6 +54,7 @@ class EnsembleModel:
         return f"Condition_{idx}"
                 
     def predict(self, X):
+        import numpy as np
         individual_preds = {}
         individual_probs = {}
         
