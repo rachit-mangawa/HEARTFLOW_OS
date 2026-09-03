@@ -38,7 +38,7 @@ def preprocess_data(df, is_training=True):
                 y = y_raw 
     
     # Fix broken encoding column names safely
-    X_raw.rename(columns=lambda x: x.replace('', '°') if isinstance(x, str) else x, inplace=True)
+    X_raw.rename(columns=lambda x: x.replace('\ufffd', '°') if isinstance(x, str) else x, inplace=True)
     
     if 'Fall Detection' in X_raw.columns:
         X_raw['Fall Detection'] = X_raw['Fall Detection'].map({'Yes': 1, 'No': 0}).fillna(0)

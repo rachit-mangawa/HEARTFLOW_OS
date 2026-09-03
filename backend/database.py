@@ -17,11 +17,25 @@ async def sync_from_hub():
     if not settings.hf_token:
         print("No HF_TOKEN found. Skipping sync.")
         return
+        
+    try:
+        user_info = api.whoami(token=settings.hf_token)
+        username = user_info.get("name")
+        if username and "IDKHowToCodeFr" in settings.repo_id:
+            settings.repo_id = f"{username}/tinyml-logs"
+    except Exception as e:
+        print(f"Failed to fetch user info from token: {e}")
+
     
     async with sync_lock:
         if time.time() - last_sync < 60:
             return
         try:
+            try:
+                api.create_repo(repo_id=settings.repo_id, repo_type="dataset", exist_ok=True, token=settings.hf_token)
+            except Exception as e:
+                print(f"Failed to create repo: {e}")
+                
             print(f"Downloading {settings.db_name} from Hub...")
             def _download():
                 path = hf_hub_download(
@@ -77,11 +91,13 @@ async def init_db() -> None:
 
 async def log_prediction(data: Any, prediction_label: str, confidence: float) -> None:
     async with aiosqlite.connect(DB_PATH) as db:
+        from datetime import timezone, timedelta
+        ist = timezone(timedelta(hours=5, minutes=30))
         await db.execute('''
             INSERT INTO predictions (timestamp, heart_rate, spo2, sys_bp, dia_bp, temp, fall_detection, prediction_label, confidence)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S"),
             data.Heart_Rate,
             data.SpO2_Level,
             data.Systolic_BP,

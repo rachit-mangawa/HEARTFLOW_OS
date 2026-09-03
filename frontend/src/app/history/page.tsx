@@ -123,7 +123,7 @@ export default function PatientHistory() {
                         <td className="px-6 py-4 border-r-2 border-ink">{record.sys_bp}/{record.dia_bp}</td>
                         <td className="px-6 py-4 border-r-2 border-ink">{temperature}</td>
                         <td className={`px-6 py-4 border-r-2 border-ink ${getStatusStyles(predLabel)}`}>
-                          {isRisk ? '[!] ' : '✓ '}{predLabel}
+                          {isRisk ? '[!] ' : '[OK] '}{predLabel}
                         </td>
                         <td className="px-6 py-4">
                           {(record.confidence * 100).toFixed(1)}%

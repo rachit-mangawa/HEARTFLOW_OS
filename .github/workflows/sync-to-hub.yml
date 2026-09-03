@@ -26,10 +26,12 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
-      - name: Install Hugging Face Hub CLI
-        run: pip install -U "huggingface_hub[cli]"
+      - name: Install Hugging Face CLI
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh | bash -s
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Sync to Hugging Face Space
         env:
@@ -37,8 +39,9 @@ jobs:
         # We upload the root, but exclude the frontend logic and git folders.
         # This will use the Dockerfile at the root to deploy the FastAPI server.
         run: |
-          python -m huggingface_hub.cli upload IDKHowToCodeFr/tinyml-backend . \
-            --repo-type space \
+          hf upload IDKHowToCodeFr/tinyml-backend . \
+            --type space \
+            --delete "*" \
             --exclude "frontend/node_modules/*" \
             --exclude "frontend/.next/*" \
             --exclude ".git/*" \
@@ -47,6 +50,9 @@ jobs:
   deploy-frontend-to-pages:
     runs-on: ubuntu-latest
     needs: deploy-backend-to-hf
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,15 +67,17 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        with:
+          static_site_generator: next
+
       - name: Build Next.js Static Export
         working-directory: ./frontend
         env:
           NEXT_PUBLIC_API_URL: https://idkhowtocodefr-tinyml-backend.hf.space
           NEXT_PUBLIC_WS_URL: wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed
         run: npm run build
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -161,9 +161,9 @@ export default function Analysis() {
                         };
                         
                         return (
-                          <div className={`border-2 p-6 flex flex-col mb-4 ${getStatusStyles(prediction.prediction === 1 ? prediction.prediction_label : 'Healthy')}`}>
+                          <div className={`border-2 p-6 flex flex-col mb-4 ${getStatusStyles(prediction.prediction ? prediction.prediction_label : 'Healthy')}`}>
                             <div className="font-sans text-[clamp(28px,3vw,56px)] font-black tracking-tighter leading-none mb-2 uppercase break-words">
-                              {prediction.prediction === 1 ? `[!]_${prediction.prediction_label.replace(" ", "_")}` : 'NORMAL'}
+                              {prediction.prediction ? `[!]_${prediction.prediction_label.replace(" ", "_")}` : 'NORMAL'}
                             </div>
                             <div className="text-[14px] font-bold tracking-[0.1em]">
                               CONFIDENCE: {(prediction.probability * 100).toFixed(1)}%
@@ -184,7 +184,7 @@ export default function Analysis() {
                               <div key={modelName} className="flex justify-between items-center p-3 hover:bg-canvas-cream transition-colors">
                                 <div className="w-[20%] text-slate">[{modelName}]</div>
                                 <div className={`w-[40%] ${prediction.model_outputs[modelName] !== 'Healthy' ? 'text-hazard' : ''}`}>
-                                  {prediction.model_outputs[modelName] !== 'Healthy' ? '! ' + prediction.model_outputs[modelName] : 'OK Healthy'}
+                                  {prediction.model_outputs[modelName] !== 'Healthy' ? '[!] ' + prediction.model_outputs[modelName] : '[OK] HEALTHY'}
                                 </div>
                                 <div className="w-[20%] text-right">
                                   CONF: {(prediction.model_probs[modelName] * 100).toFixed(1)}%

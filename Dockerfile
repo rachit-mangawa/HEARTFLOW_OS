@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -11,10 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy necessary directories for the backend to run
-COPY backend/ ./backend/
-COPY model/ ./model/
-COPY data/ ./data/
+# Copy all necessary files and directories
+COPY . .
 
 # Hugging Face Spaces mandates port 7860
 EXPOSE 7860

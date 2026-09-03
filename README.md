@@ -1,3 +1,12 @@
+---
+title: HeartFlow OS Backend
+emoji: 🫀
+colorFrom: gray
+colorTo: red
+sdk: docker
+pinned: false
+---
+
 # HEARTFLOW_OS // TinyML Heart Health Telemetry
 
 A production-ready, edge-optimized application for real-time cardiovascular analytics. It bridges the gap between cloud-scale machine learning and low-level embedded hardware by deploying soft-voting ensembles and automated C-code transpilation for resource-constrained IoT systems.

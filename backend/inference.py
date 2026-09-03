@@ -31,7 +31,7 @@ def evaluate(ensemble_model, data) -> Dict[str, Any]:
         return {"error": "Ensemble model not loaded"}
 
     # Ensemble Prediction
-    disease_label, conf, ind_preds, class_probs, weights = ensemble_model.predict(processed_df)
+    disease_label, conf, ind_preds, class_probs, weights, ind_conf = ensemble_model.predict(processed_df)
     is_at_risk = (disease_label.lower() not in ["healthy", "normal", "none"])
 
     return {
@@ -40,6 +40,7 @@ def evaluate(ensemble_model, data) -> Dict[str, Any]:
         "probability": float(conf),
         "ensemble_prediction": is_at_risk,
         "model_outputs": ind_preds,
+        "model_probs": ind_conf,
         "disease_probs": class_probs,
         "weights": weights
     }

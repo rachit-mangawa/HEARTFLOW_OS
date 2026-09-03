@@ -1,10 +1,12 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
 import asyncio
-import sys
-import os
 import random
 import shap
 import database as db
@@ -19,8 +21,6 @@ try:
     warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 except ImportError:
     pass
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from preprocessing import preprocess_data
 from export import generate_c_code
 from inference import evaluate
@@ -71,14 +71,23 @@ class PatientData(BaseModel):
     Diastolic_BP: float
     Body_Temp: float
     
+from fastapi.responses import RedirectResponse
+
+@app.get("/")
+def read_root():
+    return RedirectResponse(url="/docs")
+
 @app.get("/health")
 def health_check():
     return {"status": "Healthy" if get_ensemble() else "Warning - Models Offline"}
 
 def log_alert_sync(data: PatientData, conf: float):
     try:
+        from datetime import datetime, timezone, timedelta
+        ist = timezone(timedelta(hours=5, minutes=30))
+        timestamp = datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
         with open("alerts.log", "a") as f:
-            f.write(f"ALERT: Patient at risk! HR: {data.Heart_Rate}, SpO2: {data.SpO2_Level}, Confidence: {conf:.2f}\n")
+            f.write(f"[{timestamp}] ALERT: Patient at risk! HR: {data.Heart_Rate}, SpO2: {data.SpO2_Level}, Confidence: {conf:.2f}\n")
     except Exception:
         pass
 
@@ -126,50 +135,15 @@ async def websocket_feed(websocket: WebSocket):
         await websocket.close(code=1011)
         return
         
-    hr, spo2, sys_bp, dia_bp, temp = 75.0, 98.0, 120.0, 80.0, 37.0
-    target_hr, target_spo2, target_sys, target_dia = hr, spo2, sys_bp, dia_bp
+    from simulator import PatientDataSimulator
+    simulator = PatientDataSimulator()
     
     try:
-        while True:
-            # 5% chance every second to shift patient state
-            if random.random() < 0.05:
-                state = random.choice(["normal", "normal", "normal", "asthma", "hypertension", "heart_disease", "diabetes"])
-                if state == "normal":
-                    target_hr, target_spo2, target_sys, target_dia = 75.0, 98.0, 120.0, 80.0
-                elif state == "asthma":
-                    target_hr, target_spo2, target_sys, target_dia = 115.0, 88.0, 135.0, 85.0
-                elif state == "hypertension":
-                    target_hr, target_spo2, target_sys, target_dia = 90.0, 97.0, 175.0, 105.0
-                elif state == "heart_disease":
-                    target_hr, target_spo2, target_sys, target_dia = 135.0, 91.0, 150.0, 95.0
-                elif state == "diabetes":
-                    target_hr, target_spo2, target_sys, target_dia = 85.0, 96.0, 140.0, 90.0
-            
-            # Interpolate towards target with noise
-            hr += (target_hr - hr) * 0.1 + random.uniform(-2, 2)
-            spo2 += (target_spo2 - spo2) * 0.1 + random.uniform(-0.5, 0.5)
-            sys_bp += (target_sys - sys_bp) * 0.1 + random.uniform(-1, 1)
-            dia_bp += (target_dia - dia_bp) * 0.1 + random.uniform(-1, 1)
-            temp = max(36.0, min(39.0, temp + random.uniform(-0.1, 0.1)))
-            
-            hr = max(50.0, min(180.0, hr))
-            spo2 = max(80.0, min(100.0, spo2))
-            
-            data = PatientData(
-                Heart_Rate=round(hr, 1),
-                SpO2_Level=round(spo2, 1),
-                Systolic_BP=round(sys_bp, 1),
-                Diastolic_BP=round(dia_bp, 1),
-                Body_Temp=round(temp, 1)
-            )
+        async for state in simulator.run():
+            data = PatientData(**state)
             
             prediction_result = await asyncio.to_thread(evaluate, eng, data)
             
-            if "error" not in prediction_result:
-                pass
-
-
-            # Re-map the keys to match what frontend expects
             front_pred = None
             if "error" not in prediction_result:
                 front_pred = {
@@ -183,7 +157,6 @@ async def websocket_feed(websocket: WebSocket):
                 "sensor_data": data.model_dump(),
                 "prediction": front_pred
             })
-            await asyncio.sleep(1.0)
     except WebSocketDisconnect:
         pass
     except Exception as e:

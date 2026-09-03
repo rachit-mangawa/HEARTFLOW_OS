@@ -50,4 +50,8 @@ class EnsembleModel:
             for i, prob in enumerate(weighted_probs)
         }
         
-        return final_pred, confidence, individual_preds, class_probs, self.weights
+        individual_conf = {
+            name: float(np.max(probs)) for name, probs in individual_probs.items()
+        }
+        
+        return final_pred, confidence, individual_preds, class_probs, self.weights, individual_conf
