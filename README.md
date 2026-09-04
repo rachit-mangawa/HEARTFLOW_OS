@@ -7,9 +7,9 @@ sdk: docker
 pinned: false
 ---
 
-# HEARTFLOW_OS // TinyML Heart Health Telemetry
+# HEARTFLOW_OS // Edge-Native Cardiovascular Telemetry
 
-A production-ready, edge-optimized application for real-time cardiovascular analytics. It bridges the gap between cloud-scale machine learning and low-level embedded hardware by deploying soft-voting ensembles and automated C-code transpilation for resource-constrained IoT systems.
+A production-grade, edge-optimized application for real-time cardiovascular telemetry and predictive diagnostics. HeartFlow OS bridges cloud-scale machine learning with low-level embedded constraints by transpiling soft-voting ensembles directly into zero-dependency, statically allocated C-code for microcontroller deployment.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16+-black.svg?style=flat&logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat&logo=react)
@@ -19,56 +19,68 @@ A production-ready, edge-optimized application for real-time cardiovascular anal
 
 ---
 
-## Overview
+## 🚀 Overview
 
-HEARTFLOW_OS is designed for clinical telemetry monitoring. It evaluates live patient vitals using an ensemble of classifiers, provides diagnostic probability distributions, and physically compresses these Python-trained models into raw C-code headers ready to be flashed directly onto edge silicon (e.g., ESP32, Arduino Nano).
+HeartFlow OS is engineered for high-frequency clinical telemetry. It ingests live patient vitals via WebSockets, evaluates telemetry against an ensemble of distributed classifiers to compute diagnostic probability distributions, and physically compresses these complex mathematical models into raw C-code headers ready to be flashed onto constrained edge silicon (e.g., ESP32, Cortex-M series).
 
 ### Key Engineering Features
 
-- **Industrial Brutalist Frontend**: A high-performance, cockpit-dense Next.js 16 UI using native WebSockets and React 19 to render 60fps SVG telemetry sweeps without dropping frames.
-- **Edge Computing & TinyML**: Transpiles complex Scikit-Learn models into highly optimized, dependency-free **C-code headers**. Bypasses dynamic memory allocation entirely.
-- **INT8 Quantization Engine**: Mathematically scales 64-bit floating-point weights down to 8-bit integers, shrinking the flash memory payload by **~75%** for constrained microcontrollers.
-- **Soft-Voting Ensemble**: Aggregates predictions across five independent models (Random Forest, SVM, KNN, Logistic Regression, MLP Neural Network) to output robust probability distributions rather than black-box binary answers.
-- **Zero-Downtime MLOps Pipeline**: Features a dedicated `/retrain` pipeline allowing dynamic CSV uploads. It validates schemas, imputes missing data, retrains the entire ensemble in a background thread, and hot-swaps the intelligence engine globally without dropping active WebSocket connections.
+- **High-Throughput Telemetry Interface:** A highly optimized Next.js 16 dashboard utilizing native WebSockets and React 19 to render 60fps SVG telemetry sweeps with near-zero latency or dropped frames.
+- **Edge Inference & TinyML:** Transpiles sophisticated `scikit-learn` models into highly optimized, dependency-free C-code. Designed with strict spatial and temporal constraints in mind, bypassing dynamic memory allocation entirely (`malloc`-free).
+- **INT8 Quantization Engine:** Algorithmically scales 64-bit floating-point weights and biases down to 8-bit integers, effectively shrinking the flashed payload memory footprint by ~75% without significant accuracy degradation.
+- **Soft-Voting Ensemble:** Fuses predictions from five discrete model architectures (Random Forest, SVM, KNN, Logistic Regression, MLP Neural Network) to generate resilient probability distributions, mitigating the variance and biases of individual black-box models.
+- **Zero-Downtime MLOps:** Integrated `/retrain` pipeline allowing for real-time schema validation, data imputation, and background ensemble retraining. Hot-swaps the underlying intelligence engine globally without interrupting active clinical WebSocket streams.
 
-## Architecture
+---
 
-The project follows a decoupled, modular design pattern split between a React Client, a FastAPI Core, and an Edge Compiler.
+## 🏗 System Architecture
 
-For a comprehensive deep-dive into the data flows and system topography, refer to the [ARCHITECTURE.md](./ARCHITECTURE.md) document.
+The architecture adheres to a strictly decoupled, service-oriented design pattern split across the Client (React), the Core (FastAPI), and the Edge (C-Compiler).
 
-### Repository Structure
+For a deep-dive into system topography, data flows, and design rationale, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+### Repository Topology
 
 ```text
 HEARTFLOW_OS/
-├── backend/               # FastAPI server, ML pipelines, aiosqlite, Edge C-compiler
-│   ├── ensemble.py        # Core intelligence and prediction aggregations
-│   ├── main.py            # Websocket feeds, REST APIs, and background tasks
-│   └── preprocessing.py   # MLOps data imputation, scaling, and state preservation
-├── frontend/              # Next.js 16 UI, React Context, framer-motion components
-│   ├── src/app/           # Dashboard, Simulator, MLOps, and Architecture routes
-│   └── src/components/    # Reusable brutalist UI components (Vitals, Graphs)
-├── model/                 # Local cache of serialized SciKit-Learn .pkl weights
-└── data/                  # Base patient cohort CSVs for MLOps retraining pipelines
+├── backend/               # FastAPI core, aiosqlite, async ML pipelines, C-compiler
+│   ├── ensemble.py        # Core intelligence and soft-voting aggregations
+│   ├── main.py            # Websocket ingress, REST APIs, and background routines
+│   └── preprocessing.py   # State-preserving MLOps data imputation and scaling
+├── frontend/              # Next.js 16 UI, React Context, Framer Motion
+│   ├── src/app/           # Route segments (Dashboard, Simulator, Architecture)
+│   └── src/components/    # Memoized, brutalist UI components for 60fps rendering
+├── model/                 # Local LRU cache of serialized model states (.pkl)
+└── data/                  # Immutable patient cohort datasets for MLOps
 ```
 
-## Quickstart
+---
 
-### 1. Initialize Backend
+## 🛠 Quickstart Guide
+
+### 1. Initialize the Core (Backend)
+Requires Python 3.10+
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # Or `.\venv\Scripts\activate` on Windows
+python -m venv .venv
+source .venv/bin/activate  # Windows: `.\.venv\Scripts\activate`
 pip install -r requirements.txt
-python models.py  # Initial train of the base ensemble
+python models.py           # Initialize database and train the baseline ensemble
 uvicorn main:app --reload --port 8000
 ```
 
-### 2. Initialize Frontend
+### 2. Initialize the Client (Frontend)
+Requires Node.js 18+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-The system will boot on `localhost:3000`. Connect to view the live dashboard streams and access the MLOps retraining interfaces.
+The system will boot on `localhost:3000`. Navigate to the dashboard to monitor live telemetry streams, access MLOps pipelines, and export INT8 TinyML headers.
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.

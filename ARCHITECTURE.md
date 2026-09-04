@@ -1,13 +1,14 @@
-# HEARTFLOW_OS // System Architecture
+# HEARTFLOW_OS // System Architecture & Engineering Topography
 
-## Overview
-HeartFlow OS is an end-to-end, edge-optimized clinical telemetry pipeline. The system bridges the gap between high-level cloud machine learning and low-level embedded hardware, enabling real-time clinical inference and automated C-code transpilation for resource-constrained microcontrollers (TinyML).
+## 📌 Executive Summary
 
-The architecture adheres to a decoupled, modular design pattern split into three primary planes: **Client (Frontend)**, **Core (Backend)**, and **Edge (Hardware Compilation)**.
+HeartFlow OS is a distributed, edge-optimized telemetry pipeline designed for clinical-grade cardiovascular inference. The architecture addresses the inherent tension between heavy-compute machine learning paradigms and the constrained environments of low-power microcontrollers (TinyML).
+
+By aggressively decoupling the presentation layer (Client), the orchestration and modeling engine (Core), and the physical target execution (Edge), the system achieves strict separation of concerns, high-throughput asynchronous concurrency, and near-zero downtime deployment of predictive models.
 
 ---
 
-## Architecture Diagram
+## 🏗 High-Level Architecture Diagram
 
 ```mermaid
 graph TD
@@ -18,81 +19,86 @@ graph TD
     classDef edge_tech fill:#f3f3f2,stroke:#111,stroke-width:2px,color:#111,font-family:monospace;
     classDef data fill:#94a3b8,stroke:#475569,stroke-width:2px,color:#fff,font-family:monospace;
 
-    subgraph Client [Client Application]
-        UI[Next.js 16 UI / Dashboard]:::frontend
-        WS_Client[WebSocket Client]:::frontend
-        HTTP_Client[HTTP Client]:::frontend
+    subgraph Client [Client Application / Next.js 16]
+        UI[React 19 Dashboard]:::frontend
+        WS_Client[WebSocket Context]:::frontend
+        HTTP_Client[Axios/Fetch HTTP]:::frontend
     end
 
-    subgraph Core [FastAPI Backend]
-        WS_Server[WebSocket Feed / Generator]:::backend
-        REST_API[REST API Router]:::backend
-        Inference[Inference Engine / Preprocessor]:::backend
-        MLOps[MLOps Pipeline]:::backend
-        DB[(aiosqlite)]:::backend
+    subgraph Core [FastAPI Core / Python 3.10+]
+        WS_Server[Async WebSocket Broker]:::backend
+        REST_API[RESTful API Router]:::backend
+        Inference[Stateful Inference Preprocessor]:::backend
+        MLOps[Background MLOps Engine]:::backend
+        DB[(aiosqlite Asynchronous DB)]:::backend
     end
 
-    subgraph ML_Layer [Intelligence Pipeline]
-        Ensemble{Soft-Voting Ensemble}:::ml_node
+    subgraph ML_Layer [Intelligence Pipeline / Scikit-Learn]
+        Ensemble{Soft-Voting Aggregator}:::ml_node
         Models[RF, SVM, KNN, LogReg, MLP]:::ml_node
-        SHAP[SHAP Explainer]:::ml_node
-        EdgeCompiler[INT8 C-Compiler AST]:::ml_node
+        SHAP[SHAP Feature Explainer]:::ml_node
+        EdgeCompiler[INT8 AST C-Compiler]:::ml_node
     end
 
-    subgraph Hardware [Edge Target]
+    subgraph Hardware [Edge Target / Embedded Silicon]
         HEADER((tinyml_model.h)):::edge_tech
-        MCU[ESP32 / Cortex-M]:::edge_tech
+        MCU[ESP32 / Cortex-M Node]:::edge_tech
     end
 
-    subgraph Storage [Persistent Storage]
-        ModelWeights[Trained Weights .pkl]:::data
-        CSV[Patient Dataset .csv]:::data
+    subgraph Storage [Persistent Persistence Layer]
+        ModelWeights[Serialized Weights / LRU .pkl]:::data
+        CSV[Immutable Patient Dataset .csv]:::data
     end
 
-    %% Flow
-    UI -->|React 19 / Framer| WS_Client
-    UI -->|User Interaction| HTTP_Client
+    %% Edge Flows
+    UI -->|Framer Motion Layouts| WS_Client
+    UI -->|Config / Retrain Requests| HTTP_Client
     
-    WS_Client <-->|ws:// Live Telemetry| WS_Server
+    WS_Client <-->|ws:// 60Hz Telemetry Stream| WS_Server
     HTTP_Client -->|POST /retrain, GET /export| REST_API
     
-    WS_Server -->|Evaluates Vitals| Inference
-    REST_API -->|Triggers Retrain| MLOps
-    REST_API -->|Requests Header| EdgeCompiler
+    WS_Server -->|Event Loop Execution| Inference
+    REST_API -->|Threaded Task| MLOps
+    REST_API -->|Triggers Generation| EdgeCompiler
     
-    Inference -->|Predicts| Ensemble
+    Inference -->|Standardized Vector| Ensemble
     Ensemble --> Models
     Ensemble --> SHAP
     
-    MLOps -->|Writes| ModelWeights
-    MLOps -->|Appends| CSV
-    EdgeCompiler -->|Reads| Models
-    Inference -->|Reads| ModelWeights
+    MLOps -->|LRU State Override| ModelWeights
+    MLOps -->|Append Only| CSV
+    EdgeCompiler -->|Parses Structure| Models
+    Inference -->|Reads Memory-Mapped| ModelWeights
     
-    EdgeCompiler -->|Transpiles| HEADER
-    HEADER -.->|Flashed to| MCU
+    EdgeCompiler -->|Emits Dependency-Free C| HEADER
+    HEADER -.->|Flash via UART| MCU
 ```
 
 ---
 
-## 1. Client Plane (Frontend)
-Engineered using **Next.js 16 (App Router)** and **React 19**. 
-- **Design System:** Strict Industrial Brutalist aesthetic utilizing hard grids, monochromatic blueprints (`bg-canvas-cream`, `text-ink`), and high-contrast hazard states.
-- **State Management:** React Context API manages high-frequency telemetry streams.
-- **Data Transport:** Real-time data is ingested via native WebSockets (`ws://`), bypassing HTTP overhead for continuous vital monitoring.
-- **Animations:** Hardware-accelerated SVG manipulations and layout transitions powered by `framer-motion`.
+## 1. The Presentation Layer (Client Plane)
+Engineered using **Next.js 16 (App Router)** and **React 19**.
 
-## 2. Core Plane (Backend)
-Built on **FastAPI** (Python 3.10+), maximizing asynchronous throughput.
-- **WebSocket Generator:** A state-machine driven data simulator generates correlated, volatile telemetry streams (simulating clinical episodes like Asthma or Heart Disease).
-- **Inference Preprocessor:** Live patient data is standardized and imputed using a persistent `SimpleImputer` and `StandardScaler` trained on the original dataset, ensuring inference dimensions perfectly match the training phase.
-- **Storage:** Employs `aiosqlite` for non-blocking, asynchronous database writes to track historical patient classifications without stalling the event loop.
+- **Rendering Strategy:** Heavily leverages React Server Components (RSC) where applicable, while isolating stateful, high-frequency telemetry updates to optimized Client Components.
+- **WebSocket Triage:** Bypasses standard HTTP overhead by multiplexing telemetry streams via native WebSockets (`ws://`). The stream is mapped into a React Context provider, aggressively memoized using `useMemo` and `useCallback` to prevent unnecessary DOM re-renders and React thrashing at 60Hz.
+- **Visual Engineering:** Implements an Industrial Brutalist design language. All animations and Layout Transitions are hardware-accelerated (`transform`/`opacity` driven) utilizing `framer-motion` to maintain 60fps even under heavy CPU charting loads.
 
-## 3. Intelligence Pipeline (MLOps)
-- **Ensemble Architecture:** Achieves clinical-grade precision via a 5-model soft-voting ensemble (`RandomForest`, `SVM`, `KNN`, `LogisticRegression`, `MLPClassifier`).
-- **Batch Retraining:** Exposes a robust `/retrain` pipeline allowing direct CSV uploads. The pipeline safely joins the schemas, automatically updates `patient_dataset.csv`, fits new scalers/imputers, retraining all models in a `BackgroundTask` thread, and hot-swaps the `EnsembleModel` globally with zero downtime.
+## 2. The Orchestration Engine (Core Plane)
+Built entirely asynchronously on top of **FastAPI** (Python 3.10+).
 
-## 4. Edge Compilation (TinyML)
-- **Zero-Dep C-Headers:** The backend transpiles trained SciKit-Learn tree models directly into standalone `C` functions. 
-- **INT8 Quantization:** Floating-point weights and decision thresholds are algorithmically compressed (quantized) into 8-bit integers, effectively shrinking the flashed payload by ~75%.
-- **Target:** Designed to run strictly on MCU SRAM without dynamic memory allocation (no `malloc`), perfect for resource-constrained nodes like the ESP32 or Cortex-M4.
+- **Asynchronous Throughput:** Utilizing the `asyncio` event loop and `uvicorn`, the backend comfortably supports multiple concurrent clinical WebSocket connections. I/O-bound operations (database writes) are completely non-blocking.
+- **Stateful Preprocessing:** Live data must match the exact multi-dimensional space the models were trained on. The backend retains a persistent `SimpleImputer` and `StandardScaler`, ensuring live inference vectors are identical in scale to the offline batch data without runtime data leakage.
+- **Event-Driven Database:** Implements `aiosqlite` for non-blocking audit logging of predictions, ensuring the primary telemetry event loop is never stalled by disk I/O.
+
+## 3. Intelligence Pipeline & MLOps
+Designed for precision and zero-downtime deployment.
+
+- **Distributed Soft-Voting:** Rather than relying on a monolithic architecture, inference is distributed across five orthogonal models (`RandomForest`, `SVM`, `KNN`, `LogisticRegression`, `MLPClassifier`). A soft-voting aggregator calculates the weighted probability distribution, offering a confidence interval rather than a binary black-box output.
+- **Live Background Retraining:** The `/retrain` pipeline exposes an API for ingesting new clinical datasets. Upon payload validation, it spins up a `fastapi.BackgroundTasks` thread. The system dynamically updates imputers, recalculates decision boundaries across all 5 models, serializes the updated weights to disk (`.pkl`), and critically—hot-swaps the active `EnsembleModel` object in RAM. This ensures active patient telemetry sessions are never dropped during model redeployments.
+
+## 4. The Edge Compilation Pipeline (TinyML)
+The most critical engineering bottleneck in telemetry is getting heavy Python models onto $2 silicon.
+
+- **AST-Based C-Transpilation:** Instead of running a heavyweight Python interpreter (like MicroPython) on the edge device, the backend parses the scikit-learn model's internal Abstract Syntax Trees (AST) and transpiles them directly into pure, statically typed `C` functions.
+- **Zero-Dependency Guarantee:** The resulting `tinyml_model.h` file requires no external libraries. It bypasses `malloc()` completely, relying entirely on static stack allocation, eliminating the risk of heap fragmentation or memory leaks in long-running embedded nodes.
+- **INT8 Quantization:** 64-bit floating point weights are mathematically clamped and scaled into 8-bit integers (`int8_t`). This quantization dramatically reduces flash storage requirements by up to ~75% and massively accelerates inference execution time on ALU architectures lacking dedicated floating-point hardware (FPU).
