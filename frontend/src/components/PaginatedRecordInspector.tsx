@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Table2, RefreshCw } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 interface PaginatedRecordInspectorProps {
   initialRows: Record<string, unknown>[];
@@ -17,6 +18,8 @@ export default function PaginatedRecordInspector({
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Client-side fallback computations
   const clientFiltered = useMemo(() => {
@@ -49,13 +52,11 @@ export default function PaginatedRecordInspector({
   } | null>(null);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) return;
-
     let isSubscribed = true;
     const controller = new AbortController();
 
     const loadData = async () => {
+      setLoading(true);
       try {
         const params = new URLSearchParams({
           page: String(page),
@@ -64,23 +65,31 @@ export default function PaginatedRecordInspector({
           ...(searchTerm.trim() && { search: searchTerm.trim() }),
         });
 
-        const res = await fetch(`${apiUrl}/dataset?${params.toString()}`, {
-          signal: controller.signal,
-        });
+        const { data, error: fetchErr } = await apiFetch<{ rows: Record<string, unknown>[]; total: number }>(
+          `/heartflow/dataset?${params.toString()}`,
+          {
+            signal: controller.signal,
+            onSlow: (slow) => {
+              if (isSubscribed) setIsSlow(slow);
+            },
+          }
+        );
 
-        if (res.ok) {
-          const data = await res.json();
-          if (isSubscribed && data && Array.isArray(data.rows)) {
+        if (isSubscribed) {
+          if (fetchErr) {
+            setError(fetchErr);
+          } else if (data && Array.isArray(data.rows)) {
             setBackendData({
               rows: data.rows,
               total: data.total || 60000,
             });
             setIsBackendConnected(true);
-            setLoading(false);
+            setError(null);
           }
+          setLoading(false);
         }
       } catch {
-        // Fall through to client computation
+        if (isSubscribed) setLoading(false);
       }
     };
 

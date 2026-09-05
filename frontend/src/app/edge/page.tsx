@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Cpu, Zap, Terminal } from "lucide-react";
 import { generateCHeader } from "@/lib/edge/c_exporter";
 import GeneratedCHeader from "@/components/GeneratedCHeader";
+import { apiFetch } from "@/lib/api";
 
 export default function EdgeDeployment() {
   const [model, setModel] = useState("rf");
@@ -11,6 +12,7 @@ export default function EdgeDeployment() {
   const [quantize, setQuantize] = useState(true);
   const [code, setCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -23,17 +25,19 @@ export default function EdgeDeployment() {
     setError("");
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (apiUrl) {
-        const res = await fetch(`${apiUrl}/export_tinyml?model_name=${activeModel}&quantize=${activeQuantize}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (!data.error && (data.code || data.c_code)) {
-            setCode(data.code || data.c_code);
-            setLoading(false);
-            return;
-          }
+      const { data, error: fetchErr } = await apiFetch<{ code?: string; c_code?: string; error?: string }>(
+        `/heartflow/export_tinyml?model_name=${activeModel}&quantize=${activeQuantize}`,
+        {
+          onSlow: (slow) => setIsSlow(slow),
         }
+      );
+      if (data && !data.error && (data.code || data.c_code)) {
+        setCode((data.code || data.c_code) ?? null);
+        setLoading(false);
+        return;
+      }
+      if (fetchErr) {
+        setError(fetchErr);
       }
     } catch {
       // Cloud API unreachable, seamlessly compile on the client

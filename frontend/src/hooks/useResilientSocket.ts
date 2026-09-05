@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export type ConnectionStatus = "connected" | "reconnecting" | "disconnected";
+export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
 
 export function useResilientSocket<T>(url: string, onMessage: (msg: T) => void): ConnectionStatus {
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
@@ -22,6 +22,7 @@ export function useResilientSocket<T>(url: string, onMessage: (msg: T) => void):
     let isComponentMounted = true;
 
     const connect = () => {
+      setStatus(reconnectAttemptRef.current === 0 ? "connecting" : "reconnecting");
       try {
         ws = new WebSocket(url);
       } catch {

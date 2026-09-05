@@ -34,18 +34,23 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Sync to Hugging Face Space
+        continue-on-error: true
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         # We upload the root, but exclude the frontend logic and git folders.
         # This will use the Dockerfile at the root to deploy the FastAPI server.
         run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "HF_TOKEN secret not set; skipping Space sync."
+            exit 0
+          fi
           hf upload IDKHowToCodeFr/tinyml-backend . \
             --type space \
             --delete "*" \
             --exclude "frontend/node_modules/*" \
             --exclude "frontend/.next/*" \
             --exclude ".git/*" \
-            --exclude ".github/*"
+            --exclude ".github/*" || true
 
   deploy-frontend-to-pages:
     runs-on: ubuntu-latest

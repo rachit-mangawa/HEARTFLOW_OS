@@ -20,6 +20,8 @@ import FeatureDistributionChart from "@/components/FeatureDistributionChart";
 import CohortBreakdownChart from "@/components/CohortBreakdownChart";
 import FeatureStatsTable from "@/components/FeatureStatsTable";
 import PaginatedRecordInspector from "@/components/PaginatedRecordInspector";
+import { apiFetch } from "@/lib/api";
+import { API_BASE } from "@/config";
 
 export default function DatasetPage() {
   const [profile, setProfile] = useState<DatasetProfile>(DATASET_PROFILE);
@@ -32,20 +34,14 @@ export default function DatasetPage() {
   useEffect(() => {
     const fetchLiveProfile = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        if (apiUrl) {
-          const res = await fetch(`${apiUrl}/dataset/summary`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.summary && data.feature_stats) {
-              setProfile((prev) => ({
-                ...prev,
-                ...data,
-                sample_rows: data.sample_rows || prev.sample_rows,
-              }));
-              setIsLiveApi(true);
-            }
-          }
+        const { data } = await apiFetch<DatasetProfile>("/heartflow/dataset/summary");
+        if (data && data.summary && data.feature_stats) {
+          setProfile((prev) => ({
+            ...prev,
+            ...data,
+            sample_rows: data.sample_rows || prev.sample_rows,
+          }));
+          setIsLiveApi(true);
         }
       } catch {
         // Fall through to precomputed edge profile
@@ -56,10 +52,9 @@ export default function DatasetPage() {
   }, []);
 
   const handleDownloadCSV = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (apiUrl && isLiveApi) {
+    if (isLiveApi) {
       const a = document.createElement("a");
-      a.href = `${apiUrl}/dataset/download`;
+      a.href = `${API_BASE}/heartflow/dataset/download`;
       a.download = "heartflow_ground_truth_60k.csv";
       document.body.appendChild(a);
       a.click();

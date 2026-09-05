@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
+import { IS_DEV } from "@/config";
 import {
   Download,
   FileSpreadsheet,
@@ -98,6 +100,22 @@ export default function MLOps() {
   const [validation, setValidation] = useState<ValidationReport | null>(null);
   const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [retrainEnabled, setRetrainEnabled] = useState<boolean | null>(null);
+  const [isSlow, setIsSlow] = useState(false);
+
+  useEffect(() => {
+    apiFetch<{ retrain_enabled?: boolean }>("/heartflow/health")
+      .then(({ data }) => {
+        if (data && typeof data.retrain_enabled === "boolean") {
+          setRetrainEnabled(data.retrain_enabled);
+        } else {
+          setRetrainEnabled(IS_DEV);
+        }
+      })
+      .catch(() => {
+        setRetrainEnabled(IS_DEV);
+      });
+  }, []);
 
   const stagingWorkbenchRef = useRef<HTMLDivElement>(null);
   const statusBannerRef = useRef<HTMLDivElement>(null);
@@ -244,6 +262,15 @@ export default function MLOps() {
 
   const handleUpload = async () => {
     if (!file) return;
+    if (retrainEnabled === false) {
+      setStatus("error");
+      setMessage("Retraining is disabled on the hosted demo");
+      setTimeout(() => {
+        statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 80);
+      return;
+    }
+
     setStatus("uploading");
     setTimeout(() => {
       statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -253,41 +280,50 @@ export default function MLOps() {
     formData.append("file", file);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${apiUrl}/retrain`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.status === "success" || !data.error) {
-          setStatus("success");
-          setMessage(data.message || "Dataset merged and ensemble models successfully retrained!");
-          setTimeout(() => {
-            statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-          }, 80);
-          return;
-        } else {
-          throw new Error(data.error || "Retraining failed");
+      const { data, error: fetchErr, status: httpStatus } = await apiFetch<{ status?: string; message?: string; error?: string }>(
+        "/heartflow/retrain",
+        {
+          method: "POST",
+          body: formData,
+          onSlow: (slow) => setIsSlow(slow),
         }
-      }
-    } catch {
-      // Zero-cloud client fallback
-    }
-
-    if (validation && validation.validRows > 0) {
-      setStatus("success");
-      setMessage(
-        `Pre-flight validated ${validation.validRows} observations across all 5 physiological features. Ingested into active MLOps buffer and ready for on-device transpilation.`
       );
-    } else {
+
+      if (httpStatus === 403) {
+        setStatus("error");
+        setMessage("Retraining is disabled on the hosted demo (HTTP 403)");
+        setTimeout(() => {
+          statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 80);
+        return;
+      }
+
+      if (data && (data.status === "success" || !data.error)) {
+        setStatus("success");
+        setMessage(data.message || "Dataset merged and ensemble models successfully retrained!");
+        setTimeout(() => {
+          statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 80);
+        return;
+      }
+
+      if (fetchErr) {
+        setStatus("error");
+        setMessage(fetchErr);
+        setTimeout(() => {
+          statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 80);
+        return;
+      }
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       setStatus("error");
-      setMessage("Validation failed. Please verify that all 5 continuous physiological features are present.");
+      setMessage(`Retraining error: ${errMsg}`);
+      setTimeout(() => {
+        statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 80);
+      return;
     }
-    setTimeout(() => {
-      statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 80);
   };
 
   return (
@@ -434,9 +470,19 @@ export default function MLOps() {
             </div>
 
             <div className="pt-6 border-t-2 border-ink mt-6 flex flex-col gap-3">
+              {retrainEnabled === false && (
+                <div className="p-3 border-2 border-hazard bg-hazard/10 text-hazard text-[12px] font-bold uppercase tracking-wider">
+                  Retraining is disabled on the hosted demo
+                </div>
+              )}
+              {isSlow && (
+                <div className="p-3 border-2 border-hazard bg-hazard/10 text-hazard text-[12px] font-bold uppercase tracking-wider">
+                  Waking up the server, first request can take a minute
+                </div>
+              )}
               <button
                 onClick={handleUpload}
-                disabled={!file || status === "uploading" || (validation !== null && validation.validRows === 0)}
+                disabled={!file || status === "uploading" || retrainEnabled === false || (validation !== null && validation.validRows === 0)}
                 className="btn-tactile-hazard py-4 text-[15px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {status === "uploading" ? (

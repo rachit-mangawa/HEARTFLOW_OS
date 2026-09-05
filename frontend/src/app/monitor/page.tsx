@@ -102,9 +102,12 @@ export default function SystemMonitor() {
   const getStatusLabel = () => {
     if (runtimeMode === "SERIAL_ESP32_HARDWARE") return "ESP32_HARDWARE · UART_115200";
     if (runtimeMode === "SILICON_LOOPBACK") return "SILICON_LOOPBACK · VIRTUAL_COM";
+    if (status === "connecting") return "CONNECTING...";
     if (status === "reconnecting") return "RECONNECTING...";
+    if (status === "disconnected") return "DISCONNECTED";
+    if (status === "connected") return "LIVE";
     if (status === "edge_active") return "EDGE_AI_ACTIVE (ZERO-CLOUD)";
-    return data ? "STREAM_CONNECTED" : "AWAITING_SIGNAL";
+    return data ? "LIVE" : "AWAITING_SIGNAL";
   };
 
   // Primary physiological values

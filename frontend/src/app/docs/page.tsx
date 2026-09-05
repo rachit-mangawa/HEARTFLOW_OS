@@ -1,5 +1,7 @@
 "use client";
 
+import { API_BASE, WS_BASE, IS_DEV } from "@/config";
+
 import { useState } from "react";
 import {
   Cpu,
@@ -39,7 +41,7 @@ const ENDPOINTS: EndpointDoc[] = [
     description: "Evaluates raw physiological telemetry against the calibrated 5-model ensemble (Random Forest, SVM, KNN, Logistic Regression, Small-NN) to generate real-time clinical anomaly classifications and probability distributions.",
     latency: "< 20µs (In-Browser / MCU) | < 35ms (Cloud REST)",
     category: "Inference",
-    curl: `curl -X POST "https://idkhowtocodefr-tinyml-backend.hf.space/predict" \\
+    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/predict" \\
   -H "Content-Type: application/json" \\
   -d '{
     "Heart_Rate": 84,
@@ -58,7 +60,7 @@ payload = {
     "Body_Temp": 37.1
 }
 
-res = requests.post("https://idkhowtocodefr-tinyml-backend.hf.space/predict", json=payload)
+res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/heartflow/predict", json=payload)
 data = res.json()
 print("Diagnosis:", data["prediction_label"])
 print("Confidence:", data["probability"])`,
@@ -115,11 +117,11 @@ console.log(result.label, result.confidence, result.disease_probs);`,
     description: "Returns an isolated audit trail of patient evaluations recorded during the active session. Fully sandboxed in browser sessionStorage without persistent cloud tracking.",
     latency: "< 5ms",
     category: "System",
-    curl: `curl -X GET "https://idkhowtocodefr-tinyml-backend.hf.space/history?limit=10" \\
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/history?limit=10" \\
   -H "Accept: application/json"`,
     python: `import requests
 
-res = requests.get("https://idkhowtocodefr-tinyml-backend.hf.space/history?limit=10")
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/history?limit=10")
 records = res.json()
 print(f"Retrieved {len(records)} audit entries")`,
     typescript: `import { getSessionHistory } from "@/lib/edge/history";
@@ -149,11 +151,11 @@ console.log("Active records:", sessionAudit.length);`,
     description: "Compiles trained statistical model parameters and decision tree topologies directly into pure C99 header source code (model.h). Requires zero dynamic memory allocation (malloc), suited for bare-metal ESP32, ARM Cortex-M4, and RP2040.",
     latency: "< 2ms (In-Browser transpiler)",
     category: "Hardware",
-    curl: `curl -X GET "https://idkhowtocodefr-tinyml-backend.hf.space/export_tinyml?model_name=rf" \\
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/export_tinyml?model_name=rf" \\
   -H "Accept: application/json"`,
     python: `import requests
 
-res = requests.get("https://idkhowtocodefr-tinyml-backend.hf.space/export_tinyml?model_name=rf")
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/export_tinyml?model_name=rf")
 c_source = res.json()["code"]
 
 with open("model_rf.h", "w") as f:
@@ -179,10 +181,10 @@ console.log("C header size:", cCode.length, "bytes");`,
     description: "Returns accuracy, F1-score benchmarks, calibration curves, and INT8 fixed-point quantization trade-offs across all 5 ensemble constituent models.",
     latency: "< 10ms",
     category: "MLOps",
-    curl: `curl -X GET "https://idkhowtocodefr-tinyml-backend.hf.space/metrics"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/metrics"`,
     python: `import requests
 
-metrics = requests.get("https://idkhowtocodefr-tinyml-backend.hf.space/metrics").json()
+metrics = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/metrics").json()
 print("Ensemble Accuracy:", metrics["ensemble_accuracy"])`,
     typescript: `// Client-side benchmarks available via MLOps metrics module`,
     responseBody: {
@@ -206,18 +208,18 @@ print("Ensemble Accuracy:", metrics["ensemble_accuracy"])`,
     description: "Accepts a batch CSV telemetry dataset, executes schema alias normalization, patches character encodings, synthesizes the Risk_Severity feature, re-fits all 5 ensemble constituent models, and hot-swaps active weights in memory with zero downtime.",
     latency: "< 3.5s (Full Ensemble Re-fitting)",
     category: "MLOps",
-    curl: `curl -X POST "https://idkhowtocodefr-tinyml-backend.hf.space/retrain" \\
+    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/retrain" \\
   -F "file=@patient_dataset_verified_batch.csv"`,
     python: `import requests
 
 with open("patient_dataset_verified_batch.csv", "rb") as f:
-    res = requests.post("https://idkhowtocodefr-tinyml-backend.hf.space/retrain", files={"file": f})
+    res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/heartflow/retrain", files={"file": f})
 print(res.json()["message"])`,
     typescript: `// Triggered via MLOps workspace in frontend/src/app/mlops/page.tsx
 const formData = new FormData();
 formData.append("file", csvFile);
 
-const res = await fetch("/api/retrain", {
+const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/heartflow/retrain", {
   method: "POST",
   body: formData,
 });
@@ -253,12 +255,12 @@ console.log(data.message);`,
     description: "Returns the real-time operational status of the FastAPI backend and verifies whether all 5 constituent ensemble models are trained, serialized, and loaded in memory.",
     latency: "< 1ms",
     category: "System",
-    curl: `curl -X GET "https://idkhowtocodefr-tinyml-backend.hf.space/health"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/health"`,
     python: `import requests
 
-res = requests.get("https://idkhowtocodefr-tinyml-backend.hf.space/health")
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/health")
 print("Engine Status:", res.json()["status"])`,
-    typescript: `const res = await fetch("https://idkhowtocodefr-tinyml-backend.hf.space/health");
+    typescript: `const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/heartflow/health");
 const data = await res.json();
 console.log("Status:", data.status);`,
     responseBody: {
@@ -273,10 +275,10 @@ console.log("Status:", data.status);`,
     description: "Returns pre-computed multivariate exploratory analytics for the 60,000 observation corpus: Pearson correlation matrix, 12-bin continuous vital distributions, balanced disease cohorts, and sensor alarm trigger rates. Payload is < 15 KB (99.8% bandwidth reduction vs raw dumps).",
     latency: "< 5ms (Cached Profiler)",
     category: "MLOps",
-    curl: `curl -X GET "https://idkhowtocodefr-tinyml-backend.hf.space/dataset/summary"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset/summary"`,
     python: `import requests
 
-profile = requests.get("https://idkhowtocodefr-tinyml-backend.hf.space/dataset/summary").json()
+profile = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset/summary").json()
 print("Total Records:", profile["summary"]["total_records"])
 print("Pearson Matrix:", len(profile["correlation_matrix"]["matrix"]))`,
     typescript: `import { DATASET_PROFILE } from "@/lib/edge/dataset-profile";
@@ -306,13 +308,13 @@ console.log("Features:", DATASET_PROFILE.summary.total_features);`,
     description: "High-speed windowed querying across 60,000 verified clinical telemetry records with multi-channel vital attributes, patient identifiers, and alarm states. Supports pagination, full-text patient search, and diagnostic filtering.",
     latency: "< 5ms (Server Windowed Query)",
     category: "MLOps",
-    curl: `curl -X GET "https://idkhowtocodefr-tinyml-backend.hf.space/dataset?page=1&limit=25&disease=Heart%20Disease"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset?page=1&limit=25&disease=Heart%20Disease"`,
     python: `import requests
 
 params = {"page": 1, "limit": 25, "disease": "Heart Disease"}
-res = requests.get("https://idkhowtocodefr-tinyml-backend.hf.space/dataset", params=params).json()
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset", params=params).json()
 print(f"Page {res.get('page', 1)}: {len(res.get('rows', []))} rows")`,
-    typescript: `const res = await fetch("https://idkhowtocodefr-tinyml-backend.hf.space/dataset?page=1&limit=25");
+    typescript: `const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset?page=1&limit=25");
 const data = await res.json();
 console.log("Rows fetched:", data.rows?.length || data.length);`,
     responseBody: {
@@ -342,7 +344,7 @@ console.log("Rows fetched:", data.rows?.length || data.length);`,
     description: "Computes game-theoretic Shapley values using TreeExplainer across the Random Forest estimator. Quantifies exact positive and negative feature contributions per vital metric.",
     latency: "< 15ms",
     category: "Inference",
-    curl: `curl -X POST "https://idkhowtocodefr-tinyml-backend.hf.space/explain" \\
+    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/explain" \\
   -H "Content-Type: application/json" \\
   -d '{
     "Heart_Rate": 115,
@@ -360,7 +362,7 @@ payload = {
     "Diastolic_BP": 105,
     "Body_Temp": 38.5
 }
-res = requests.post("https://idkhowtocodefr-tinyml-backend.hf.space/explain", json=payload)
+res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/heartflow/explain", json=payload)
 print("SHAP Attribution:", res.json())`,
     typescript: `import { calculateShap } from "@/lib/edge/explain";
 
@@ -392,19 +394,19 @@ console.log(attribution);`,
     description: "Bi-directional WebSocket streaming live sensor telemetry vectors at 60 Hz with concurrent ensemble inference, pathology state machine transitions, and anomaly likelihood scores.",
     latency: "< 5ms (Streaming WebSocket Frame)",
     category: "Hardware",
-    curl: `wscat -c "wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed"`,
+    curl: `wscat -c "wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed"`,
     python: `import asyncio
 import websockets
 import json
 
 async def stream():
-    async with websockets.connect("wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed") as ws:
+    async with websockets.connect("wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed") as ws:
         async for msg in ws:
             packet = json.loads(msg)
             print(packet["sensor_data"], packet["prediction"])
 
 asyncio.run(stream())`,
-    typescript: `const socket = new WebSocket("wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed");
+    typescript: `const socket = new WebSocket("wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed");
 socket.onmessage = (event) => {
   const packet = JSON.parse(event.data);
   console.log("Telemetry Frame:", packet);
@@ -502,21 +504,23 @@ export default function ApiDocs() {
           <div className="flex flex-col items-start md:items-end gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
               <a
-                href="https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend"
+                href="https://huggingface.co/spaces/IDKHowToCodeFr/hf-backend"
                 target="_blank"
                 rel="noreferrer"
                 className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-[#FFD21E] text-ink hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5"
               >
                 <span>🤗 HF Space</span>
               </a>
-              <a
-                href="https://idkhowtocodefr-tinyml-backend.hf.space/docs"
-                target="_blank"
-                rel="noreferrer"
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-white text-ink hover:bg-hazard hover:text-white transition-colors flex items-center gap-1.5"
-              >
-                <span>Swagger Docs ↗</span>
-              </a>
+              {process.env.NODE_ENV === "development" && (
+                <a
+                  href={`${API_BASE}/docs`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-white text-ink hover:bg-hazard hover:text-white transition-colors flex items-center gap-1.5"
+                >
+                  <span>Swagger Docs ↗</span>
+                </a>
+              )}
             </div>
             <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white flex items-center gap-2">
               <ShieldCheck size={14} className="text-hazard" />
@@ -596,18 +600,18 @@ export default function ApiDocs() {
                   HeartFlow OS decouples local bare-metal edge transpilation from cloud endpoints:
                 </p>
                 <div className="bg-canvas-cream border border-ink p-2 text-[11px] font-bold break-all text-ink">
-                  https://idkhowtocodefr-tinyml-backend.hf.space
+                  https://idkhowtocodefr-hf-backend.hf.space/heartflow
                 </div>
                 <div className="mt-2 text-[11px] text-slate font-bold flex flex-col gap-1">
                   <div>
                     HF SPACE:{" "}
                     <a
-                      href="https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend"
+                      href="https://huggingface.co/spaces/IDKHowToCodeFr/hf-backend"
                       target="_blank"
                       rel="noreferrer"
                       className="text-hazard underline hover:text-ink"
                     >
-                      IDKHowToCodeFr/tinyml-backend ↗
+                      IDKHowToCodeFr/hf-backend ↗
                     </a>
                   </div>
                   <div>

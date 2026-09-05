@@ -5,7 +5,7 @@ const isStandalone = process.env.OUTPUT_STANDALONE === "true";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (isGhPages ? "/HEARTFLOW_OS" : "");
 
 const nextConfig: NextConfig = {
-  ...(isGhPages ? { output: "export" as const } : isStandalone ? { output: "standalone" as const } : {}),
+  output: isStandalone ? ("standalone" as const) : ("export" as const),
   basePath: basePath || undefined,
   images: {
     unoptimized: true,

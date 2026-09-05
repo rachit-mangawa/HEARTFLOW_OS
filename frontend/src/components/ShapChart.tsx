@@ -5,6 +5,8 @@ import { PatientVitals } from "@/lib/edge/types";
 import { computeEdgeShap } from "@/lib/edge/explain";
 import { TrendingUp, TrendingDown, ShieldCheck, AlertTriangle } from "lucide-react";
 
+import { apiFetch } from "@/lib/api";
+
 interface ShapChartProps {
   patientData: PatientVitals | null;
 }
@@ -17,6 +19,8 @@ interface ShapData {
 
 export default function ShapChart({ patientData }: ShapChartProps) {
   const [cloudShap, setCloudShap] = useState<ShapData | null>(null);
+  const [isSlow, setIsSlow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Compute zero-cloud edge attributions synchronously whenever patientData changes
   const localShap = useMemo(() => {
@@ -24,24 +28,28 @@ export default function ShapChart({ patientData }: ShapChartProps) {
     return computeEdgeShap(patientData);
   }, [patientData]);
 
-  // Attempt backend TreeSHAP API enhancement if configured
+  // Attempt backend TreeSHAP API enhancement
   useEffect(() => {
-    if (!patientData || !process.env.NEXT_PUBLIC_API_URL) return;
+    if (!patientData) return;
 
     let isCancelled = false;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/explain`, {
+    apiFetch<ShapData>("/heartflow/explain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patientData),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.shap_values && !isCancelled) {
-          setCloudShap(data);
-        }
-      })
-      .catch(() => {});
+      onSlow: (slow) => {
+        if (!isCancelled) setIsSlow(slow);
+      },
+    }).then(({ data, error: err }) => {
+      if (isCancelled) return;
+      if (err) {
+        setError(err);
+      } else if (data?.shap_values) {
+        setCloudShap(data);
+        setError(null);
+      }
+    });
 
     return () => {
       isCancelled = true;

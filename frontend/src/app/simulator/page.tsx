@@ -6,6 +6,7 @@ import ShapChart from "@/components/ShapChart";
 import { PatientVitals } from "@/lib/edge/types";
 import { evaluateEdge } from "@/lib/edge/inference";
 import { appendSessionHistory } from "@/lib/edge/history";
+import { apiFetch } from "@/lib/api";
 
 interface PredictionResult {
   prediction: boolean;
@@ -14,6 +15,7 @@ interface PredictionResult {
   model_outputs?: Record<string, string>;
   model_probs?: Record<string, number>;
   weights?: Record<string, number>;
+  disease_probs?: Record<string, number>;
 }
 
 // Clinically bounded randomized vitals generator
@@ -75,6 +77,8 @@ export default function Simulator() {
   const [submittedData, setSubmittedData] = useState<PatientVitals | null>(null);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Manual slider adjustment updates input parameters only
   const handleSliderChange = (field: keyof PatientVitals, val: number) => {
@@ -95,37 +99,41 @@ export default function Simulator() {
   // Inference execution runs strictly when the user clicks the action button
   const handlePredict = async () => {
     setLoading(true);
+    setError(null);
     const targetData = { ...formData };
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (apiUrl) {
-        const res = await fetch(`${apiUrl}/predict`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(targetData),
+      const { data, error: fetchErr } = await apiFetch<PredictionResult>("/heartflow/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(targetData),
+        onSlow: (slow) => setIsSlow(slow),
+      });
+
+      if (data) {
+        setPrediction(data);
+        setSubmittedData(targetData);
+        setError(null);
+
+        // Append execution record to session audit log
+        appendSessionHistory({
+          timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
+          heart_rate: targetData.Heart_Rate,
+          spo2: targetData.SpO2_Level,
+          sys_bp: targetData.Systolic_BP,
+          dia_bp: targetData.Diastolic_BP,
+          body_temp: targetData.Body_Temp,
+          prediction_label: data.prediction_label || (data.prediction ? "Anomaly" : "Normal"),
+          confidence: data.probability ?? 0.95,
+          is_at_risk: Boolean(data.prediction),
         });
-        if (res.ok) {
-          const data = await res.json();
-          setPrediction(data);
-          setSubmittedData(targetData);
 
-          // Append execution record to session audit log
-          appendSessionHistory({
-            timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
-            heart_rate: targetData.Heart_Rate,
-            spo2: targetData.SpO2_Level,
-            sys_bp: targetData.Systolic_BP,
-            dia_bp: targetData.Diastolic_BP,
-            body_temp: targetData.Body_Temp,
-            prediction_label: data.prediction_label || (data.prediction ? "Anomaly" : "Normal"),
-            confidence: data.probability ?? 0.95,
-            is_at_risk: Boolean(data.prediction),
-          });
+        setLoading(false);
+        return;
+      }
 
-          setLoading(false);
-          return;
-        }
+      if (fetchErr) {
+        setError(fetchErr);
       }
     } catch {
       // Cloud API unreachable, seamlessly fall back to local Edge inference
@@ -327,6 +335,16 @@ export default function Simulator() {
                 {loading ? "PROCESSING REQUEST..." : "EXECUTE INFERENCE"}
               </button>
             </div>
+            {isSlow && (
+              <div className="mt-3 p-2.5 border-2 border-hazard bg-hazard/10 text-hazard text-[11px] font-bold uppercase tracking-wider">
+                Waking up the server, first request can take a minute
+              </div>
+            )}
+            {error && (
+              <div className="mt-3 p-2.5 border-2 border-red-500 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-wider">
+                {error}
+              </div>
+            )}
           </div>
 
           {/* Results Panel - 7 Columns */}

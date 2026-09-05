@@ -22,6 +22,7 @@ import {
   PlusCircle,
   Activity
 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 interface RawCloudRecord {
   id: number;
@@ -151,28 +152,34 @@ export default function PatientHistory() {
     setLoading(false);
   }, []);
 
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const [isSlow, setIsSlow] = useState(false);
+
   const fetchCloudHistory = useCallback(async () => {
     setCloudLoading(true);
+    setCloudError(null);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${apiUrl}/history`);
-      if (res.ok) {
-        const raw = (await res.json()) as RawCloudRecord[];
-        if (Array.isArray(raw)) {
-          const formatted: HistoryRecord[] = raw.map((r: RawCloudRecord) => ({
-            id: r.id,
-            timestamp: r.timestamp,
-            heart_rate: r.heart_rate,
-            spo2: r.spo2,
-            sys_bp: r.sys_bp,
-            dia_bp: r.dia_bp,
-            body_temp: r.temp ?? r.body_temp ?? 37.0,
-            prediction_label: r.prediction_label,
-            confidence: r.confidence,
-            is_at_risk: Boolean(r.prediction_label && r.prediction_label.toLowerCase() !== "normal" && r.prediction_label.toLowerCase() !== "healthy")
-          }));
-          setCloudRecords(formatted);
-        }
+      const { data: raw, error: fetchErr } = await apiFetch<RawCloudRecord[]>("/heartflow/history?limit=100", {
+        onSlow: (slow) => setIsSlow(slow),
+      });
+
+      if (raw && Array.isArray(raw)) {
+        const formatted: HistoryRecord[] = raw.map((r: RawCloudRecord) => ({
+          id: r.id,
+          timestamp: r.timestamp,
+          heart_rate: r.heart_rate,
+          spo2: r.spo2,
+          sys_bp: r.sys_bp,
+          dia_bp: r.dia_bp,
+          body_temp: r.temp ?? r.body_temp ?? 37.0,
+          prediction_label: r.prediction_label,
+          confidence: r.confidence,
+          is_at_risk: Boolean(r.prediction_label && r.prediction_label.toLowerCase() !== "normal" && r.prediction_label.toLowerCase() !== "healthy")
+        }));
+        setCloudRecords(formatted);
+        setCloudError(null);
+      } else if (fetchErr) {
+        setCloudError(fetchErr);
       }
     } catch {
       // cloud unavailable

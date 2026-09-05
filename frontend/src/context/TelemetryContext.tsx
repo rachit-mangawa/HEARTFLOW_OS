@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { useResilientSocket, ConnectionStatus } from "@/hooks/useResilientSocket";
+import { WS_BASE } from "@/config";
 import { globalSimulator } from "@/lib/edge/simulator";
 import { appendSessionHistory } from "@/lib/edge/history";
 import { evaluateEdge } from "@/lib/edge/inference";
@@ -74,7 +75,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     updatePacketStream(msg);
   }, [updatePacketStream]);
 
-  const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "";
+  const wsUrl = `${WS_BASE}/heartflow/ws/feed`;
   const cloudStatus = useResilientSocket(wsUrl, handleMessage);
 
   // Monitor cloud connection status
