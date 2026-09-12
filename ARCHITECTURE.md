@@ -21,32 +21,32 @@ graph TD
 
     subgraph Client [Client Application / Next.js 16]
         direction TB
-        UI["React 19 Views<br/>[dashboard/page.tsx, etc]"]:::frontend
-        WS_Client["WebSocket Context<br/>[TelemetryContext.tsx]"]:::frontend
-        HTTP_Client["HTTP Data Fetching"]:::frontend
+        UI["Views<br/>(page.tsx)"]:::frontend
+        WS_Client["WebSocket<br/>(TelemetryContext.tsx)"]:::frontend
+        HTTP_Client["HTTP Fetch"]:::frontend
     end
 
     subgraph Core [FastAPI Core / Python 3.10+]
         direction TB
-        WS_Server["Async WebSocket Broker<br/>[main.py]"]:::backend
-        REST_API["REST API Router<br/>[main.py]"]:::backend
-        Simulator["Vitals Simulator<br/>[simulator.py]"]:::backend
-        DB["SQLite DB & aiosqlite<br/>[database.py]"]:::backend
+        WS_Server["WebSocket Broker<br/>(main.py)"]:::backend
+        REST_API["REST API Router<br/>(main.py)"]:::backend
+        Simulator["Vitals Simulator<br/>(simulator.py)"]:::backend
+        DB["SQLite & aiosqlite<br/>(database.py)"]:::backend
     end
 
     subgraph ML_Layer [Intelligence Pipeline / Scikit-Learn]
         direction TB
-        Inference["Inference & Preprocessing<br/>[inference.py, preprocessing.py]"]:::ml_node
-        Ensemble["Soft-Voting Ensemble<br/>[ensemble.py]"]:::ml_node
-        Training["Model Training<br/>[models.py]"]:::ml_node
-        EdgeCompiler["C-Code Exporter<br/>[export.py]"]:::ml_node
+        Inference["Inference<br/>(inference.py)"]:::ml_node
+        Ensemble["Soft-Voting<br/>(ensemble.py)"]:::ml_node
+        Training["Model Training<br/>(models.py)"]:::ml_node
+        EdgeCompiler["C-Code Exporter<br/>(export.py)"]:::ml_node
     end
 
     subgraph Storage [Persistence & Hardware]
         direction TB
-        ModelWeights["Model Artifacts<br/>[model/ directory]"]:::data
-        CSV["Patient Dataset<br/>[patient_dataset.csv]"]:::data
-        MCU["Edge Silicon / Header<br/>[tinyml_model.h]"]:::edge_tech
+        ModelWeights["Model Artifacts<br/>(model/)"]:::data
+        CSV["Patient Dataset<br/>(patient_dataset.csv)"]:::data
+        MCU["Edge Silicon<br/>(tinyml_model.h)"]:::edge_tech
     end
 
     %% Flows
