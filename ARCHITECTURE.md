@@ -20,58 +20,54 @@ graph TD
     classDef data fill:#94a3b8,stroke:#475569,stroke-width:2px,color:#fff,font-family:monospace;
 
     subgraph Client [Client Application / Next.js 16]
-        UI[React 19 Dashboard]:::frontend
-        WS_Client[WebSocket Context]:::frontend
-        HTTP_Client[Axios/Fetch HTTP]:::frontend
+        direction TB
+        UI["React 19 Views<br/>[dashboard/page.tsx, etc]"]:::frontend
+        WS_Client["WebSocket Context<br/>[TelemetryContext.tsx]"]:::frontend
+        HTTP_Client["HTTP Data Fetching"]:::frontend
     end
 
     subgraph Core [FastAPI Core / Python 3.10+]
-        WS_Server[Async WebSocket Broker]:::backend
-        REST_API[RESTful API Router]:::backend
-        Inference[Stateful Inference Preprocessor]:::backend
-        MLOps[Background MLOps Engine]:::backend
-        DB[(aiosqlite Asynchronous DB)]:::backend
+        direction TB
+        WS_Server["Async WebSocket Broker<br/>[main.py]"]:::backend
+        REST_API["REST API Router<br/>[main.py]"]:::backend
+        Simulator["Vitals Simulator<br/>[simulator.py]"]:::backend
+        DB["SQLite DB & aiosqlite<br/>[database.py]"]:::backend
     end
 
     subgraph ML_Layer [Intelligence Pipeline / Scikit-Learn]
-        Ensemble{Soft-Voting Aggregator}:::ml_node
-        Models[RF, SVM, KNN, LogReg, MLP]:::ml_node
-        SHAP[SHAP Feature Explainer]:::ml_node
-        EdgeCompiler[INT8 AST C-Compiler]:::ml_node
+        direction TB
+        Inference["Inference & Preprocessing<br/>[inference.py, preprocessing.py]"]:::ml_node
+        Ensemble["Soft-Voting Ensemble<br/>[ensemble.py]"]:::ml_node
+        Training["Model Training<br/>[models.py]"]:::ml_node
+        EdgeCompiler["C-Code Exporter<br/>[export.py]"]:::ml_node
     end
 
-    subgraph Hardware [Edge Target / Embedded Silicon]
-        HEADER((tinyml_model.h)):::edge_tech
-        MCU[ESP32 / Cortex-M Node]:::edge_tech
+    subgraph Storage [Persistence & Hardware]
+        direction TB
+        ModelWeights["Model Artifacts<br/>[model/ directory]"]:::data
+        CSV["Patient Dataset<br/>[patient_dataset.csv]"]:::data
+        MCU["Edge Silicon / Header<br/>[tinyml_model.h]"]:::edge_tech
     end
 
-    subgraph Storage [Persistent Persistence Layer]
-        ModelWeights[Serialized Weights / LRU .pkl]:::data
-        CSV[Immutable Patient Dataset .csv]:::data
-    end
-
-    %% Edge Flows
-    UI -->|Framer Motion Layouts| WS_Client
-    UI -->|Config / Retrain Requests| HTTP_Client
+    %% Flows
+    UI --> WS_Client
+    UI --> HTTP_Client
     
-    WS_Client <-->|ws:// 60Hz Telemetry Stream| WS_Server
-    HTTP_Client -->|POST /retrain, GET /export| REST_API
+    WS_Client <--> WS_Server
+    HTTP_Client --> REST_API
     
-    WS_Server -->|Event Loop Execution| Inference
-    REST_API -->|Threaded Task| MLOps
-    REST_API -->|Triggers Generation| EdgeCompiler
+    WS_Server --> Inference
+    Simulator --> WS_Server
+    REST_API --> DB
+    REST_API --> Training
+    REST_API --> EdgeCompiler
     
-    Inference -->|Standardized Vector| Ensemble
-    Ensemble --> Models
-    Ensemble --> SHAP
-    
-    MLOps -->|LRU State Override| ModelWeights
-    MLOps -->|Append Only| CSV
-    EdgeCompiler -->|Parses Structure| Models
-    Inference -->|Reads Memory-Mapped| ModelWeights
-    
-    EdgeCompiler -->|Emits Dependency-Free C| HEADER
-    HEADER -.->|Flash via UART| MCU
+    Inference --> Ensemble
+    Training --> ModelWeights
+    Training --> CSV
+    Ensemble --> ModelWeights
+    EdgeCompiler --> Ensemble
+    EdgeCompiler -.-> MCU
 ```
 
 ---
