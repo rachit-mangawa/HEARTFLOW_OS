@@ -80,3 +80,13 @@ async def test_simulator_run_yields_dict_with_rounding():
         val = data[k]
         assert isinstance(val, (int, float))
         assert round(val, 1) == val
+
+@pytest.mark.asyncio
+async def test_simulator_dynamic_variance_across_frames():
+    sim = PatientDataSimulator()
+    hr_samples = []
+    for _ in range(10):
+        sim._step_physics()
+        hr_samples.append(round(sim.hr, 1))
+    assert len(set(hr_samples)) > 1, "Simulator values should vary dynamically across steps"
+
