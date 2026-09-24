@@ -32,16 +32,6 @@ export default function Analytics() {
 
   return (
     <main className="min-h-[100dvh] relative overflow-hidden bg-canvas">
-      <nav className="h-16 flex items-center px-8 border-b border-hairline bg-canvas/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-[1200px] mx-auto w-full flex justify-between items-center">
-          <Link href="/" className="font-display text-xl text-ink font-light tracking-[-0.02em]">TinyML Core</Link>
-          <div className="flex gap-6 items-center text-[15px] font-medium tracking-tight">
-            <Link href="/dashboard" className="text-muted hover:text-ink transition-colors">Live Monitor</Link>
-            <Link href="/history" className="text-muted hover:text-ink transition-colors">History</Link>
-            <Link href="/mlops" className="text-muted hover:text-ink transition-colors">MLOps</Link>
-          </div>
-        </div>
-      </nav>
 
       <div className="max-w-[1200px] mx-auto px-8 py-24 relative">
         <div className="absolute top-0 right-1/4 w-[30vw] h-[30vw] rounded-full bg-gradient-sky opacity-20 blur-[80px] -z-10" />

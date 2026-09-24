@@ -21,29 +21,8 @@ export default function Home() {
 
   return (
     <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white">
-      {/* Top Nav (Mechanical) */}
-      <motion.nav 
-        initial={{ y: "-100%" }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: easeFluid }}
-        className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50"
-      >
-        <div className="max-w-[1400px] mx-auto w-full flex justify-between items-center">
-          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase hover:text-hazard transition-colors">
-            [ HEARTFLOW_OS ]
-          </Link>
-          <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase hidden md:flex">
-            <Link href="/dashboard" className="text-ink hover:text-hazard transition-colors">SYS.MONITOR</Link>
-            <Link href="/simulator" className="text-ink hover:text-hazard transition-colors">AI.SIMULATOR</Link>
-            <Link href="/history" className="text-ink hover:text-hazard transition-colors">DATA.LOG</Link>
-            <Link href="/mlops" className="text-ink hover:text-hazard transition-colors">ML.OPS</Link>
-            <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
-          </div>
-        </div>
-      </motion.nav>
-
       {/* Hero Section */}
-      <section className="max-w-[1400px] mx-auto w-full px-8 pt-32 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-16 flex-1 overflow-hidden">
+      <section className="max-w-[1400px] mx-auto w-full px-8 pt-16 md:pt-32 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-16 flex-1 overflow-hidden">
         <motion.div 
           variants={staggerContainer}
           initial="hidden"
@@ -61,13 +40,13 @@ export default function Home() {
             <span>INT8_QUANTIZED</span>
           </motion.div>
           
-          <motion.h1 variants={fadeUp} className="text-[clamp(4rem,8vw,8rem)] mb-8">
+          <motion.h1 variants={fadeUp} className="text-[clamp(3rem,8vw,8rem)] mb-8 leading-tight">
             CLINICAL<br />
             INFERENCE<br />
             <span className="text-hazard">AT THE EDGE.</span>
           </motion.h1>
 
-          <motion.p variants={fadeUp} className="text-[16px] text-ink max-w-lg leading-relaxed uppercase tracking-[0.02em] font-bold border-l-4 border-hazard pl-6 mb-12">
+          <motion.p variants={fadeUp} className="text-[14px] md:text-[16px] text-ink max-w-lg leading-relaxed uppercase tracking-[0.02em] font-bold border-l-4 border-hazard pl-6 mb-12">
             An ensemble intelligence pipeline engineered for resource-constrained microcontrollers. Deploy robust cardiovascular telemetry analysis directly to the silicon.
           </motion.p>
 
@@ -77,7 +56,7 @@ export default function Home() {
                 whileHover={{ scale: 1.02, backgroundColor: "var(--color-hazard)", borderColor: "var(--color-hazard)" }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="inline-flex items-center justify-center h-12 px-8 bg-ink text-white text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink"
+                className="inline-flex items-center justify-center h-12 px-8 bg-ink text-white text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink w-full md:w-auto"
               >
                 [ INITIATE_STREAM ]
               </motion.a>
@@ -87,7 +66,7 @@ export default function Home() {
                 whileHover={{ scale: 1.02, backgroundColor: "var(--color-ink)", color: "var(--color-canvas-cream)" }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="inline-flex items-center justify-center h-12 px-8 bg-transparent text-ink text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink"
+                className="inline-flex items-center justify-center h-12 px-8 bg-transparent text-ink text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink w-full md:w-auto mt-2 md:mt-0"
               >
                 C_COMPILER &gt;&gt;
               </motion.a>
@@ -105,10 +84,10 @@ export default function Home() {
           <motion.div variants={fadeUp} className="bg-white p-8 flex flex-col justify-between group cursor-default">
             <div className="text-[10px] text-slate font-bold tracking-[0.15em] mb-4 group-hover:text-hazard transition-colors duration-300">FEAT.01</div>
             <div>
-              <h3 className="font-sans text-[24px] font-black uppercase tracking-[-0.02em] mb-2 text-ink">
+              <h3 className="font-sans text-[20px] md:text-[24px] font-black uppercase tracking-[-0.02em] mb-2 text-ink">
                 INT8 Quantization
               </h3>
-              <p className="text-[13px] text-slate leading-relaxed uppercase">
+              <p className="text-[12px] md:text-[13px] text-slate leading-relaxed uppercase">
                 Weights scaled to 8-bit integers. 75% payload reduction for ESP32 constraint matrices.
               </p>
             </div>
@@ -117,10 +96,10 @@ export default function Home() {
           <motion.div variants={fadeUp} className="bg-canvas-cream p-8 flex flex-col justify-between group cursor-default">
             <div className="text-[10px] text-slate font-bold tracking-[0.15em] mb-4 group-hover:text-hazard transition-colors duration-300">FEAT.02</div>
             <div>
-              <h3 className="font-sans text-[24px] font-black uppercase tracking-[-0.02em] mb-2 text-ink">
+              <h3 className="font-sans text-[20px] md:text-[24px] font-black uppercase tracking-[-0.02em] mb-2 text-ink">
                 Ensemble Architecture
               </h3>
-              <p className="text-[13px] text-slate leading-relaxed uppercase">
+              <p className="text-[12px] md:text-[13px] text-slate leading-relaxed uppercase">
                 RF, KNN, and SVM combined with a meta-classifier for clinical-grade precision.
               </p>
             </div>
@@ -129,35 +108,16 @@ export default function Home() {
           <motion.div variants={fadeUp} className="bg-white p-8 flex flex-col justify-between group cursor-default">
             <div className="text-[10px] text-slate font-bold tracking-[0.15em] mb-4 group-hover:text-hazard transition-colors duration-300">FEAT.03</div>
             <div>
-              <h3 className="font-sans text-[24px] font-black uppercase tracking-[-0.02em] mb-2 text-ink">
+              <h3 className="font-sans text-[20px] md:text-[24px] font-black uppercase tracking-[-0.02em] mb-2 text-ink">
                 Zero-Dep Export
               </h3>
-              <p className="text-[13px] text-slate leading-relaxed uppercase">
+              <p className="text-[12px] md:text-[13px] text-slate leading-relaxed uppercase">
                 Compile trained models directly to standalone C headers. Zero dynamic allocation.
               </p>
             </div>
           </motion.div>
         </motion.div>
       </section>
-
-      {/* Minimal Footer */}
-      <motion.footer 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.8 }}
-        className="w-full border-t-2 border-ink bg-white py-6 px-8"
-      >
-        <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink">
-            © 2026 HEARTFLOW_OS. TELEMETRY_SYS.
-          </div>
-          <div className="flex items-center gap-8">
-            <Link href="/architecture" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">ARCHITECTURE.MD</Link>
-            <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`} target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">API_DOCS</a>
-            <a href="https://github.com/IDKHowToCodeFR/HEARTFLOW_OS" target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">GITHUB_REPO</a>
-          </div>
-        </div>
-      </motion.footer>
     </main>
   );
 }

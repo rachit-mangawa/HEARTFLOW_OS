@@ -9,73 +9,87 @@ pinned: false
 
 <div align="center">
   <h1>HeartFlow OS</h1>
-  <p><strong>Cardiovascular Telemetry & MLOps Engine</strong></p>
+  <p><strong>Cardiovascular Telemetry & Edge MLOps Engine</strong></p>
   
+  <p>
+    <a href="https://huggingface.co/spaces/IDKHowToCodeFR/HEARTFLOW_OS" target="_blank">
+      <img src="https://img.shields.io/badge/🤗_HuggingFace-Live_Demo-FFD21E.svg?style=for-the-badge" alt="Hugging Face Space" />
+    </a>
+    <a href="https://heartflow-os.vercel.app" target="_blank">
+      <img src="https://img.shields.io/badge/🌐_Website-Live_App-black.svg?style=for-the-badge&logo=vercel" alt="Live Website" />
+    </a>
+  </p>
+
   <p>
     <img src="https://img.shields.io/badge/Next.js-16+-black.svg?style=for-the-badge&logo=next.js" alt="Next.js" />
     <img src="https://img.shields.io/badge/React-19-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black" alt="React" />
     <img src="https://img.shields.io/badge/FastAPI-0.111.0+-009688.svg?style=for-the-badge&logo=fastapi" alt="FastAPI" />
-    <img src="https://img.shields.io/badge/Scikit--Learn-1.5.1+-F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white" alt="Scikit-Learn" />
+    <img src="https://img.shields.io/badge/PlatformIO-Edge-orange.svg?style=for-the-badge&logo=platformio&logoColor=white" alt="PlatformIO" />
     <img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License" />
   </p>
 </div>
 
 ---
 
-HeartFlow OS takes real-time patient vitals via WebSockets, runs them through an scikit-learn ensemble, and outputs probability distributions for cardiovascular conditions. It also transpiles these models into standalone C headers you can flash directly to constrained edge devices like an ESP32.
+HeartFlow OS is an end-to-end telemetry and inference platform designed to stream cardiovascular vitals, predict anomalies using a soft-voting ensemble model, and export those models to highly-constrained edge devices (like ESP32/Arduino).
 
-## Components
+## System Architecture
 
 | Domain | Tech | Details |
 | :--- | :--- | :--- |
-| **Frontend** | Next.js 16, React 19 | Renders 60Hz telemetry streams using WebSockets and SVG |
-| **Backend** | FastAPI, Python 3.10 | Handles WebSocket routing and MLOps API endpoints |
-| **ML** | Scikit-Learn | Soft-voting ensemble (RF, SVM, KNN, LogReg, MLP) |
-| **Database** | SQLite, `aiosqlite` | Non-blocking telemetry and prediction logging |
-| **Compiler** | Custom AST Transpiler | Generates INT8 quantized, `malloc`-free C code |
+| **Frontend** | Next.js 16, Framer Motion | Industrial Brutalist UI with auto-healing WebSocket reconnections. |
+| **Backend** | FastAPI, Python 3.10 | Real-time WebSocket routing, Telemetry simulator, and SHAP Explainability. |
+| **MLOps Pipeline** | Scikit-Learn | Automated training pipelines with F1-Score evaluation and rollback protection. |
+| **Edge Compiler** | Custom AST Transpiler | Exports trained ensembles to zero-dependency, INT8 quantized C headers. |
+| **Firmware** | PlatformIO, C++ | Ready-to-deploy hardware wrapper for ESP32/Arduino execution. |
 
-## Features
+## Core Features
 
-- **Live Telemetry**: Streams data at 60Hz via WebSockets to a React 19 dashboard.
-- **Edge Compilation**: Converts trained scikit-learn models into C headers. The generated code requires no dependencies and does not use dynamic memory allocation.
-- **Quantization**: Scales 64-bit float weights down to 8-bit integers, reducing flash memory usage by ~75%.
-- **Soft-Voting**: Combines predictions from 5 different models to output a probability distribution.
-- **Background Retraining**: Upload new CSV data to `/retrain` and the backend will impute missing values, retrain the models in a background thread, and update the live ensemble without dropping active socket connections.
-
-## Architecture
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for data flow diagrams and the file map.
+- **Fault-Tolerant Telemetry**: Streams data via WebSockets to the React dashboard with exponential backoff and UI-level auto-reconnection.
+- **Automated MLOps Registry**: Upload batch CSV data to `/retrain`. The system evaluates the new models against a test set and will automatically roll back if performance (F1-score) degrades.
+- **Edge Compilation (TinyML)**: Converts trained models into standalone C code (`model.h`). The generated code requires no dynamic memory allocation (`malloc`-free) and uses integer quantization to cut memory footprint by 75%.
+- **Cross-Language Assurance**: Built-in test pipelines verify that the exported C logic perfectly matches the Python models before flashing to hardware.
 
 ## Quickstart
 
-### 1. Backend
+### Option 1: Docker Compose (Recommended)
 
-Requires Python 3.10+.
+Run the entire full-stack platform (Frontend + Backend) with a single command:
 
+```bash
+docker compose up --build
+```
+- UI available at: `http://localhost:3000`
+- API Docs available at: `http://localhost:8000/docs`
+
+### Option 2: Manual Local Setup
+
+**Backend (Python)**
 ```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate  # Windows: .\.venv\Scripts\activate
 pip install -r requirements.txt
-
-# Train initial models and seed the DB
-python models.py
-
-# Start the server
+python models.py           # Seed initial models
 uvicorn main:app --reload --port 8000
 ```
 
-### 2. Frontend
-
-Requires Node.js 18+.
-
+**Frontend (Node)**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000` to view the dashboard, upload new data, or export C headers.
+### Option 3: Hardware Firmware (Edge Deployment)
+
+Once you export your `model.h` from the UI or API, deploy to your microcontroller:
+
+```bash
+cd firmware
+# Copy your exported model.h to firmware/src/model.h
+pio run -t upload
+```
 
 ## License
 

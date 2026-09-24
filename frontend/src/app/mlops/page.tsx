@@ -54,25 +54,6 @@ export default function MLOps() {
   return (
     <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white">
       {/* Top Nav (Mechanical) */}
-      <motion.nav 
-        initial={{ y: "-100%" }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: easeFluid }}
-        className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50"
-      >
-        <div className="max-w-[1400px] mx-auto w-full flex justify-between items-center">
-          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase hover:text-hazard transition-colors">
-            [ HEARTFLOW_OS ]
-          </Link>
-          <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase">
-            <Link href="/dashboard" className="text-ink hover:text-hazard transition-colors">SYS.MONITOR</Link>
-            <Link href="/simulator" className="text-ink hover:text-hazard transition-colors">AI.SIMULATOR</Link>
-            <Link href="/history" className="text-ink hover:text-hazard transition-colors">DATA.LOG</Link>
-            <Link href="/mlops" className="text-hazard border-b-2 border-hazard pb-1">ML.OPS</Link>
-            <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
-          </div>
-        </div>
-      </motion.nav>
 
       <motion.div 
         variants={staggerContainer}

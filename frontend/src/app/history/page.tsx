@@ -37,20 +37,6 @@ export default function PatientHistory() {
   return (
     <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white">
       {/* Top Nav (Mechanical) */}
-      <nav className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto w-full flex justify-between items-center">
-          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase">
-            [ HEARTFLOW_OS ]
-          </Link>
-          <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase">
-            <Link href="/dashboard" className="text-ink hover:text-hazard transition-colors">SYS.MONITOR</Link>
-            <Link href="/simulator" className="text-ink hover:text-hazard transition-colors">AI.SIMULATOR</Link>
-            <Link href="/history" className="text-hazard border-b-2 border-hazard pb-1">DATA.LOG</Link>
-            <Link href="/mlops" className="text-ink hover:text-hazard transition-colors">ML.OPS</Link>
-            <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
-          </div>
-        </div>
-      </nav>
 
       <div className="max-w-[1400px] mx-auto w-full px-8 py-16 flex-1 flex flex-col">
         <header className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
