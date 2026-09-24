@@ -507,11 +507,9 @@ Measured across 10,000 synthetic clinical telemetry vectors:
   - `GET /dataset`: Returns complete legacy array for backward-compatible consumers and test suites.
   - `GET /dataset?page=1&limit=25`: Returns windowed paginated records with patient search and diagnosis cohort filtering.
 
-### 10.2. Cloud Production Deployment: Hugging Face Spaces
-- **Hugging Face Space Registry**: [https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend](https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend)
-- **Production REST Gateway**: `https://idkhowtocodefr-tinyml-backend.hf.space`
-- **FastAPI OpenAPI / Swagger Documentation**: `https://idkhowtocodefr-tinyml-backend.hf.space/docs`
-- **Real-Time WebSocket Feed**: `wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed`
+### 10.2. Remote Cloud Service Gateway
+- **Production REST Gateway**: `https://idkhowtocodefr-hf-backend.hf.space/heartflow`
+- **Real-Time WebSocket Feed**: `wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed`
 
 ---
 

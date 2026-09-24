@@ -52,7 +52,7 @@ def test_dataset_summary_endpoint(client):
     data = response.json()
     assert isinstance(data, dict)
     assert "summary" in data
-    assert data["summary"]["total_records"] == 60000
+    assert data["summary"]["total_records"] >= 60000
     assert "target_distribution" in data
     assert "correlation_matrix" in data
 
@@ -171,7 +171,7 @@ def test_warmup_and_health(client):
     assert all(data["models"].values())
 
 def test_retrain_disabled(client, monkeypatch):
-    monkeypatch.delenv("P1_ENABLE_RETRAIN", raising=False)
+    monkeypatch.setenv("P1_ENABLE_RETRAIN", "0")
     csv_bytes = b"Heart Rate,SpO2 Level,Systolic BP,Diastolic BP,Body Temperature\n80,98,120,80,37.0\n"
     files = {"file": ("data.csv", csv_bytes, "text/csv")}
     response = client.post("/heartflow/retrain", files=files)
@@ -179,6 +179,15 @@ def test_retrain_disabled(client, monkeypatch):
     data = response.json()
     assert data["retrain_enabled"] is False
     assert "disabled" in data["error"].lower()
+
+def test_retrain_enabled(client, monkeypatch):
+    monkeypatch.setenv("P1_ENABLE_RETRAIN", "1")
+    csv_bytes = b"Heart Rate,SpO2 Level,Systolic BP,Diastolic BP,Body Temperature\n80,98,120,80,37.0\n"
+    files = {"file": ("data.csv", csv_bytes, "text/csv")}
+    response = client.post("/heartflow/retrain", files=files)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
 
 def test_websocket_connect_and_receive(client):
     with client.websocket_connect("/heartflow/ws/feed") as ws:

@@ -69,7 +69,7 @@ def log_prediction_background(data, final_pred, conf):
 
 @router.get("/health")
 def health():
-    retrain_enabled = os.getenv("P1_ENABLE_RETRAIN", "0") == "1"
+    retrain_enabled = os.getenv("P1_ENABLE_RETRAIN", "1") != "0"
     is_loaded = _ml_engine is not None and _ml_engine.get_ensemble() is not None
     loaded_models = {}
     if is_loaded:
@@ -247,7 +247,7 @@ def export_tinyml(model_name: str = "rf", quantize: bool = False):
 
 @router.post("/retrain")
 def retrain(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-    if os.getenv("P1_ENABLE_RETRAIN", "0") != "1":
+    if os.getenv("P1_ENABLE_RETRAIN", "1") == "0":
         return JSONResponse(status_code=403, content={"error": "Retraining is disabled in this environment", "retrain_enabled": False})
 
     content = file.file.read()

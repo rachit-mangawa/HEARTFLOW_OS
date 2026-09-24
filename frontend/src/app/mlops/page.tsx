@@ -109,11 +109,11 @@ export default function MLOps() {
         if (data && typeof data.retrain_enabled === "boolean") {
           setRetrainEnabled(data.retrain_enabled);
         } else {
-          setRetrainEnabled(IS_DEV);
+          setRetrainEnabled(true);
         }
       })
       .catch(() => {
-        setRetrainEnabled(IS_DEV);
+        setRetrainEnabled(true);
       });
   }, []);
 
@@ -264,7 +264,7 @@ export default function MLOps() {
     if (!file) return;
     if (retrainEnabled === false) {
       setStatus("error");
-      setMessage("Retraining is disabled on the hosted demo");
+      setMessage("Retraining is currently disabled in this environment");
       setTimeout(() => {
         statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 80);
@@ -291,7 +291,7 @@ export default function MLOps() {
 
       if (httpStatus === 403) {
         setStatus("error");
-        setMessage("Retraining is disabled on the hosted demo (HTTP 403)");
+        setMessage("Retraining is disabled in this environment (HTTP 403)");
         setTimeout(() => {
           statusBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 80);
@@ -472,7 +472,7 @@ export default function MLOps() {
             <div className="pt-6 border-t-2 border-ink mt-6 flex flex-col gap-3">
               {retrainEnabled === false && (
                 <div className="p-3 border-2 border-hazard bg-hazard/10 text-hazard text-[12px] font-bold uppercase tracking-wider">
-                  Retraining is disabled on the hosted demo
+                  Retraining is currently disabled in this environment
                 </div>
               )}
               {isSlow && (

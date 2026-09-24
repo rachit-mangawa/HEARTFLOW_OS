@@ -136,7 +136,7 @@ def preprocess_data(df, is_training=False, model_dir=None):
             
     return X_raw, y
 
-def get_train_test_split(df):
+def get_train_test_split(df, model_dir=None):
     from sklearn.model_selection import train_test_split
-    X, y = preprocess_data(df, is_training=True)
+    X, y = preprocess_data(df, is_training=True, model_dir=model_dir)
     return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)

@@ -22,12 +22,6 @@ app_port: 8000
 ### **Clinical Cardiovascular Telemetry & Distributed Edge TinyML Transpilation Engine**
 
 <p>
-  <a href="https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend" target="_blank">
-    <img src="https://img.shields.io/badge/HuggingFace-Live_Spaces_Backend-FFD21E.svg?style=for-the-badge&logo=huggingface" alt="Hugging Face Space" />
-  </a>
-  <a href="https://idkhowtocodefr-tinyml-backend.hf.space/docs" target="_blank">
-    <img src="https://img.shields.io/badge/FastAPI-Interactive_Swagger_Docs-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white" alt="Hugging Face API Docs" />
-  </a>
   <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS" target="_blank">
     <img src="https://img.shields.io/badge/GitHub-Repository-141413.svg?style=for-the-badge&logo=github" alt="GitHub Repository" />
   </a>
@@ -244,18 +238,16 @@ Interactive documentation with live in-browser testing is hosted at `/docs`.
 
 ## Quickstart Guide
 
-### Option 1: Live Cloud Hugging Face Space (Zero Local Install)
+### Option 1: Remote Cloud API Gateway (Zero Local Install)
 
-The backend is deployed and running live on Hugging Face Spaces:
-- **Hugging Face Space**: [https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend](https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend)
-- **Direct REST API Gateway**: `https://idkhowtocodefr-tinyml-backend.hf.space`
-- **Interactive Swagger OpenAPI Docs**: `https://idkhowtocodefr-tinyml-backend.hf.space/docs`
-- **WebSocket Telemetry Stream**: `wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed`
+The backend runs as a hosted cloud API service:
+- **Direct REST API Gateway**: `https://idkhowtocodefr-hf-backend.hf.space/heartflow`
+- **WebSocket Telemetry Stream**: `wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed`
 
 To connect the Next.js frontend to the live cloud backend, set:
 ```bash
-NEXT_PUBLIC_API_URL=https://idkhowtocodefr-tinyml-backend.hf.space
-NEXT_PUBLIC_WS_URL=wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed
+NEXT_PUBLIC_API_URL=https://idkhowtocodefr-hf-backend.hf.space/heartflow
+NEXT_PUBLIC_WS_URL=wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed
 ```
 
 ---

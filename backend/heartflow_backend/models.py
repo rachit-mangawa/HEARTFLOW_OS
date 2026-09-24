@@ -28,7 +28,7 @@ def train_models(data_path: str | None = None, model_dir: str | None = None):
         registry = {"active_version": "v1", "versions": {"v1": {"score": 0.0}}}
         
     df = pd.read_csv(data_path, encoding='utf-8')
-    X_train, X_test, y_train, y_test = get_train_test_split(df)
+    X_train, X_test, y_train, y_test = get_train_test_split(df, model_dir=model_dir)
     
     models = {
         'knn': KNeighborsClassifier(n_neighbors=5),

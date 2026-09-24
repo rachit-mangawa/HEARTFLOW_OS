@@ -38,7 +38,7 @@ const ENDPOINTS: EndpointDoc[] = [
     method: "POST",
     path: "/predict",
     title: "Cardiovascular Risk Ensemble Inference",
-    description: "Evaluates raw physiological telemetry against the calibrated 5-model ensemble (Random Forest, SVM, KNN, Logistic Regression, Small-NN) to generate real-time clinical anomaly classifications and probability distributions.",
+    description: "Evaluates vital signs against the 5-model ensemble to predict cardiovascular risk and class probabilities.",
     latency: "< 20µs (In-Browser / MCU) | < 35ms (Cloud REST)",
     category: "Inference",
     curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/predict" \\
@@ -114,7 +114,7 @@ console.log(result.label, result.confidence, result.disease_probs);`,
     method: "GET",
     path: "/history",
     title: "Session Audit & Telemetry Log",
-    description: "Returns an isolated audit trail of patient evaluations recorded during the active session. Fully sandboxed in browser sessionStorage without persistent cloud tracking.",
+    description: "Returns recent evaluation records recorded during the active session from browser storage.",
     latency: "< 5ms",
     category: "System",
     curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/history?limit=10" \\
@@ -148,7 +148,7 @@ console.log("Active records:", sessionAudit.length);`,
     method: "GET",
     path: "/export_tinyml?model_name={rf|svm|knn|logreg|small_nn}",
     title: "TinyML C99 Header Transpiler",
-    description: "Compiles trained statistical model parameters and decision tree topologies directly into pure C99 header source code (model.h). Requires zero dynamic memory allocation (malloc), suited for bare-metal ESP32, ARM Cortex-M4, and RP2040.",
+    description: "Generates a standalone C99 header (model.h) containing model weights and decision logic without dynamic memory allocation.",
     latency: "< 2ms (In-Browser transpiler)",
     category: "Hardware",
     curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/export_tinyml?model_name=rf" \\
@@ -178,7 +178,7 @@ console.log("C header size:", cCode.length, "bytes");`,
     method: "GET",
     path: "/metrics",
     title: "Ensemble Performance & Quantization Diagnostics",
-    description: "Returns accuracy, F1-score benchmarks, calibration curves, and INT8 fixed-point quantization trade-offs across all 5 ensemble constituent models.",
+    description: "Returns accuracy, F1 scores, and weights for each model in the ensemble.",
     latency: "< 10ms",
     category: "MLOps",
     curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/metrics"`,
@@ -205,7 +205,7 @@ print("Ensemble Accuracy:", metrics["ensemble_accuracy"])`,
     method: "POST",
     path: "/retrain",
     title: "MLOps Batch Telemetry Retraining",
-    description: "Accepts a batch CSV telemetry dataset, executes schema alias normalization, patches character encodings, synthesizes the Risk_Severity feature, re-fits all 5 ensemble constituent models, and hot-swaps active weights in memory with zero downtime.",
+    description: "Accepts a CSV batch of patient records, maps headers to standard columns, re-fits the ensemble models, and saves updated weights.",
     latency: "< 3.5s (Full Ensemble Re-fitting)",
     category: "MLOps",
     curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/retrain" \\
@@ -252,7 +252,7 @@ console.log(data.message);`,
     method: "GET",
     path: "/health",
     title: "System Health & Model Engine Readiness Status",
-    description: "Returns the real-time operational status of the FastAPI backend and verifies whether all 5 constituent ensemble models are trained, serialized, and loaded in memory.",
+    description: "Reports backend operational status and whether ensemble models are loaded.",
     latency: "< 1ms",
     category: "System",
     curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/health"`,
@@ -272,7 +272,7 @@ console.log("Status:", data.status);`,
     method: "GET",
     path: "/dataset/summary",
     title: "Statistical Profiling & Telemetry Summary",
-    description: "Returns pre-computed multivariate exploratory analytics for the 60,000 observation corpus: Pearson correlation matrix, 12-bin continuous vital distributions, balanced disease cohorts, and sensor alarm trigger rates. Payload is < 15 KB (99.8% bandwidth reduction vs raw dumps).",
+    description: "Returns summary statistics, feature distributions, and correlation values for the 60,000-record dataset in a compact payload.",
     latency: "< 5ms (Cached Profiler)",
     category: "MLOps",
     curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset/summary"`,
@@ -305,7 +305,7 @@ console.log("Features:", DATASET_PROFILE.summary.total_features);`,
     method: "GET",
     path: "/dataset?page={page}&limit={limit}&disease={disease}&search={search}",
     title: "Paginated Clinical Telemetry Record Inspector",
-    description: "High-speed windowed querying across 60,000 verified clinical telemetry records with multi-channel vital attributes, patient identifiers, and alarm states. Supports pagination, full-text patient search, and diagnostic filtering.",
+    description: "Returns paginated rows from the 60,000-record telemetry dataset, with optional search and diagnosis filtering.",
     latency: "< 5ms (Server Windowed Query)",
     category: "MLOps",
     curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset?page=1&limit=25&disease=Heart%20Disease"`,
@@ -341,7 +341,7 @@ console.log("Rows fetched:", data.rows?.length || data.length);`,
     method: "POST",
     path: "/explain",
     title: "SHAP Tree Feature Attribution & Explainability",
-    description: "Computes game-theoretic Shapley values using TreeExplainer across the Random Forest estimator. Quantifies exact positive and negative feature contributions per vital metric.",
+    description: "Calculates SHAP values for the random forest model to show how each vital sign influenced the prediction.",
     latency: "< 15ms",
     category: "Inference",
     curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/explain" \\
@@ -391,7 +391,7 @@ console.log(attribution);`,
     method: "WS",
     path: "/ws/feed",
     title: "Live Physiological Telemetry WebSocket Stream",
-    description: "Bi-directional WebSocket streaming live sensor telemetry vectors at 60 Hz with concurrent ensemble inference, pathology state machine transitions, and anomaly likelihood scores.",
+    description: "Streams continuous patient vitals and real-time ensemble predictions over WebSocket.",
     latency: "< 5ms (Streaming WebSocket Frame)",
     category: "Hardware",
     curl: `wscat -c "wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed"`,
@@ -494,7 +494,7 @@ export default function ApiDocs() {
           <div>
             <div className="text-[12px] text-hazard font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
               <span className="w-2.5 h-2.5 rounded-full bg-hazard" />
-              REST &amp; WEBSOCKET PROTOCOL SPECIFICATIONS
+              API REFERENCE &amp; PROTOCOL SPECIFICATION
             </div>
             <h1 className="text-[clamp(2.5rem,5vw,5.5rem)] leading-[0.9]">
               API REFERENCE<br />&amp; ENDPOINTS
@@ -503,14 +503,6 @@ export default function ApiDocs() {
 
           <div className="flex flex-col items-start md:items-end gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
-              <a
-                href="https://huggingface.co/spaces/IDKHowToCodeFr/hf-backend"
-                target="_blank"
-                rel="noreferrer"
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-[#FFD21E] text-ink hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5"
-              >
-                <span>🤗 HF Space</span>
-              </a>
               {process.env.NODE_ENV === "development" && (
                 <a
                   href={`${API_BASE}/docs`}
@@ -524,10 +516,10 @@ export default function ApiDocs() {
             </div>
             <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white flex items-center gap-2">
               <ShieldCheck size={14} className="text-hazard" />
-              <span>SPEC REV: 3.2.0 · PRODUCTION HARDENED</span>
+              <span>SPECIFICATION · REVISION 3.2</span>
             </div>
             <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
-              Zero-Cloud In-Browser TinyML · Bare-Metal C99 · Hybrid Cloud REST
+              In-browser evaluation, C99 export, and cloud REST endpoints.
             </div>
           </div>
         </header>
@@ -594,28 +586,20 @@ export default function ApiDocs() {
               <div className="border-b-2 md:border-b-0 md:border-r-2 border-ink/20 pb-6 md:pb-0 md:pr-6">
                 <div className="text-[11px] font-bold text-hazard uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <Server size={14} />
-                  <span>01 // DUAL-PLANE ARCHITECTURE</span>
+                  <span>01 // SERVICE ARCHITECTURE</span>
                 </div>
                 <p className="text-[12px] text-slate leading-relaxed mb-3">
-                  HeartFlow OS decouples local bare-metal edge transpilation from cloud endpoints:
+                  Inference runs in the browser by default, with an optional remote service for cloud and batch evaluation.
                 </p>
                 <div className="bg-canvas-cream border border-ink p-2 text-[11px] font-bold break-all text-ink">
                   https://idkhowtocodefr-hf-backend.hf.space/heartflow
                 </div>
                 <div className="mt-2 text-[11px] text-slate font-bold flex flex-col gap-1">
                   <div>
-                    HF SPACE:{" "}
-                    <a
-                      href="https://huggingface.co/spaces/IDKHowToCodeFr/hf-backend"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-hazard underline hover:text-ink"
-                    >
-                      IDKHowToCodeFr/hf-backend ↗
-                    </a>
+                    REMOTE SERVICE: Cloud REST &amp; WebSocket gateway
                   </div>
                   <div>
-                    LOCAL ENGINE: In-Browser Client TinyML (<span className="text-hazard">0.0ms Egress</span>)
+                    LOCAL ENGINE: In-Browser TinyML evaluator
                   </div>
                 </div>
               </div>
@@ -623,26 +607,26 @@ export default function ApiDocs() {
               <div className="border-b-2 md:border-b-0 md:border-r-2 border-ink/20 pb-6 md:pb-0 md:pr-6">
                 <div className="text-[11px] font-bold text-hazard uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <ShieldCheck size={14} />
-                  <span>02 // ZERO-TRUST AUTHENTICATION</span>
+                  <span>02 // PRIVACY &amp; SESSIONS</span>
                 </div>
                 <p className="text-[12px] text-slate leading-relaxed mb-3">
-                  Telemetry channels operate in zero-cloud sandbox mode with session isolation. No private data persists to central databases without explicit audit consent.
+                  Telemetry stays on the client during normal use. Session logs are kept in browser memory and are not sent to any database without a manual retrain upload.
                 </p>
                 <div className="bg-canvas-cream border border-ink p-2 text-[11px] font-bold text-slate">
-                  OPTIONAL: X-HeartFlow-Client: edge_v2.4
+                  OPTIONAL: X-HeartFlow-Client header
                 </div>
                 <div className="mt-2 text-[11px] text-slate font-bold">
-                  CORS: Globally enabled (<span className="text-ink">*</span>) for MCU bridges
+                  CORS: Allowed for web clients and hardware bridges
                 </div>
               </div>
 
               <div>
                 <div className="text-[11px] font-bold text-hazard uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <Binary size={14} />
-                  <span>03 // ABI CONTRACT & ENCODING</span>
+                  <span>03 // CONTRACTS &amp; CODE GENERATION</span>
                 </div>
                 <p className="text-[12px] text-slate leading-relaxed mb-3">
-                  REST endpoints use strict JSON schema contracts. Embedded outputs conform to ISO/IEC 9899:1999 (C99) with zero dynamic memory allocation (<code className="text-ink font-bold">0 malloc bytes</code>).
+                  Endpoints accept and return JSON. Generated C files use standard C99 without malloc calls, making them suitable for microcontrollers.
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   <span className="border border-ink px-2 py-0.5 bg-canvas-cream text-[10px] font-bold">INT8_QUANT</span>
@@ -800,14 +784,14 @@ export default function ApiDocs() {
                 <div>
                   <div className="text-[11px] font-bold text-hazard uppercase tracking-widest mb-1 flex items-center gap-1.5">
                     <Activity size={14} />
-                    <span>INTERACTIVE EDGE SANDBOX</span>
+                    <span>IN-BROWSER EVALUATION</span>
                   </div>
                   <h2 className="text-[22px] md:text-[26px] font-black uppercase tracking-tight text-ink">
-                    LIVE IN-BROWSER INFERENCE CONSOLE
+                    INTERACTIVE INFERENCE TEST
                   </h2>
                 </div>
                 <div className="text-[12px] font-bold text-slate uppercase">
-                  Zero-Network Egress · Direct In-Memory Execution
+                  Runs directly in browser memory without network requests
                 </div>
               </div>
 
