@@ -1,15 +1,18 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 
 type StreamState = {
   hr: number[];
   temp: number[];
 };
 
+type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
+
 type TelemetryContextType = {
   data: any;
   stream: StreamState;
+  status: ConnectionStatus;
 };
 
 const TelemetryContext = createContext<TelemetryContextType | null>(null);
@@ -20,24 +23,62 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     hr: Array(50).fill(75),
     temp: Array(50).fill(37.0)
   });
+  const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptRef = useRef(0);
 
   useEffect(() => {
-    const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/feed");
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      setData(msg);
-      if (msg?.sensor_data) {
-        setStream(prev => ({
-          hr: [...prev.hr.slice(1), msg.sensor_data.Heart_Rate],
-          temp: [...prev.temp.slice(1), msg.sensor_data.Body_Temp]
-        }));
-      }
+    let ws: WebSocket;
+    let isComponentMounted = true;
+
+    const connect = () => {
+      ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/feed");
+      
+      ws.onopen = () => {
+        if (!isComponentMounted) return;
+        setStatus('connected');
+        reconnectAttemptRef.current = 0; // Reset attempts
+      };
+
+      ws.onmessage = (event) => {
+        if (!isComponentMounted) return;
+        const msg = JSON.parse(event.data);
+        setData(msg);
+        if (msg?.sensor_data) {
+          setStream(prev => ({
+            hr: [...prev.hr.slice(1), msg.sensor_data.Heart_Rate],
+            temp: [...prev.temp.slice(1), msg.sensor_data.Body_Temp]
+          }));
+        }
+      };
+
+      ws.onclose = () => {
+        if (!isComponentMounted) return;
+        setStatus('reconnecting');
+        const timeout = Math.min(1000 * (2 ** reconnectAttemptRef.current), 30000); // Max 30s
+        reconnectAttemptRef.current += 1;
+        
+        reconnectTimeoutRef.current = setTimeout(connect, timeout);
+      };
+
+      ws.onerror = () => {
+        if (!isComponentMounted) return;
+        ws.close(); // Force trigger onclose
+      };
     };
-    return () => ws.close();
+
+    connect();
+
+    return () => {
+      isComponentMounted = false;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (ws) ws.close();
+    };
   }, []);
 
   return (
-    <TelemetryContext.Provider value={{ data, stream }}>
+    <TelemetryContext.Provider value={{ data, stream, status }}>
       {children}
     </TelemetryContext.Provider>
   );

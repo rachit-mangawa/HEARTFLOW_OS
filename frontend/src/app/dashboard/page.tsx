@@ -4,18 +4,38 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useTelemetry } from "@/context/TelemetryContext";
 
+const easeFluid: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeFluid } }
+};
+
 export default function Dashboard() {
-  const { data, stream } = useTelemetry();
+  const { data, stream, status } = useTelemetry();
 
   return (
     <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
       {/* Top Nav (Mechanical) */}
-      <nav className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50">
+      <motion.nav 
+        initial={{ y: "-100%" }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: easeFluid }}
+        className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50"
+      >
         <div className="max-w-[1400px] mx-auto w-full flex justify-between items-center">
-          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase">
+          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase hover:text-hazard transition-colors">
             [ HEARTFLOW_OS ]
           </Link>
-          <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase">
+          <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase hidden md:flex">
             <Link href="/dashboard" className="text-hazard border-b-2 border-hazard pb-1">SYS.MONITOR</Link>
             <Link href="/simulator" className="text-ink hover:text-hazard transition-colors">AI.SIMULATOR</Link>
             <Link href="/history" className="text-ink hover:text-hazard transition-colors">DATA.LOG</Link>
@@ -23,30 +43,40 @@ export default function Dashboard() {
             <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
-      <div className="max-w-[1400px] mx-auto w-full px-8 py-16 flex-1 flex flex-col">
-        <header className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
+      <motion.div 
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="max-w-[1400px] mx-auto w-full px-8 py-16 flex-1 flex flex-col"
+      >
+        <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
           <div>
-            <div className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4">
+            <div className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4 flex items-center gap-2">
+              <motion.div 
+                animate={{ opacity: [1, 0.2, 1] }} 
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-2 h-2 rounded-full bg-hazard"
+              />
               /// TELEMETRY_STREAM_ACTIVE
             </div>
-            <h1 className="text-[clamp(3rem,6vw,6rem)]">
+            <h1 className="text-[clamp(3rem,6vw,6rem)] leading-[0.9]">
               PATIENT<br />TELEMETRY
             </h1>
           </div>
           <div className="text-right hidden md:block">
-            <div className="text-[14px] font-bold uppercase tracking-[0.05em] border-2 border-ink px-4 py-2 bg-ink text-canvas-cream">
-              STATUS: {data ? "CONNECTED" : "AWAITING SIGNAL"}
+            <div className={`text-[14px] font-bold uppercase tracking-[0.05em] border-2 border-ink px-4 py-2 text-canvas-cream ${status === 'reconnecting' ? 'bg-hazard animate-pulse' : 'bg-ink'}`}>
+              STATUS: {status === 'reconnecting' ? "RECONNECTING..." : (data ? "CONNECTED" : "AWAITING SIGNAL")}
             </div>
           </div>
-        </header>
+        </motion.header>
 
         {/* Dashboard Grid - Brutalist Tables */}
-        <div className="grid grid-cols-1 bg-ink border-2 border-ink" aria-live="polite">
+        <motion.div variants={staggerContainer} className="grid grid-cols-1 bg-ink border-2 border-ink" aria-live="polite">
           
           {/* Main Status Panel */}
-          <div className="bg-canvas-cream flex flex-col">
+          <motion.div variants={fadeUp} className="bg-canvas-cream flex flex-col">
             <div className="border-b-2 border-ink p-4 flex justify-between items-center bg-white">
               <h2 className="text-[14px] font-bold tracking-[0.05em]">{'< LIVE_VITALS >'}</h2>
               {data?.prediction ? (
@@ -61,33 +91,39 @@ export default function Dashboard() {
                     return "bg-hazard text-white border-hazard"; 
                   };
                   return (
-                    <div className={`px-4 py-2 text-[14px] font-bold uppercase tracking-[0.05em] border-2 ${getStatusStyles(data.prediction.label)}`}>
+                    <motion.div 
+                      key={data.prediction.label}
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className={`px-4 py-2 text-[14px] font-bold uppercase tracking-[0.05em] border-2 ${getStatusStyles(data.prediction.label)}`}
+                    >
                       {data.prediction.is_at_risk ? '[!]' : '[OK]'} {data.prediction.label} ({(data.prediction.confidence * 100).toFixed(1)}%)
-                    </div>
+                    </motion.div>
                   );
                 })()
               ) : (
-                <div className="px-4 py-2 text-[14px] font-bold tracking-[0.05em] border-2 border-ink text-slate">
+                <div className="px-4 py-2 text-[14px] font-bold tracking-[0.05em] border-2 border-ink text-slate animate-pulse">
                   INITIALIZING...
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-ink border-b-2 border-ink">
+            <motion.div variants={staggerContainer} className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-ink border-b-2 border-ink">
               <VitalCard label="HEART_RATE" value={data?.sensor_data?.Heart_Rate ? Math.round(data.sensor_data.Heart_Rate) : "---"} unit="BPM" />
               <VitalCard label="O2_SATURATION" value={data?.sensor_data?.SpO2_Level ? Math.round(data.sensor_data.SpO2_Level) : "---"} unit="%" />
               <VitalCard label="BLOOD_PRESSURE" value={data?.sensor_data ? `${Math.round(data.sensor_data.Systolic_BP)}/${Math.round(data.sensor_data.Diastolic_BP)}` : null} unit="MMHG" />
               <VitalCard label="CORE_TEMP" value={data?.sensor_data?.Body_Temp ? data.sensor_data.Body_Temp.toFixed(1) : "---"} unit="°C" />
-            </div>
+            </motion.div>
             
             {/* 2-Column Mini Graphs */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-ink border-b-2 border-ink h-[160px]">
-              <div className="bg-white p-3 flex flex-col"><div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-2">HR_STREAM</div><div className="flex-1 min-h-0 relative"><TelemetryGraph stream={stream.hr} min={60} max={150} color="var(--color-ink)" fill="rgba(5,5,5,0.05)" /></div></div>
-              <div className="bg-white p-3 flex flex-col"><div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-2">TEMP_STREAM</div><div className="flex-1 min-h-0 relative"><TelemetryGraph stream={stream.temp} min={36.0} max={39.0} color="var(--color-ink)" fill="rgba(5,5,5,0.05)" /></div></div>
-            </div>
+            <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-ink border-b-2 border-ink h-[160px]">
+              <div className="bg-white p-3 flex flex-col group"><div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-2 group-hover:text-hazard transition-colors">HR_STREAM</div><div className="flex-1 min-h-0 relative"><TelemetryGraph stream={stream.hr} min={60} max={150} color="var(--color-ink)" fill="rgba(5,5,5,0.05)" /></div></div>
+              <div className="bg-white p-3 flex flex-col group"><div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-2 group-hover:text-hazard transition-colors">TEMP_STREAM</div><div className="flex-1 min-h-0 relative"><TelemetryGraph stream={stream.temp} min={36.0} max={39.0} color="var(--color-ink)" fill="rgba(5,5,5,0.05)" /></div></div>
+            </motion.div>
 
             {/* Diagnostic Probabilities */}
-            <div className="bg-white flex flex-col min-h-[280px]">
+            <motion.div variants={fadeUp} className="bg-white flex flex-col min-h-[280px]">
               <div className="border-b-2 border-ink p-3 px-6 flex justify-between items-center bg-canvas-cream">
                 <h2 className="text-[12px] font-bold tracking-[0.1em] uppercase">{'< DIAGNOSTIC_PROBABILITIES >'}</h2>
                 <div className="text-[11px] font-bold tracking-[0.05em] text-hazard uppercase">CLASS / LIKELIHOOD</div>
@@ -96,11 +132,17 @@ export default function Dashboard() {
                 {data?.prediction?.disease_probs ? (
                    Object.entries(data.prediction.disease_probs)
                      .sort((a, b) => (b[1] as number) - (a[1] as number))
-                     .map(([disease, prob]) => {
+                     .map(([disease, prob], i) => {
                         const pct = ((prob as number) * 100).toFixed(1);
                         const isRisk = (prob as number) > 0.4 && disease.toLowerCase() !== 'normal' && disease.toLowerCase() !== 'healthy';
                         return (
-                          <div key={disease} className="flex flex-col gap-2">
+                          <motion.div 
+                            key={disease} 
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5, delay: i * 0.1, ease: easeFluid }}
+                            className="flex flex-col gap-2"
+                          >
                             <div className="flex justify-between text-[12px] font-bold uppercase tracking-[0.1em]">
                                <span className={isRisk ? "text-hazard drop-shadow-[0_0_2px_rgba(230,25,25,0.5)]" : "text-ink"}>{disease}</span>
                                <span className="tabular-nums">{pct}%</span>
@@ -112,10 +154,10 @@ export default function Dashboard() {
                                 className={`h-full relative z-10 ${isRisk ? 'bg-hazard shadow-[0_0_8px_var(--hazard-red)]' : 'bg-ink'}`}
                                 initial={{ width: "0%" }}
                                 animate={{ width: `${pct}%` }}
-                                transition={{ duration: 0.5, ease: "easeOut" }}
+                                transition={{ duration: 0.8, ease: easeFluid }}
                               />
                             </div>
-                          </div>
+                          </motion.div>
                         )
                      })
                 ) : (
@@ -124,30 +166,35 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
 
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </main>
   );
 }
 
 function VitalCard({ label, value, unit }: { label: string, value: string | number | null | undefined, unit: string }) {
   return (
-    <div className="bg-canvas-cream p-8 flex flex-col hover:bg-white transition-colors cursor-default overflow-hidden">
-      <div className="text-[11px] font-bold text-slate tracking-[0.1em] border-b border-ink/20 pb-2 mb-4">
+    <motion.div variants={fadeUp} className="bg-canvas-cream p-8 flex flex-col hover:bg-white transition-colors cursor-default overflow-hidden group">
+      <div className="text-[11px] font-bold text-slate tracking-[0.1em] border-b border-ink/20 pb-2 mb-4 group-hover:text-hazard transition-colors">
         {label}
       </div>
       <div>
-        <div className="font-sans text-[clamp(40px,3.5vw,60px)] font-black tracking-tighter tabular-nums leading-none mb-1 break-all">
+        <motion.div 
+          key={String(value)}
+          initial={{ opacity: 0.5, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-sans text-[clamp(40px,3.5vw,60px)] font-black tracking-tighter tabular-nums leading-none mb-1 break-all"
+        >
           {value !== null && value !== undefined ? value : "---"}
-        </div>
+        </motion.div>
         <div className="text-[12px] font-bold tracking-[0.05em] text-hazard">
           [{unit}]
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

@@ -5,6 +5,21 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import ShapChart from "@/components/ShapChart";
 
+const easeFluid: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeFluid } }
+};
+
 export default function Analysis() {
   const [formData, setFormData] = useState({
     Heart_Rate: 75,
@@ -52,9 +67,14 @@ export default function Analysis() {
   return (
     <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
       {/* Top Nav (Mechanical) */}
-      <nav className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50">
+      <motion.nav 
+        initial={{ y: "-100%" }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: easeFluid }}
+        className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50"
+      >
         <div className="max-w-[1400px] mx-auto w-full flex justify-between items-center">
-          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase">
+          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase hover:text-hazard transition-colors">
             [ HEARTFLOW_OS ]
           </Link>
           <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase">
@@ -65,10 +85,15 @@ export default function Analysis() {
             <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
-      <div className="max-w-[1400px] mx-auto w-full px-8 py-16 flex-1 flex flex-col">
-        <header className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
+      <motion.div 
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="max-w-[1400px] mx-auto w-full px-8 py-16 flex-1 flex flex-col"
+      >
+        <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
           <div>
             <div className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4">
               /// EXPLAINABLE_AI_MODULE
@@ -82,12 +107,12 @@ export default function Analysis() {
               MANUAL OVERRIDE. INPUT CUSTOM TELEMETRY TO TEST ENSEMBLE CLASSIFIER AND VIEW SHAPLEY FEATURE IMPORTANCE VECTORS.
             </div>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink">
+        <motion.div variants={staggerContainer} className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink">
           
           {/* Input Panel */}
-          <div className="lg:col-span-5 bg-canvas-cream flex flex-col">
+          <motion.div variants={fadeUp} className="lg:col-span-5 bg-canvas-cream flex flex-col">
             <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
               <h2 className="text-[14px] font-bold tracking-[0.05em]">{'< MANUAL_INPUT_MATRIX >'}</h2>
             </div>
@@ -99,24 +124,24 @@ export default function Analysis() {
               <InputControl label="DIASTOLIC_BP (MMHG)" value={formData.Diastolic_BP} min={40} max={140} onChange={(v: number) => setFormData({...formData, Diastolic_BP: v})} />
               <InputControl label="BODY_TEMP (°C)" value={formData.Body_Temp} min={30} max={42} step={0.1} onChange={(v: number) => setFormData({...formData, Body_Temp: v})} />
               
-              <button 
+              <motion.button 
                 onClick={handlePredict}
                 disabled={loading}
-                className="mt-6 border-[3px] border-ink bg-hazard text-white py-6 font-bold text-[18px] tracking-[0.2em] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-[6px] active:translate-x-[6px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase"
+                whileHover={{ y: 2, x: 2, boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}
+                whileTap={{ y: 6, x: 6, boxShadow: "none" }}
+                transition={{ duration: 0.1 }}
+                className="mt-6 border-[3px] border-ink bg-hazard text-white py-6 font-bold text-[18px] tracking-[0.2em] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] uppercase disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'PROCESSING_REQUEST...' : '[ EXECUTE_INFERENCE ]'}
-              </button>
+              </motion.button>
 
-              {/* Terminal Readout to fill empty space */}
+              {/* Terminal Readout */}
               <div className="mt-8 flex-grow border-[3px] border-ink bg-ink text-[#4AF626] p-0 flex flex-col min-h-[150px] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
-                {/* CRT Scanline Overlay */}
                 <div className="absolute inset-0 pointer-events-none opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)] z-10" />
-                
                 <div className="text-[10px] font-bold tracking-[0.2em] text-ink bg-white border-b-[3px] border-ink px-4 py-3 flex justify-between uppercase">
                   <span>RAW_PAYLOAD_PREVIEW</span>
                   <span>{JSON.stringify(formData).length} BYTES // SYS_READY</span>
                 </div>
-                
                 <div className="p-6 flex-grow flex flex-col relative z-0">
                   <pre className="text-[12px] font-mono whitespace-pre-wrap flex-grow overflow-auto leading-relaxed">
 {`{
@@ -131,21 +156,24 @@ export default function Analysis() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Results Panel */}
-          <div className="lg:col-span-7 bg-canvas-cream flex flex-col">
+          <motion.div variants={fadeUp} className="lg:col-span-7 bg-canvas-cream flex flex-col overflow-hidden">
             <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
               <h2 className="text-[14px] font-bold tracking-[0.05em]">{'< INFERENCE_RESULTS_&_XAI >'}</h2>
             </div>
             
             <div className="flex-grow flex flex-col relative bg-white">
-              {/* Blueprint Grid Background */}
               <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(var(--ink-black) 1px, transparent 1px), linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
               
               <div className="z-10 p-8 flex flex-col h-full">
                 {prediction ? (
-                  <>
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, ease: easeFluid }}
+                  >
                     <div className="mb-12">
                       <div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-4">MODEL_OUTPUT</div>
                       
@@ -180,8 +208,14 @@ export default function Analysis() {
                             <span className="text-hazard">WEIGHTED_VOTING</span>
                           </div>
                           <div className="divide-y-2 divide-ink">
-                            {Object.keys(prediction.model_outputs).map(modelName => (
-                              <div key={modelName} className="flex justify-between items-center p-3 hover:bg-canvas-cream transition-colors">
+                            {Object.keys(prediction.model_outputs).map((modelName, index) => (
+                              <motion.div 
+                                key={modelName}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
+                                className="flex justify-between items-center p-3 hover:bg-canvas-cream transition-colors"
+                              >
                                 <div className="w-[20%] text-slate">[{modelName}]</div>
                                 <div className={`w-[40%] ${prediction.model_outputs[modelName] !== 'Healthy' ? 'text-hazard' : ''}`}>
                                   {prediction.model_outputs[modelName] !== 'Healthy' ? '[!] ' + prediction.model_outputs[modelName] : '[OK] HEALTHY'}
@@ -192,7 +226,7 @@ export default function Analysis() {
                                 <div className="w-[20%] text-right text-slate">
                                   W: {prediction.weights[modelName].toFixed(2)}
                                 </div>
-                              </div>
+                              </motion.div>
                             ))}
                           </div>
                         </div>
@@ -205,30 +239,37 @@ export default function Analysis() {
                         <ShapChart patientData={submittedData} />
                       </div>
                     </div>
-                  </>
+                  </motion.div>
                 ) : (
                   <div className="h-full flex items-center justify-center">
-                    <div className="text-slate text-[14px] font-bold tracking-[0.1em] uppercase border-2 border-slate px-6 py-4">
-                      AWAITING_INPUT...
+                    <div className="text-slate text-[14px] font-bold tracking-[0.1em] uppercase border-2 border-slate px-6 py-4 animate-pulse">
+                      {loading ? 'CALCULATING_SHAP_VALUES...' : 'AWAITING_INPUT...'}
                     </div>
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
           
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </main>
   );
 }
 
 function InputControl({ label, value, min, max, step = 1, onChange }: any) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 group">
       <div className="flex justify-between items-end">
-        <label className="text-[13px] font-bold text-slate tracking-[0.1em]">{label}</label>
-        <span className="font-sans text-[32px] font-black leading-none tabular-nums tracking-tighter">{value}</span>
+        <label className="text-[13px] font-bold text-slate tracking-[0.1em] group-hover:text-ink transition-colors">{label}</label>
+        <motion.span 
+          key={value}
+          initial={{ opacity: 0.5, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-sans text-[32px] font-black leading-none tabular-nums tracking-tighter"
+        >
+          {value}
+        </motion.span>
       </div>
       <div className="relative border-2 border-ink p-1 bg-white">
         <input 

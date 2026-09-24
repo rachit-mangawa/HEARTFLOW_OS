@@ -1,7 +1,23 @@
 "use client";
 
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
+
+const easeFluid: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeFluid } }
+};
 
 export default function MLOps() {
   const [file, setFile] = useState<File | null>(null);
@@ -38,9 +54,14 @@ export default function MLOps() {
   return (
     <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white">
       {/* Top Nav (Mechanical) */}
-      <nav className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50">
+      <motion.nav 
+        initial={{ y: "-100%" }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.8, ease: easeFluid }}
+        className="h-16 flex items-center px-8 border-b-2 border-ink bg-canvas-cream sticky top-0 z-50"
+      >
         <div className="max-w-[1400px] mx-auto w-full flex justify-between items-center">
-          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase">
+          <Link href="/" className="font-sans text-[18px] font-black tracking-[-0.04em] uppercase hover:text-hazard transition-colors">
             [ HEARTFLOW_OS ]
           </Link>
           <div className="flex gap-8 items-center text-[13px] font-bold tracking-[0.05em] uppercase">
@@ -51,10 +72,15 @@ export default function MLOps() {
             <Link href="/edge" className="text-ink hover:text-hazard transition-colors">EDGE.COMPILER</Link>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
-      <div className="max-w-[1000px] mx-auto w-full px-8 py-16 flex-1 flex flex-col">
-        <header className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
+      <motion.div 
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="max-w-[1000px] mx-auto w-full px-8 py-16 flex-1 flex flex-col"
+      >
+        <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
           <div>
             <div className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4">
               /// PIPELINE_CONTROL
@@ -63,9 +89,9 @@ export default function MLOps() {
               MODEL<br />OPERATIONS
             </h1>
           </div>
-        </header>
+        </motion.header>
 
-        <div className="border-2 border-ink bg-white p-8">
+        <motion.div variants={fadeUp} className="border-2 border-ink bg-white p-8">
           <div className="border-b-2 border-ink pb-4 mb-8">
             <h2 className="text-[16px] font-bold tracking-[0.05em] uppercase text-ink">{'< BATCH_RETRAIN >'}</h2>
             <p className="text-[13px] text-slate uppercase mt-2">Append telemetry data and rebuild the edge ensemble.</p>
@@ -74,12 +100,18 @@ export default function MLOps() {
           <div className="flex flex-col gap-6">
             <label 
               htmlFor="dropzone-file" 
-              className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-ink bg-canvas-cream hover:bg-hazard hover:text-white transition-colors cursor-pointer group"
+              className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-ink bg-canvas-cream hover:bg-hazard hover:text-white transition-colors cursor-pointer group relative overflow-hidden"
             >
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <div className="text-[24px] font-bold mb-4 group-hover:text-white">
+              <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(45deg,var(--ink-black)_25%,transparent_25%,transparent_50%,var(--ink-black)_50%,var(--ink-black)_75%,transparent_75%,transparent)] bg-[length:20px_20px]" />
+              <div className="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
+                <motion.div 
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  key={file ? 'selected' : 'unselected'}
+                  className="text-[24px] font-bold mb-4 group-hover:text-white"
+                >
                   {file ? '[ FILE_SELECTED ]' : '[ SELECT_CSV ]'}
-                </div>
+                </motion.div>
                 <p className="mb-2 text-[14px] font-bold uppercase">
                   {file ? file.name : "CLICK TO UPLOAD DATASET"}
                 </p>
@@ -96,23 +128,30 @@ export default function MLOps() {
             </label>
 
             <div className="flex justify-between items-center border-t-2 border-ink pt-6 mt-2" aria-live="polite">
-              <div className="text-[13px] font-bold uppercase tracking-[0.05em]">
+              <motion.div 
+                key={status}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-[13px] font-bold uppercase tracking-[0.05em]"
+              >
                 {status === "uploading" && <span className="text-slate">PROCESSING...</span>}
                 {status === "error" && <span className="text-hazard">ERR: {message}</span>}
                 {status === "success" && <span className="text-ink bg-canvas-cream px-2 py-1 border border-ink">SYS: {message}</span>}
-              </div>
+              </motion.div>
               
-              <button 
+              <motion.button 
+                whileHover={{ scale: 1.02, backgroundColor: "var(--color-hazard)", borderColor: "var(--color-hazard)" }}
+                whileTap={{ scale: 0.98 }}
                 onClick={handleUpload}
                 disabled={!file || status === "uploading"}
-                className="inline-flex items-center justify-center h-12 px-8 bg-ink text-white text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink hover:bg-hazard hover:border-hazard transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                className="inline-flex items-center justify-center h-12 px-8 bg-ink text-white text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink disabled:opacity-50 disabled:pointer-events-none"
               >
                 EXECUTE &gt;&gt;
-              </button>
+              </motion.button>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </main>
   );
 }
