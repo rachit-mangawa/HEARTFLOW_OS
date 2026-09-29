@@ -57,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8">
               <a href="https://huggingface.co/spaces/IDKHowToCodeFR/HEARTFLOW_OS" target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">HUGGING_FACE</a>
-              <a href="https://heartflow-os.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">LIVE_APP</a>
+              <a href="https://idkhowtocodefr.github.io/HEARTFLOW_OS" target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">LIVE_APP</a>
               <Link href="/architecture" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">ARCHITECTURE.MD</Link>
               <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`} target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">API_DOCS</a>
               <a href="https://github.com/IDKHowToCodeFR/HEARTFLOW_OS" target="_blank" rel="noopener noreferrer" className="text-[12px] font-bold tracking-[0.05em] uppercase text-ink hover:text-hazard transition-colors">GITHUB_REPO</a>

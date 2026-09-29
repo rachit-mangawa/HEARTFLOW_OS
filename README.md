@@ -15,8 +15,8 @@ pinned: false
     <a href="https://huggingface.co/spaces/IDKHowToCodeFR/HEARTFLOW_OS" target="_blank">
       <img src="https://img.shields.io/badge/🤗_HuggingFace-Live_Demo-FFD21E.svg?style=for-the-badge" alt="Hugging Face Space" />
     </a>
-    <a href="https://heartflow-os.vercel.app" target="_blank">
-      <img src="https://img.shields.io/badge/🌐_Website-Live_App-black.svg?style=for-the-badge&logo=vercel" alt="Live Website" />
+    <a href="https://idkhowtocodefr.github.io/HEARTFLOW_OS" target="_blank">
+      <img src="https://img.shields.io/badge/🌐_Website-Live_App-black.svg?style=for-the-badge&logo=githubpages" alt="Live Website" />
     </a>
   </p>
 

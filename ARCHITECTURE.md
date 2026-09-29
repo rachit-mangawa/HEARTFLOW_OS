@@ -2,57 +2,76 @@
 
 HeartFlow OS is a distributed Edge AI platform. It bridges the gap between high-level Python MLOps and low-level embedded systems (ESP32/Arduino) by orchestrating live telemetry, automated model training, and zero-dependency C transpilation.
 
-## System Topology
+## Core Flow Diagrams
+
+### 1. Data Cleaning & Feature Selection Pipeline
 
 ```mermaid
 graph TD
-    A[Patient Sensors / Simulator] -->|WebSocket: 60Hz| B(FastAPI Backend)
-    B <-->|Logs & State| C[(SQLite DB)]
-    B <-->|Inference| D[Scikit-Learn Ensemble]
-    B -->|Transpilation| E{AST Compiler}
-    E -->|Generates model.h| F[PlatformIO Firmware]
-    F -->|Flashed to| G[ESP32 Edge Device]
-    
-    H[React / Next.js UI] <-->|WebSocket Stream| B
-    H <-->|REST API| B
-    
-    I[CSV Dataset] -->|Upload| H
-    H -->|/retrain endpoint| B
-    B -->|Train & Evaluate F1| D
+    A[Raw CSV Dataset] --> B{Drop Redundant Columns}
+    B -->|Remove| C[Patient Number, Alert Flags]
+    B --> D[Sanitize Encodings]
+    D -->|Fix \ufffd -> °| E[Feature Engineering]
+    E -->|Create Risk_Severity| F[Risk_Severity = HR > 105 + SpO2 < 94]
+    F --> G[Imputation]
+    G -->|SimpleImputer: Mean| H[Scaling]
+    H -->|StandardScaler| I[Clean Feature Matrix]
+    I --> J[Train / Test Split 80:20]
 ```
 
-## Directory Structure
+### 2. MLOps Background Retraining
 
-| Directory / File | Purpose |
-| :--- | :--- |
-| **`backend/`** | Python FastAPI application. |
-| `backend/main.py` | WebSocket router, dependency injection, and REST endpoints. |
-| `backend/models.py` | MLOps script: Loads dataset, trains ensemble, checks F1 score against `registry.json`, and saves `.pkl` files on success. |
-| `backend/export.py` | AST Compiler: Parses Python decision trees into `if/else` C logic. Applies INT8 quantization. |
-| `backend/ensemble.py` | Soft-voting runtime inference engine. |
-| `backend/test_c_export.py` | Cross-language integrity test ensuring Python models and C-code outputs match. |
-| **`frontend/`** | Next.js 16 Application. |
-| `frontend/src/app/layout.tsx`| Root layout containing the global telemetry socket context and universal footer. |
-| `frontend/src/context/` | Contains `TelemetryContext.tsx` which manages the WebSocket stream with exponential backoff. |
-| **`firmware/`** | PlatformIO C++ Project for edge microcontrollers. |
-| `firmware/platformio.ini` | Build configuration for `esp32dev` with `-O3` optimization flags. |
-| `firmware/src/main.cpp` | Main Arduino wrapper that includes the generated `model.h` and executes `predict()`. |
-| **`docker-compose.yml`** | Full-stack orchestration configuration. |
+```mermaid
+graph TD
+    A[New CSV Upload via UI] --> B(FastAPI /retrain)
+    B --> C[Background Thread: train_models]
+    C --> D[Preprocess Data & Fit Transformers]
+    D --> E[Train 5 Models: KNN, SVM, LogReg, RF, MLP]
+    E --> F[Calculate Weighted F1 Score]
+    F --> G{Is F1 > Active Version?}
+    G -->|Yes| H[Save .pkl files, Update registry.json]
+    G -->|No| I[Rollback, Discard Models]
+    H --> J[Hot-Reload Live Inference Pipeline]
+```
 
-## Data Flow: Background Retraining (MLOps)
+### 3. Edge Compilation (TinyML)
 
-1. User uploads a CSV via the **MLOps UI**.
-2. FastAPI validates the schema and appends it to `patient_dataset.csv`.
-3. A background task invokes `train_models()`.
-4. A new Random Forest is trained. Its F1-score is evaluated against a test set.
-5. If the new score is $\ge$ the `active_version` score in `registry.json`, the `.pkl` files are overwritten and the live Ensemble model is hot-reloaded.
-6. If the new score degrades, the model is rejected (Automatic Rollback).
+```mermaid
+graph TD
+    A[Export Request /export_tinyml] --> B[Load Active .pkl Random Forest]
+    B --> C[Traverse AST Trees Recursively]
+    C --> D{Quantization Enabled?}
+    D -->|Yes| E[Map Float64 to INT8 thresholds]
+    D -->|No| F[Keep Float32 thresholds]
+    E --> G[Generate C Header: model.h]
+    F --> G
+    G -->|Zero-Malloc| H[PlatformIO / ESP32 Compile]
+```
 
-## Data Flow: Edge Compilation (TinyML)
+## Detailed Explanations
 
-1. User requests an export via the **Edge Compiler UI** (`/export_tinyml`).
-2. `export.py` loads the active `.pkl` models.
-3. The Scikit-Learn tree object is recursively traversed.
-4. Leaf nodes are identified and converted into raw `printf` or standard `return` C-strings.
-5. If `quantize=True`, 64-bit float thresholds are mapped to 8-bit integers.
-6. A self-contained `model.h` file is returned, containing a single `int predict(float features[])` function. No dynamic memory (`malloc`/`free`) is used, guaranteeing memory safety on embedded controllers.
+### Data Cleaning and Feature Selection
+Raw patient data is noisy and often contains missing or invalid readings. The preprocessing pipeline (`backend/preprocessing.py`) handles this systematically:
+1. **Dimensionality Reduction**: Redundant or target-leakage columns (like `Heart Rate Alert` or `Patient Number`) are dropped to prevent the model from overfitting on administrative flags.
+2. **Encoding Fixes**: Unicode corruption (e.g., `\ufffd` instead of `°`) is sanitized.
+3. **Imputation**: Missing sensor readings are populated using a `SimpleImputer(strategy='mean')`. The imputer is fitted on the training set and serialized to `imputer.pkl` to prevent data leakage during live inference.
+4. **Feature Engineering**: A custom `Risk_Severity` feature is synthesized by combining critical thresholds: `(Heart Rate > 105) + (SpO2 < 94)`. This gives the decision trees a powerful non-linear hint.
+5. **Standardization**: All continuous features are scaled to a standard normal distribution via `StandardScaler`, ensuring distance-based algorithms (like KNN and SVM) compute correctly.
+
+### Intelligence Pipeline (Ensemble)
+HeartFlow doesn't rely on a single algorithm. It trains five distinct models:
+- **K-Nearest Neighbors (KNN)**
+- **Support Vector Machine (SVM)**
+- **Logistic Regression (LogReg)**
+- **Random Forest (RF)**
+- **Multilayer Perceptron (MLP Neural Network)**
+
+During live telemetry inference (`backend/ensemble.py`), the system aggregates the probability vectors from all five models. It performs a **soft-vote**, returning the highest confidence average as the final diagnosis. 
+
+### Fault-Tolerant Retraining (MLOps)
+When a clinician uploads a new batch of data via the `/mlops` UI, the system trains the entire ensemble in a background thread without dropping live WebSocket connections. 
+It evaluates the newly trained models against a 20% holdout test set. If the new `weighted F1-Score` is higher than the `active_version` tracked in `registry.json`, the `.pkl` files are hot-swapped. If the score degrades, the new models are destroyed (Automated Rollback).
+
+### Edge Transpilation
+Running Python on an ESP32 is too heavy. The `backend/export.py` script traverses the AST (Abstract Syntax Tree) of the trained Scikit-Learn Random Forest and writes pure, `if/else` C++ code into a `model.h` file. 
+To shrink the firmware size by 75%, it applies **INT8 Quantization**, scaling floating-point sensor thresholds into 8-bit integers. The resulting inference function uses zero dynamic memory (`malloc`/`free`), ensuring the microcontroller never crashes from heap fragmentation.

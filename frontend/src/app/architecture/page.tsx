@@ -96,6 +96,59 @@ export default function Architecture() {
 
           </div>
         </motion.div>
+
+        {/* Detailed Specifications */}
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="w-full flex flex-col gap-8">
+          
+          <motion.div variants={fadeUp} className="border-t-4 border-ink pt-8">
+            <h2 className="text-[20px] md:text-[24px] font-sans font-black tracking-[-0.02em] uppercase text-ink mb-6">
+              [ SPEC_01 ] Data Sanitization & Feature Engineering
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white border-2 border-ink p-6">
+                <h3 className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4 uppercase">/// Pipeline_Execution</h3>
+                <p className="text-[13px] md:text-[14px] text-slate leading-relaxed uppercase mb-4">
+                  Raw telemetry is hostile. The ingestion script aggressively drops redundant alert flags to prevent target-leakage. Broken unicode encodings from edge sensors are patched on the fly.
+                </p>
+                <div className="font-mono text-[10px] md:text-[11px] bg-ink text-canvas-cream p-4 border-l-4 border-hazard">
+                  <span className="text-slate">01</span> DROP: 'Heart Rate Alert', 'Patient Number'<br/>
+                  <span className="text-slate">02</span> PATCH: '\ufffd' -&gt; '°'<br/>
+                  <span className="text-slate">03</span> ENCODE: LabelEncoder(Predicted Disease)
+                </div>
+              </div>
+              <div className="bg-white border-2 border-ink p-6">
+                <h3 className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4 uppercase">/// Feature_Synthesis</h3>
+                <p className="text-[13px] md:text-[14px] text-slate leading-relaxed uppercase mb-4">
+                  Missing sensor drops are repaired using a fitted <code className="bg-canvas-cream px-1 text-ink">SimpleImputer(mean)</code>. We inject a non-linear hint directly into the AST: <code className="bg-canvas-cream px-1 text-ink">Risk_Severity</code>. All floats are strictly normalized via <code className="bg-canvas-cream px-1 text-ink">StandardScaler</code>.
+                </p>
+                <div className="font-mono text-[10px] md:text-[11px] bg-ink text-canvas-cream p-4 border-l-4 border-hazard">
+                  Risk_Severity = (HR &gt; 105) + (SpO2 &lt; 94)<br/>
+                  Imputer.fit_transform(continuous_features)<br/>
+                  Scaler.fit_transform(continuous_features)
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="border-t-4 border-ink pt-8">
+            <h2 className="text-[20px] md:text-[24px] font-sans font-black tracking-[-0.02em] uppercase text-ink mb-6">
+              [ SPEC_02 ] Soft-Voting Ensemble & MLOps
+            </h2>
+            <div className="bg-white border-2 border-ink p-6">
+              <p className="text-[13px] md:text-[14px] text-slate leading-relaxed uppercase mb-6 max-w-3xl">
+                Single-model inference is clinically insufficient. HeartFlow_OS aggregates probability distributions from 5 disparate algorithms: <strong>KNN, SVM, LogReg, Random Forest, and a Neural Network (MLP)</strong>. 
+                <br/><br/>
+                When a clinician uploads a new batch dataset, the API spawns a background thread. It retrains all 5 models, calculates the weighted F1-Score against a 20% holdout, and checks <code className="bg-canvas-cream px-1 text-ink">registry.json</code>. If the new score degrades, the batch is destroyed. If it improves, the active `.pkl` weights are hot-swapped globally without dropping WebSocket streams.
+              </p>
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-start text-[12px] font-bold">
+                <div className="bg-ink text-white px-4 py-2">F1 SCORE &gt; ACTIVE_V1</div>
+                <div className="text-ink">━━▶</div>
+                <div className="bg-hazard text-white px-4 py-2 border-2 border-hazard shadow-[4px_4px_0px_0px_rgba(10,10,10,1)]">HOT_SWAP_MODELS()</div>
+              </div>
+            </div>
+          </motion.div>
+
+        </motion.div>
       </motion.div>
     </main>
   );
