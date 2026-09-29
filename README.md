@@ -12,8 +12,8 @@ pinned: false
   <p><strong>Cardiovascular Telemetry & Edge MLOps Engine</strong></p>
   
   <p>
-    <a href="https://huggingface.co/spaces/IDKHowToCodeFR/HEARTFLOW_OS" target="_blank">
-      <img src="https://img.shields.io/badge/🤗_HuggingFace-Live_Demo-FFD21E.svg?style=for-the-badge" alt="Hugging Face Space" />
+    <a href="https://idkhowtocodefr-tinyml-backend.hf.space/docs" target="_blank">
+      <img src="https://img.shields.io/badge/🤗_HuggingFace-API_Docs-FFD21E.svg?style=for-the-badge" alt="Hugging Face API" />
     </a>
     <a href="https://idkhowtocodefr.github.io/HEARTFLOW_OS" target="_blank">
       <img src="https://img.shields.io/badge/🌐_Website-Live_App-black.svg?style=for-the-badge&logo=githubpages" alt="Live Website" />
