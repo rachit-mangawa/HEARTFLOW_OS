@@ -91,8 +91,9 @@ async def init_db() -> None:
 
 async def log_prediction(data: Any, prediction_label: str, confidence: float) -> None:
     async with aiosqlite.connect(DB_PATH) as db:
-        from datetime import timezone, timedelta
-        ist = timezone(timedelta(hours=5, minutes=30))
+        from datetime import datetime
+        import zoneinfo
+        ist = zoneinfo.ZoneInfo("Asia/Kolkata")
         await db.execute('''
             INSERT INTO predictions (timestamp, heart_rate, spo2, sys_bp, dia_bp, temp, fall_detection, prediction_label, confidence)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
