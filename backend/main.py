@@ -143,7 +143,7 @@ def force_sync():
 
 @app.post("/explain")
 async def explain(data: PatientData):
-    eng = ml_engine.get_ensemble()
+    eng = ml_engine.get_ensemble() if ml_engine else None
     if not eng or 'rf' not in eng.models:
         return {"error": "RF Model unavailable for explanation."}
         
@@ -172,7 +172,9 @@ async def explain(data: PatientData):
 
 @app.get("/export_tinyml")
 def export_tinyml(model_name: str = "rf", quantize: bool = False):
-    eng = ml_engine.get_ensemble()
+    eng = ml_engine.get_ensemble() if ml_engine else None
+    if not eng:
+        return {"error": "Models untrained or engine offline"}
     return generate_c_code(eng, model_name, quantize)
 
 def _run_mlops_ingest(csv_bytes: bytes):

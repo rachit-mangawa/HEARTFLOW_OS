@@ -31,7 +31,7 @@ pinned: false
 
 ---
 
-HeartFlow OS is an end-to-end telemetry and inference platform designed to stream cardiovascular vitals, predict anomalies using a soft-voting ensemble model, and export those models to highly-constrained edge devices (like ESP32/Arduino).
+HeartFlow OS streams cardiovascular vitals, predicts anomalies using a soft-voting ensemble, and exports models to highly-constrained edge devices (ESP32/Arduino).
 
 ## System Architecture
 
