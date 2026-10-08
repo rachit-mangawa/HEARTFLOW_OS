@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function Home() {
   const easeFluid: [number, number, number, number] = [0.16, 1, 0.3, 1];
-  
+
   const staggerContainer = {
     hidden: { opacity: 0 },
     show: {
@@ -20,18 +20,18 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white">
+    <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white">
       {/* Hero Section */}
-      <section className="max-w-[1400px] mx-auto w-full px-8 pt-16 md:pt-32 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-16 flex-1 overflow-hidden">
-        <motion.div 
+      <section className="max-w-350 mx-auto w-full px-8 pt-16 md:pt-32 pb-24 grid grid-cols-1 lg:grid-cols-12 gap-16 flex-1 overflow-hidden">
+        <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="show"
           className="lg:col-span-7 flex flex-col justify-center"
         >
-          <motion.div variants={fadeUp} className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-6 flex items-center gap-4">
-            <span>/// MODEL_V2.0</span>
-            <motion.span 
+          <motion.div variants={fadeUp} className="text-[12px] text-hazard font-bold tracking-widest mb-6 flex items-center gap-4">
+            <span>/// MODEL_V2.4 </span>
+            <motion.span
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ duration: 1, ease: easeFluid, delay: 0.4 }}
@@ -39,7 +39,7 @@ export default function Home() {
             ></motion.span>
             <span>INT8_QUANTIZED</span>
           </motion.div>
-          
+
           <motion.h1 variants={fadeUp} className="text-[clamp(3rem,8vw,8rem)] mb-8 leading-tight">
             CLINICAL<br />
             INFERENCE<br />
@@ -51,31 +51,31 @@ export default function Home() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4">
-            <Link href="/dashboard" passHref legacyBehavior>
-              <motion.a
+            <Link href="/dashboard" className="block w-full md:w-auto">
+              <motion.div
                 whileHover={{ scale: 1.02, backgroundColor: "var(--color-hazard)", borderColor: "var(--color-hazard)" }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="inline-flex items-center justify-center h-12 px-8 bg-ink text-white text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink w-full md:w-auto"
+                className="inline-flex items-center justify-center h-12 px-8 bg-ink text-white text-[14px] font-bold uppercase tracking-widest border-2 border-ink w-full"
               >
                 [ INITIATE_STREAM ]
-              </motion.a>
+              </motion.div>
             </Link>
-            <Link href="/edge" passHref legacyBehavior>
-              <motion.a
+            <Link href="/edge" className="block w-full md:w-auto mt-2 md:mt-0">
+              <motion.div
                 whileHover={{ scale: 1.02, backgroundColor: "var(--color-ink)", color: "var(--color-canvas-cream)" }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="inline-flex items-center justify-center h-12 px-8 bg-transparent text-ink text-[14px] font-bold uppercase tracking-[0.1em] border-2 border-ink w-full md:w-auto mt-2 md:mt-0"
+                className="inline-flex items-center justify-center h-12 px-8 bg-transparent text-ink text-[14px] font-bold uppercase tracking-widest border-2 border-ink w-full"
               >
                 C_COMPILER &gt;&gt;
-              </motion.a>
+              </motion.div>
             </Link>
           </motion.div>
         </motion.div>
 
         {/* Feature Grid */}
-        <motion.div 
+        <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="show"

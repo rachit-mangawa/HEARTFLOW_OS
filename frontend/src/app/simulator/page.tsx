@@ -65,18 +65,18 @@ export default function Analysis() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
+    <main className="max-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
       {/* Top Nav (Mechanical) */}
 
       <motion.div 
         variants={staggerContainer}
         initial="hidden"
         animate="show"
-        className="max-w-[1400px] mx-auto w-full px-8 py-16 flex-1 flex flex-col"
+        className="max-w-350 mx-auto w-full px-8 py-16 flex-1 flex flex-col"
       >
         <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
           <div>
-            <div className="text-[12px] text-hazard font-bold tracking-[0.1em] mb-4">
+            <div className="text-[12px] text-hazard font-bold tracking-widest mb-4">
               /// EXPLAINABLE_AI_MODULE
             </div>
             <h1 className="text-[clamp(3rem,6vw,6rem)]">
@@ -84,7 +84,7 @@ export default function Analysis() {
             </h1>
           </div>
           <div className="text-right hidden md:block max-w-sm">
-            <div className="text-[14px] font-bold uppercase tracking-[0.05em] border-2 border-ink px-4 py-2 bg-ink text-canvas-cream text-left">
+            <div className="text-[14px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-canvas-cream text-left">
               MANUAL OVERRIDE. INPUT CUSTOM TELEMETRY TO TEST ENSEMBLE CLASSIFIER AND VIEW SHAPLEY FEATURE IMPORTANCE VECTORS.
             </div>
           </div>
@@ -95,10 +95,10 @@ export default function Analysis() {
           {/* Input Panel */}
           <motion.div variants={fadeUp} className="lg:col-span-5 bg-canvas-cream flex flex-col">
             <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
-              <h2 className="text-[14px] font-bold tracking-[0.05em]">{'< MANUAL_INPUT_MATRIX >'}</h2>
+              <h2 className="text-[14px] font-bold tracking-wider">{'< MANUAL_INPUT_MATRIX >'}</h2>
             </div>
             
-            <div className="p-8 flex flex-col gap-8 flex-grow">
+            <div className="p-8 flex flex-col gap-8 grow">
               <InputControl label="HEART_RATE (BPM)" value={formData.Heart_Rate} min={40} max={200} onChange={(v: number) => setFormData({...formData, Heart_Rate: v})} />
               <InputControl label="SPO2_LEVEL (%)" value={formData.SpO2_Level} min={70} max={100} onChange={(v: number) => setFormData({...formData, SpO2_Level: v})} />
               <InputControl label="SYSTOLIC_BP (MMHG)" value={formData.Systolic_BP} min={80} max={220} onChange={(v: number) => setFormData({...formData, Systolic_BP: v})} />
@@ -117,14 +117,13 @@ export default function Analysis() {
               </motion.button>
 
               {/* Terminal Readout */}
-              <div className="mt-8 flex-grow border-[3px] border-ink bg-ink text-[#4AF626] p-0 flex flex-col min-h-[150px] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
-                <div className="absolute inset-0 pointer-events-none opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)] z-10" />
+                <div className="relative inset-0 pointer-events-none opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)] z-10" />
                 <div className="text-[10px] font-bold tracking-[0.2em] text-ink bg-white border-b-[3px] border-ink px-4 py-3 flex justify-between uppercase">
                   <span>RAW_PAYLOAD_PREVIEW</span>
                   <span>{JSON.stringify(formData).length} BYTES // SYS_READY</span>
                 </div>
-                <div className="p-6 flex-grow flex flex-col relative z-0">
-                  <pre className="text-[12px] font-mono whitespace-pre-wrap flex-grow overflow-auto leading-relaxed">
+                <div className="p-6 grow flex flex-col relative z-0">
+                  <pre className="text-[12px] font-mono whitespace-pre-wrap grow overflow-auto leading-relaxed">
 {`{
   "Heart_Rate": ${formData.Heart_Rate},
   "SpO2_Level": ${formData.SpO2_Level},
@@ -136,16 +135,15 @@ export default function Analysis() {
                   </pre>
                 </div>
               </div>
-            </div>
           </motion.div>
 
           {/* Results Panel */}
           <motion.div variants={fadeUp} className="lg:col-span-7 bg-canvas-cream flex flex-col overflow-hidden">
             <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
-              <h2 className="text-[14px] font-bold tracking-[0.05em]">{'< INFERENCE_RESULTS_&_XAI >'}</h2>
+              <h2 className="text-[14px] font-bold tracking-wider">{'< INFERENCE_RESULTS_&_XAI >'}</h2>
             </div>
             
-            <div className="flex-grow flex flex-col relative bg-white">
+            <div className="grow flex flex-col relative bg-white">
               <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(var(--ink-black) 1px, transparent 1px), linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
               
               <div className="z-10 p-8 flex flex-col h-full">
@@ -156,7 +154,7 @@ export default function Analysis() {
                     transition={{ duration: 0.6, ease: easeFluid }}
                   >
                     <div className="mb-12">
-                      <div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-4">MODEL_OUTPUT</div>
+                      <div className="text-[11px] font-bold text-slate tracking-widest mb-4">MODEL_OUTPUT</div>
                       
                       {(() => {
                         const getStatusStyles = (label: string) => {
@@ -171,10 +169,10 @@ export default function Analysis() {
                         
                         return (
                           <div className={`border-2 p-6 flex flex-col mb-4 ${getStatusStyles(prediction.prediction ? prediction.prediction_label : 'Healthy')}`}>
-                            <div className="font-sans text-[clamp(28px,3vw,56px)] font-black tracking-tighter leading-none mb-2 uppercase break-words">
+                            <div className="font-sans text-[clamp(28px,3vw,56px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-words">
                               {prediction.prediction ? `[!]_${prediction.prediction_label.replace(" ", "_")}` : 'NORMAL'}
                             </div>
-                            <div className="text-[14px] font-bold tracking-[0.1em]">
+                            <div className="text-[14px] font-bold tracking-widest">
                               CONFIDENCE: {(prediction.probability * 100).toFixed(1)}%
                             </div>
                           </div>
@@ -183,7 +181,7 @@ export default function Analysis() {
 
                       {/* Ensemble Diagnostics */}
                       {prediction.model_outputs && (
-                        <div className="border-2 border-ink bg-white flex flex-col text-[12px] font-bold uppercase tracking-[0.05em]">
+                        <div className="border-2 border-ink bg-white flex flex-col text-[12px] font-bold uppercase tracking-wider">
                           <div className="border-b-2 border-ink px-4 py-2 bg-ink text-canvas-cream flex justify-between">
                             <span>{'< ENSEMBLE_STACK_DIAGNOSTICS >'}</span>
                             <span className="text-hazard">WEIGHTED_VOTING</span>
@@ -214,8 +212,8 @@ export default function Analysis() {
                       )}
                     </div>
 
-                    <div className="flex-1 border-2 border-ink bg-white p-8 flex flex-col min-h-[300px]">
-                      <div className="text-[11px] font-bold text-slate tracking-[0.1em] mb-6 border-b-2 border-ink pb-2">SHAPLEY_ADDITIVE_EXPLANATIONS</div>
+                    <div className="flex-1 border-2 border-ink bg-white p-8 flex flex-col min-h-75">
+                      <div className="text-[11px] font-bold text-slate tracking-widest mb-6 border-b-2 border-ink pb-2">SHAPLEY_ADDITIVE_EXPLANATIONS</div>
                       <div className="flex-1">
                         <ShapChart patientData={submittedData} />
                       </div>
@@ -223,7 +221,7 @@ export default function Analysis() {
                   </motion.div>
                 ) : (
                   <div className="h-full flex items-center justify-center">
-                    <div className="text-slate text-[14px] font-bold tracking-[0.1em] uppercase border-2 border-slate px-6 py-4 animate-pulse">
+                    <div className="text-slate text-[14px] font-bold tracking-widest uppercase border-2 border-slate px-6 py-4 animate-pulse">
                       {loading ? 'CALCULATING_SHAP_VALUES...' : 'AWAITING_INPUT...'}
                     </div>
                   </div>
@@ -242,7 +240,7 @@ function InputControl({ label, value, min, max, step = 1, onChange }: any) {
   return (
     <div className="flex flex-col gap-3 group">
       <div className="flex justify-between items-end">
-        <label className="text-[13px] font-bold text-slate tracking-[0.1em] group-hover:text-ink transition-colors">{label}</label>
+        <label className="text-[13px] font-bold text-slate tracking-widest group-hover:text-ink transition-colors">{label}</label>
         <motion.span 
           key={value}
           initial={{ opacity: 0.5, y: -5 }}
