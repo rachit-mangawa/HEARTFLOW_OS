@@ -508,8 +508,8 @@ Measured across 10,000 synthetic clinical telemetry vectors:
   - `GET /dataset?page=1&limit=25`: Returns windowed paginated records with patient search and diagnosis cohort filtering.
 
 ### 10.2. Remote Cloud Service Gateway
-- **Production REST Gateway**: `https://idkhowtocodefr-hf-backend.hf.space/heartflow`
-- **Real-Time WebSocket Feed**: `wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed`
+- **Production REST Gateway**: `https://idkhowtocodefr-hf-backend.hf.space`
+- **Real-Time WebSocket Feed**: `wss://idkhowtocodefr-hf-backend.hf.space/ws/feed`
 
 ---
 

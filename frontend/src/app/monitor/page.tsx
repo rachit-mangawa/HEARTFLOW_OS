@@ -18,6 +18,7 @@ import {
   Wind,
   FileText,
 } from "lucide-react";
+import { evaluateEdge } from "@/lib/edge/inference";
 
 interface TelemetryEvent {
   id: string;
@@ -64,7 +65,15 @@ export default function SystemMonitor() {
   const [snapped, setSnapped] = useState(false);
   const [userEvents, setUserEvents] = useState<TelemetryEvent[]>([]);
 
-  const isCriticalAnomaly = Boolean(data?.prediction?.is_at_risk);
+  const effectivePrediction = data?.prediction ?? (data?.sensor_data ? evaluateEdge(data.sensor_data) : evaluateEdge({
+    Heart_Rate: 75,
+    SpO2_Level: 98,
+    Systolic_BP: 120,
+    Diastolic_BP: 80,
+    Body_Temp: 37.0,
+  }));
+
+  const isCriticalAnomaly = Boolean(effectivePrediction?.is_at_risk);
 
   const handleSnapshot = () => {
     snapshotCurrentVitals();
@@ -85,12 +94,12 @@ export default function SystemMonitor() {
 
   // Compile active events feed reactively
   const activeEvents: TelemetryEvent[] = [
-    ...(isCriticalAnomaly && data?.prediction?.label
+    ...(isCriticalAnomaly && effectivePrediction?.label
       ? [
           {
             id: `evt-crit-active`,
             timestamp: "ALERT",
-            message: `CARDIAC EVENT DETECTED: ${data.prediction.label} (${((data.prediction.confidence ?? 0.85) * 100).toFixed(1)}%)`,
+            message: `CARDIAC EVENT DETECTED: ${effectivePrediction.label} (${((effectivePrediction.confidence ?? 0.85) * 100).toFixed(1)}%)`,
             type: "crit" as const,
           },
         ]
@@ -220,7 +229,7 @@ export default function SystemMonitor() {
                 <Activity size={16} className="text-hazard" />
                 <h2 className="text-[14px] font-bold tracking-wider uppercase">Live Patient Vitals</h2>
               </div>
-              {data?.prediction ? (
+              {effectivePrediction ? (
                 (() => {
                   const getStatusStyles = (lbl: string) => {
                     const norm = (lbl || "").toLowerCase();
@@ -234,10 +243,10 @@ export default function SystemMonitor() {
                   return (
                     <div
                       className={`px-3 py-1 text-[13px] font-bold uppercase tracking-wider border-2 ${getStatusStyles(
-                        data.prediction.label
+                        effectivePrediction.label
                       )}`}
                     >
-                      {data.prediction.label} ({(data.prediction.confidence * 100).toFixed(1)}%)
+                      {effectivePrediction.label} ({(effectivePrediction.confidence * 100).toFixed(1)}%)
                     </div>
                   );
                 })()
@@ -393,8 +402,8 @@ export default function SystemMonitor() {
               </div>
 
               <div className="p-6 bg-white flex flex-col justify-center gap-5">
-                {data?.prediction?.disease_probs ? (
-                  Object.entries(data.prediction.disease_probs)
+                {effectivePrediction?.disease_probs && Object.keys(effectivePrediction.disease_probs).length > 0 ? (
+                  Object.entries(effectivePrediction.disease_probs)
                     .sort((a, b) => (b[1] as number) - (a[1] as number))
                     .map(([disease, prob]) => {
                       const pct = ((prob as number) * 100).toFixed(1);

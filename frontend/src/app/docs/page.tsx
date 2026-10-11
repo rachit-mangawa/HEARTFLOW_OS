@@ -41,7 +41,7 @@ const ENDPOINTS: EndpointDoc[] = [
     description: "Evaluates vital signs against the 5-model ensemble to predict cardiovascular risk and class probabilities.",
     latency: "< 20µs (In-Browser / MCU) | < 35ms (Cloud REST)",
     category: "Inference",
-    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/predict" \\
+    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/predict" \\
   -H "Content-Type: application/json" \\
   -d '{
     "Heart_Rate": 84,
@@ -60,7 +60,7 @@ payload = {
     "Body_Temp": 37.1
 }
 
-res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/heartflow/predict", json=payload)
+res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/predict", json=payload)
 data = res.json()
 print("Diagnosis:", data["prediction_label"])
 print("Confidence:", data["probability"])`,
@@ -117,11 +117,11 @@ console.log(result.label, result.confidence, result.disease_probs);`,
     description: "Returns recent evaluation records recorded during the active session from browser storage.",
     latency: "< 5ms",
     category: "System",
-    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/history?limit=10" \\
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/history?limit=10" \\
   -H "Accept: application/json"`,
     python: `import requests
 
-res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/history?limit=10")
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/history?limit=10")
 records = res.json()
 print(f"Retrieved {len(records)} audit entries")`,
     typescript: `import { getSessionHistory } from "@/lib/edge/history";
@@ -151,11 +151,11 @@ console.log("Active records:", sessionAudit.length);`,
     description: "Generates a standalone C99 header (model.h) containing model weights and decision logic without dynamic memory allocation.",
     latency: "< 2ms (In-Browser transpiler)",
     category: "Hardware",
-    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/export_tinyml?model_name=rf" \\
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/export_tinyml?model_name=rf" \\
   -H "Accept: application/json"`,
     python: `import requests
 
-res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/export_tinyml?model_name=rf")
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/export_tinyml?model_name=rf")
 c_source = res.json()["code"]
 
 with open("model_rf.h", "w") as f:
@@ -181,10 +181,10 @@ console.log("C header size:", cCode.length, "bytes");`,
     description: "Returns accuracy, F1 scores, and weights for each model in the ensemble.",
     latency: "< 10ms",
     category: "MLOps",
-    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/metrics"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/metrics"`,
     python: `import requests
 
-metrics = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/metrics").json()
+metrics = requests.get("https://idkhowtocodefr-hf-backend.hf.space/metrics").json()
 print("Ensemble Accuracy:", metrics["ensemble_accuracy"])`,
     typescript: `// Client-side benchmarks available via MLOps metrics module`,
     responseBody: {
@@ -208,18 +208,18 @@ print("Ensemble Accuracy:", metrics["ensemble_accuracy"])`,
     description: "Accepts a CSV batch of patient records, maps headers to standard columns, re-fits the ensemble models, and saves updated weights.",
     latency: "< 3.5s (Full Ensemble Re-fitting)",
     category: "MLOps",
-    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/retrain" \\
+    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/retrain" \\
   -F "file=@patient_dataset_verified_batch.csv"`,
     python: `import requests
 
 with open("patient_dataset_verified_batch.csv", "rb") as f:
-    res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/heartflow/retrain", files={"file": f})
+    res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/retrain", files={"file": f})
 print(res.json()["message"])`,
     typescript: `// Triggered via MLOps workspace in frontend/src/app/mlops/page.tsx
 const formData = new FormData();
 formData.append("file", csvFile);
 
-const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/heartflow/retrain", {
+const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/retrain", {
   method: "POST",
   body: formData,
 });
@@ -255,12 +255,12 @@ console.log(data.message);`,
     description: "Reports backend operational status and whether ensemble models are loaded.",
     latency: "< 1ms",
     category: "System",
-    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/health"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/health"`,
     python: `import requests
 
-res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/health")
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/health")
 print("Engine Status:", res.json()["status"])`,
-    typescript: `const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/heartflow/health");
+    typescript: `const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/health");
 const data = await res.json();
 console.log("Status:", data.status);`,
     responseBody: {
@@ -275,10 +275,10 @@ console.log("Status:", data.status);`,
     description: "Returns summary statistics, feature distributions, and correlation values for the 60,000-record dataset in a compact payload.",
     latency: "< 5ms (Cached Profiler)",
     category: "MLOps",
-    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset/summary"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/dataset/summary"`,
     python: `import requests
 
-profile = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset/summary").json()
+profile = requests.get("https://idkhowtocodefr-hf-backend.hf.space/dataset/summary").json()
 print("Total Records:", profile["summary"]["total_records"])
 print("Pearson Matrix:", len(profile["correlation_matrix"]["matrix"]))`,
     typescript: `import { DATASET_PROFILE } from "@/lib/edge/dataset-profile";
@@ -308,13 +308,13 @@ console.log("Features:", DATASET_PROFILE.summary.total_features);`,
     description: "Returns paginated rows from the 60,000-record telemetry dataset, with optional search and diagnosis filtering.",
     latency: "< 5ms (Server Windowed Query)",
     category: "MLOps",
-    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset?page=1&limit=25&disease=Heart%20Disease"`,
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/dataset?page=1&limit=25&disease=Heart%20Disease"`,
     python: `import requests
 
 params = {"page": 1, "limit": 25, "disease": "Heart Disease"}
-res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset", params=params).json()
+res = requests.get("https://idkhowtocodefr-hf-backend.hf.space/dataset", params=params).json()
 print(f"Page {res.get('page', 1)}: {len(res.get('rows', []))} rows")`,
-    typescript: `const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/heartflow/dataset?page=1&limit=25");
+    typescript: `const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/dataset?page=1&limit=25");
 const data = await res.json();
 console.log("Rows fetched:", data.rows?.length || data.length);`,
     responseBody: {
@@ -344,7 +344,7 @@ console.log("Rows fetched:", data.rows?.length || data.length);`,
     description: "Calculates SHAP values for the random forest model to show how each vital sign influenced the prediction.",
     latency: "< 15ms",
     category: "Inference",
-    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/heartflow/explain" \\
+    curl: `curl -X POST "https://idkhowtocodefr-hf-backend.hf.space/explain" \\
   -H "Content-Type: application/json" \\
   -d '{
     "Heart_Rate": 115,
@@ -362,7 +362,7 @@ payload = {
     "Diastolic_BP": 105,
     "Body_Temp": 38.5
 }
-res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/heartflow/explain", json=payload)
+res = requests.post("https://idkhowtocodefr-hf-backend.hf.space/explain", json=payload)
 print("SHAP Attribution:", res.json())`,
     typescript: `import { calculateShap } from "@/lib/edge/explain";
 
@@ -394,19 +394,19 @@ console.log(attribution);`,
     description: "Streams continuous patient vitals and real-time ensemble predictions over WebSocket.",
     latency: "< 5ms (Streaming WebSocket Frame)",
     category: "Hardware",
-    curl: `wscat -c "wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed"`,
+    curl: `wscat -c "wss://idkhowtocodefr-hf-backend.hf.space/ws/feed"`,
     python: `import asyncio
 import websockets
 import json
 
 async def stream():
-    async with websockets.connect("wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed") as ws:
+    async with websockets.connect("wss://idkhowtocodefr-hf-backend.hf.space/ws/feed") as ws:
         async for msg in ws:
             packet = json.loads(msg)
             print(packet["sensor_data"], packet["prediction"])
 
 asyncio.run(stream())`,
-    typescript: `const socket = new WebSocket("wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed");
+    typescript: `const socket = new WebSocket("wss://idkhowtocodefr-hf-backend.hf.space/ws/feed");
 socket.onmessage = (event) => {
   const packet = JSON.parse(event.data);
   console.log("Telemetry Frame:", packet);
@@ -592,7 +592,7 @@ export default function ApiDocs() {
                   Inference runs in the browser by default, with an optional remote service for cloud and batch evaluation.
                 </p>
                 <div className="bg-canvas-cream border border-ink p-2 text-[11px] font-bold break-all text-ink">
-                  https://idkhowtocodefr-hf-backend.hf.space/heartflow
+                  https://idkhowtocodefr-hf-backend.hf.space
                 </div>
                 <div className="mt-2 text-[11px] text-slate font-bold flex flex-col gap-1">
                   <div>

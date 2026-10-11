@@ -241,13 +241,13 @@ Interactive documentation with live in-browser testing is hosted at `/docs`.
 ### Option 1: Remote Cloud API Gateway (Zero Local Install)
 
 The backend runs as a hosted cloud API service:
-- **Direct REST API Gateway**: `https://idkhowtocodefr-hf-backend.hf.space/heartflow`
-- **WebSocket Telemetry Stream**: `wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed`
+- **Direct REST API Gateway**: `https://idkhowtocodefr-hf-backend.hf.space`
+- **WebSocket Telemetry Stream**: `wss://idkhowtocodefr-hf-backend.hf.space/ws/feed`
 
 To connect the Next.js frontend to the live cloud backend, set:
 ```bash
-NEXT_PUBLIC_API_URL=https://idkhowtocodefr-hf-backend.hf.space/heartflow
-NEXT_PUBLIC_WS_URL=wss://idkhowtocodefr-hf-backend.hf.space/heartflow/ws/feed
+NEXT_PUBLIC_API_URL=https://idkhowtocodefr-hf-backend.hf.space
+NEXT_PUBLIC_WS_URL=wss://idkhowtocodefr-hf-backend.hf.space/ws/feed
 ```
 
 ---

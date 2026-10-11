@@ -42,7 +42,27 @@ type TelemetryContextType = {
 const TelemetryContext = createContext<TelemetryContextType | null>(null);
 
 export function TelemetryProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<TelemetryPacket | null>(null);
+  const [data, setData] = useState<TelemetryPacket | null>(() => {
+    const defaultVitals: PatientVitals = {
+      Heart_Rate: 75,
+      SpO2_Level: 98,
+      Systolic_BP: 120,
+      Diastolic_BP: 80,
+      Body_Temp: 37.0,
+    };
+    const pred = evaluateEdge(defaultVitals);
+    return {
+      sensor_data: defaultVitals,
+      prediction: {
+        is_at_risk: pred.is_at_risk,
+        label: pred.label,
+        confidence: pred.confidence,
+        disease_probs: pred.disease_probs,
+        inference_latency_us: pred.latency_us,
+      },
+      runtime_mode: "EDGE_WASM_BROWSER",
+    };
+  });
   const [stream, setStream] = useState<StreamState>({
     hr: Array(50).fill(75),
     temp: Array(50).fill(37.0),
@@ -61,11 +81,25 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updatePacketStream = useCallback((packet: TelemetryPacket) => {
-    setData(packet);
-    if (packet.sensor_data) {
+    let finalPacket = packet;
+    if (packet.sensor_data && (!packet.prediction || !packet.prediction.disease_probs || Object.keys(packet.prediction.disease_probs).length === 0)) {
+      const edge = evaluateEdge(packet.sensor_data);
+      finalPacket = {
+        ...packet,
+        prediction: {
+          is_at_risk: edge.is_at_risk,
+          label: edge.label,
+          confidence: edge.confidence,
+          disease_probs: edge.disease_probs,
+          inference_latency_us: edge.latency_us,
+        },
+      };
+    }
+    setData(finalPacket);
+    if (finalPacket.sensor_data) {
       setStream((prev) => ({
-        hr: [...prev.hr.slice(1), packet.sensor_data.Heart_Rate],
-        temp: [...prev.temp.slice(1), packet.sensor_data.Body_Temp],
+        hr: [...prev.hr.slice(1), finalPacket.sensor_data.Heart_Rate],
+        temp: [...prev.temp.slice(1), finalPacket.sensor_data.Body_Temp],
       }));
     }
   }, []);

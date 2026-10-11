@@ -93,7 +93,7 @@ export class BrowserTelemetrySimulator {
       this.timer = setInterval(() => {
         const p = this.tick();
         this.listeners.forEach(cb => cb(p));
-      }, 1000);
+      }, 250);
     }
     return () => {
       this.listeners = this.listeners.filter(cb => cb !== fn);
