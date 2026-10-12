@@ -1,12 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Database, LineChart, Table2, Layers } from "lucide-react";
-import Link from "next/link";
+import { Database, Table2, Layers, Download } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function Analytics() {
-  const [dataset, setDataset] = useState<any[]>([]);
+  const [dataset, setDataset] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,20 +16,20 @@ export default function Analytics() {
           if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-              setDataset(data);
+              setDataset(data as Record<string, unknown>[]);
               setLoading(false);
               return;
             }
           }
         }
-      } catch (err) {
+      } catch {
         // Fall through to local dataset
       }
 
       // Zero-cloud embedded ground truth dataset
       try {
         const { SAMPLE_DATASET } = await import("@/lib/edge/dataset");
-        setDataset(SAMPLE_DATASET);
+        setDataset(SAMPLE_DATASET as unknown as Record<string, unknown>[]);
       } catch (e) {
         console.error("Local dataset error", e);
       } finally {
@@ -42,103 +40,133 @@ export default function Analytics() {
     loadDataset();
   }, []);
 
-  const spring = {
-    type: "spring" as const,
-    stiffness: 100,
-    damping: 20,
-  };
-
   const columns = dataset.length > 0 ? Object.keys(dataset[0]) : [];
 
+  const handleExportCSV = () => {
+    if (!dataset.length) return;
+    const headers = columns.join(",");
+    const rows = dataset.map((row) =>
+      columns.map((c) => JSON.stringify(row[c] ?? "")).join(",")
+    );
+    const csv = [headers, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ground_truth_patient_dataset.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <main className="min-h-dvh relative overflow-hidden bg-canvas">
-
-      <div className="max-w-300 mx-auto px-8 py-24 relative">
-        <div className="absolute top-0 right-1/4 w-[30vw] h-[30vw] rounded-full bg-gradient-sky opacity-20 blur-[80px] -z-10" />
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={spring}
-          className="mb-12 flex justify-between items-end"
-        >
+    <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col">
+        {/* Header */}
+        <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
-            <h1 className="font-display text-[48px] font-light tracking-[-0.02em] text-ink leading-[1.08] mb-4">
-              Dataset Explorer
+            <div className="text-[12px] text-hazard font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
+              <Database size={14} />
+              TELEMETRY GROUND TRUTH
+            </div>
+            <h1 className="text-[clamp(2.5rem,5vw,5.5rem)] leading-[0.9]">
+              DATASET<br />EXPLORER
             </h1>
-            <p className="font-sans text-[16px] text-body max-w-2xl leading-relaxed tracking-[0.01em]">
-              Preview the current ground-truth telemetry used for training the TinyML models.
-            </p>
           </div>
-          <div className="flex gap-4">
-            <div className="px-4 py-2 bg-canvas-soft border border-hairline-soft rounded-full flex items-center text-sm font-medium text-ink">
-              <Layers className="w-4 h-4 mr-2 text-muted" />
-              {columns.length} Features
-            </div>
-            <div className="px-4 py-2 bg-surface-card border border-hairline rounded-full flex items-center text-sm font-medium text-ink shadow-[0_4px_16px_rgba(0,0,0,0.02)]">
-              <Database className="w-4 h-4 mr-2 text-muted" />
-              {dataset.length} Rows
-            </div>
-          </div>
-        </motion.div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...spring, delay: 0.1 }}
-          className="bg-surface-card rounded-xl border border-hairline shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col h-150"
-        >
-          <div className="p-4 border-b border-hairline-soft flex items-center justify-between bg-canvas-soft">
-            <h2 className="font-sans text-[14px] font-medium text-ink flex items-center gap-2">
-              <Table2 size={16} className="text-muted" /> Raw Tabular View
-            </h2>
+          <div className="flex flex-col sm:items-end gap-3">
+            <div className="flex gap-2">
+              <div className="px-3 py-1.5 bg-white border-2 border-ink flex items-center text-[12px] font-bold uppercase tracking-wider text-ink">
+                <Layers className="w-3.5 h-3.5 mr-2 text-hazard" />
+                {columns.length} Features
+              </div>
+              <div className="px-3 py-1.5 bg-ink border-2 border-ink text-white flex items-center text-[12px] font-bold uppercase tracking-wider">
+                <Database className="w-3.5 h-3.5 mr-2 text-white" />
+                {dataset.length} Observations
+              </div>
+            </div>
+
+            <button
+              onClick={handleExportCSV}
+              disabled={!dataset.length}
+              className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-1.5 bg-white hover:bg-hazard hover:text-white transition-colors flex items-center gap-1.5"
+            >
+              <Download size={13} />
+              Download Training CSV
+            </button>
           </div>
-          <div className="grow overflow-auto relative bg-surface-card">
-            <table className="w-full text-left text-[14px]">
-              <thead className="bg-canvas-soft sticky top-0 z-10 border-b border-hairline text-muted font-medium text-[12px] uppercase tracking-[0.06em]">
+        </header>
+
+        {/* Tabular Matrix View */}
+        <div className="crosshair-corner border-2 border-ink bg-white flex flex-col h-160 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="p-4 border-b-2 border-ink flex items-center justify-between bg-canvas-cream">
+            <h2 className="text-[13px] font-bold tracking-widest uppercase text-ink flex items-center gap-2">
+              <Table2 size={16} />
+              Training Telemetry Records
+            </h2>
+            <div className="text-[11px] font-bold text-slate uppercase tracking-wider">
+              {loading ? "Loading..." : `${dataset.length} Total Records`}
+            </div>
+          </div>
+
+          <div className="grow overflow-auto relative bg-white">
+            <table className="w-full text-left text-[12px] tabular-nums font-mono">
+              <thead className="bg-ink text-white sticky top-0 z-10 border-b-2 border-ink uppercase tracking-widest text-[11px] font-bold">
                 <tr>
-                  {columns.map(col => (
-                    <th key={col} className="px-6 py-4 font-medium whitespace-nowrap">
-                      {col}
+                  {columns.map((col) => (
+                    <th key={col} className="px-6 py-3.5 border-r border-white/20 whitespace-nowrap">
+                      {col.replace("_", " ")}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-hairline-soft text-ink">
+              <tbody className="divide-y-2 divide-ink/10 text-ink uppercase font-bold">
                 {loading ? (
                   <tr>
-                    <td colSpan={columns.length || 1} className="px-6 py-12 text-center text-muted">
+                    <td colSpan={columns.length || 1} className="px-6 py-16 text-center text-slate">
                       Loading dataset...
                     </td>
                   </tr>
                 ) : dataset.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length || 1} className="px-6 py-12 text-center text-muted">
-                      No dataset available. Upload one in MLOps.
+                    <td colSpan={columns.length || 1} className="px-6 py-16 text-center text-slate">
+                      No dataset records available. Upload a CSV in Model Operations.
                     </td>
                   </tr>
                 ) : (
                   dataset.slice(0, 100).map((row, i) => (
-                    <tr key={i} className="hover:bg-canvas-soft/50 transition-colors">
-                      {columns.map(col => (
-                        <td key={col} className="px-6 py-3 whitespace-nowrap">
-                          {typeof row[col] === 'number' && !Number.isInteger(row[col]) 
-                            ? row[col].toFixed(2) 
-                            : String(row[col])}
-                        </td>
-                      ))}
+                    <tr key={i} className="hover:bg-canvas-cream transition-colors">
+                      {columns.map((col) => {
+                        const val = row[col];
+                        const isRiskCol = col.toLowerCase().includes("risk") || col.toLowerCase().includes("label");
+                        const isRiskVal = String(val).toLowerCase() === "1" || String(val).toLowerCase() === "heart disease";
+                        return (
+                          <td
+                            key={col}
+                            className={`px-6 py-3 whitespace-nowrap border-r border-ink/10 ${
+                              isRiskCol && isRiskVal ? "text-hazard" : ""
+                            }`}
+                          >
+                            {typeof val === "number" && !Number.isInteger(val)
+                              ? val.toFixed(2)
+                              : String(val ?? "---")}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
-            {!loading && dataset.length > 100 && (
-              <div className="p-4 text-center text-[13px] text-muted-soft border-t border-hairline-soft">
-                Showing first 100 rows.
-              </div>
-            )}
           </div>
-        </motion.div>
+
+          {!loading && dataset.length > 100 && (
+            <div className="p-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate border-t-2 border-ink bg-canvas-cream">
+              Showing first 100 rows · Download training CSV for full dataset
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

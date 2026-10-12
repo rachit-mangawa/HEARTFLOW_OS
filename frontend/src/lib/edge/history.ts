@@ -122,7 +122,3 @@ export function downloadSessionJSON(records: HistoryRecord[]): void {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
-// Backward-compatible alias
-export const getLocalHistory = getSessionHistory;
-export const appendLocalHistory = appendSessionHistory;

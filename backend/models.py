@@ -11,11 +11,14 @@ from sklearn.metrics import f1_score
 import pandas as pd
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from preprocessing import get_train_test_split, resolve_model_dir
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+from preprocessing import get_train_test_split, resolve_model_dir, resolve_data_path
 
 def train_models():
-    data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'patient_dataset.csv')
+    data_path = resolve_data_path()
     model_dir = resolve_model_dir()
     os.makedirs(model_dir, exist_ok=True)
     registry_path = os.path.join(model_dir, 'registry.json')

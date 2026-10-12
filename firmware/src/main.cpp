@@ -27,7 +27,15 @@ void setup() {
   unsigned long end_time = micros();
   
   Serial.print(">> INFERENCE RESULT: CLASS ");
-  Serial.println(prediction);
+  Serial.print(prediction);
+#ifdef CLASS_NAMES
+  if (prediction >= 0 && prediction < N_CLASSES) {
+    Serial.print(" (");
+    Serial.print(CLASS_NAMES[prediction]);
+    Serial.print(")");
+  }
+#endif
+  Serial.println();
   
   Serial.print(">> INFERENCE TIME: ");
   Serial.print(end_time - start_time);

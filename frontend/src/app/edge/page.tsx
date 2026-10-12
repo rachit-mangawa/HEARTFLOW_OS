@@ -1,23 +1,31 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { Cpu, Zap, Terminal } from "lucide-react";
+import { generateCHeader } from "@/lib/edge/c_exporter";
+import GeneratedCHeader from "@/components/GeneratedCHeader";
 
 export default function EdgeDeployment() {
   const [model, setModel] = useState("rf");
-  const [code, setCode] = useState("");
+  const [targetMcu, setTargetMcu] = useState("esp32");
+  const [quantize, setQuantize] = useState(true);
+  const [code, setCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  const handleExport = async () => {
+  const handleExport = async (overrideModel?: string, overrideQuantize?: boolean, overrideMcu?: string) => {
+    const activeModel = overrideModel ?? model;
+    const activeQuantize = overrideQuantize !== undefined ? overrideQuantize : quantize;
+    const activeMcu = overrideMcu ?? targetMcu;
+
     setLoading(true);
-    setCode("");
     setError("");
-    
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       if (apiUrl) {
-        const res = await fetch(`${apiUrl}/export_tinyml?model_name=${model}`);
+        const res = await fetch(`${apiUrl}/export_tinyml?model_name=${activeModel}&quantize=${activeQuantize}`);
         if (res.ok) {
           const data = await res.json();
           if (!data.error && (data.code || data.c_code)) {
@@ -27,20 +35,39 @@ export default function EdgeDeployment() {
           }
         }
       }
-    } catch (err: any) {
+    } catch {
       // Cloud API unreachable, seamlessly compile on the client
     }
 
     // Client-side Zero-Cloud TinyML Transpiler
     try {
-      const { generateCHeader } = await import("@/lib/edge/c_exporter");
-      const cCode = generateCHeader(model, false);
+      const cCode = generateCHeader(activeModel, activeQuantize, activeMcu);
       setCode(cCode);
-    } catch (err: any) {
-      setError(err.message || "Failed to generate C header");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || "Failed to generate C header");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectModel = (val: string) => {
+    setModel(val);
+  };
+
+  const handleSelectMcu = (val: string) => {
+    setTargetMcu(val);
+  };
+
+  const handleToggleQuantize = () => {
+    setQuantize((prev) => !prev);
+  };
+
+  const handleCopy = () => {
+    if (!code) return;
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = () => {
@@ -49,131 +76,214 @@ export default function EdgeDeployment() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `model_${model}.h`;
+    a.download = `model_${model}_${quantize ? "int8" : "fp32"}.h`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  return (
-    <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white">
-      {/* Top Nav (Mechanical) */}
+  // Dynamic hardware budget estimates based on selected topology
+  const getSramEstimate = () => {
+    if (model === "rf") return quantize ? "28 Bytes" : "112 Bytes";
+    if (model === "svm") return quantize ? "32 Bytes" : "200 Bytes";
+    if (model === "small_nn") return quantize ? "48 Bytes" : "168 Bytes";
+    if (model === "knn") return quantize ? "64 Bytes" : "240 Bytes";
+    return quantize ? "24 Bytes" : "96 Bytes";
+  };
 
-      <div className="max-w-350 mx-auto w-full px-8 py-16 flex-1 flex flex-col">
-        <header className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
+  const getFlashEstimate = () => {
+    if (model === "rf") return quantize ? "~ 1.6 KB" : "~ 4.2 KB";
+    if (model === "svm") return quantize ? "~ 0.9 KB" : "~ 2.1 KB";
+    if (model === "small_nn") return quantize ? "~ 1.2 KB" : "~ 2.8 KB";
+    if (model === "knn") return quantize ? "~ 1.8 KB" : "~ 3.4 KB";
+    return quantize ? "~ 0.6 KB" : "~ 1.5 KB";
+  };
+
+  return (
+    <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-12">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-6 md:py-8 flex-1 flex flex-col">
+        {/* Header */}
+        <header className="mb-6 border-b-4 border-ink pb-6 flex flex-col md:flex-row justify-between md:items-end gap-4">
           <div>
-            <div className="text-[12px] text-hazard font-bold tracking-widest mb-4">
-              /// C_COMPILER_TOOLCHAIN
+            <div className="text-[12px] text-hazard font-bold tracking-widest mb-3 flex items-center gap-2 uppercase">
+              <Terminal size={14} />
+              C99 EMBEDDED TRANSPILER · ZERO-MALLOC ABI
             </div>
-            <h1 className="text-[clamp(3rem,6vw,6rem)]">
-              EDGE<br />DEPLOYMENT
+            <h1 className="text-[clamp(2.5rem,5vw,5rem)] leading-[0.9]">
+              EDGE<br />COMPILER
             </h1>
+          </div>
+          <div className="flex flex-col items-start md:items-end gap-2 text-right">
+            <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white">
+              {`TARGET: ${targetMcu.toUpperCase()} · ${quantize ? "INT8 FIXED-POINT" : "FP32 SINGLE-PRECISION"}`}
+            </div>
+            <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
+              ABI: int predict(const float *features) · Zero-Malloc
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink">
-          {/* Config Panel */}
-          <div className="lg:col-span-4 bg-white flex flex-col border-b-2 lg:border-b-0 lg:border-r-2 border-ink p-8">
-            <div className="border-b-2 border-ink pb-4 mb-6">
-              <h2 className="text-[16px] font-bold tracking-wider uppercase text-ink">{'< BUILD_CONFIG >'}</h2>
-              <p className="text-[13px] text-slate uppercase mt-2">Select target architecture.</p>
-            </div>
-            
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-3">
-                <label htmlFor="arch-select" className="text-[11px] font-bold uppercase tracking-widest text-slate">TARGET_MCU</label>
-                <select 
-                  id="arch-select"
-                  className="w-full bg-canvas-cream border-2 border-ink px-4 py-3 text-[14px] font-bold uppercase outline-none focus-visible:bg-ink focus-visible:text-white transition-colors"
-                >
-                  <option value="arm">ARM CORTEX-M4F</option>
-                  <option value="esp32">ESP32-S3 (XTENSA)</option>
-                  <option value="rp2040">RP2040 (CORTEX-M0+)</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <label htmlFor="model-select" className="text-[11px] font-bold uppercase tracking-widest text-slate">SOURCE_MODEL</label>
-                <select 
-                  id="model-select"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className="w-full bg-canvas-cream border-2 border-ink px-4 py-3 text-[14px] font-bold uppercase outline-none focus-visible:bg-ink focus-visible:text-white transition-colors"
-                >
-                  <option value="rf">RANDOM_FOREST (REC)</option>
-                  <option value="knn">K_NEAREST_NEIGHBORS</option>
-                  <option value="svm">SUPPORT_VECTOR_MACHINE</option>
-                  <option value="logreg">LOGISTIC_REGRESSION</option>
-                  <option value="small_nn">SMALL_NEURAL_NETWORK</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <label htmlFor="opt-select" className="text-[11px] font-bold uppercase tracking-widest text-slate">OPTIMIZATION_LEVEL</label>
-                <select 
-                  id="opt-select"
-                  className="w-full bg-canvas-cream border-2 border-ink px-4 py-3 text-[14px] font-bold uppercase outline-none focus-visible:bg-ink focus-visible:text-white transition-colors"
-                >
-                  <option value="o3">-O3 (MAX SPEED)</option>
-                  <option value="os">-OS (MIN SIZE)</option>
-                  <option value="o0">-O0 (DEBUG)</option>
-                </select>
-              </div>
+        {/* 2-Column Responsive Workspace Grid (Fixed Size on Desktop: lg:h-145) */}
+        <div className="crosshair-corner grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink lg:h-145">
+          {/* Config Panel - 6 Columns (Fixed Size, Zero Scroll) */}
+          <div className="lg:col-span-6 bg-canvas-cream flex flex-col h-full min-h-0 justify-between overflow-hidden">
+            {/* Header */}
+            <div className="h-13 px-4 sm:px-5 border-b-2 border-ink bg-white flex justify-between items-center shrink-0">
+              <h2 className="text-[13px] sm:text-[14px] font-bold tracking-wider uppercase flex items-center gap-2">
+                <Cpu size={15} />
+                Target Configuration
+              </h2>
+              <span className="tech-tag text-[9px]">TINYML C99</span>
             </div>
 
-            <div className="mt-auto pt-8">
-              <button 
-                onClick={handleExport}
+            {/* Target Architecture Selection (2x2 Silicon Grid) */}
+            <div className="p-3 sm:p-3.5 bg-canvas-cream border-b-2 border-ink flex flex-col gap-1.5 shrink-0">
+              <div className="text-[10px] font-bold tracking-widest text-slate uppercase flex justify-between items-center">
+                <span className="text-ink">Target Silicon Profile</span>
+                <span className="text-hazard text-[9px] font-bold uppercase">{targetMcu} active</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "esp32", name: "ESP32-S3", clock: "240 MHz", arch: "Xtensa LX7 · SIMD", mem: "512 KB" },
+                  { id: "arm", name: "Cortex-M4F", clock: "168 MHz", arch: "ARMv7E-M · CMSIS", mem: "FPU Unit" },
+                  { id: "rp2040", name: "RP2040", clock: "133 MHz", arch: "Dual M0+ · ALU", mem: "264 KB" },
+                  { id: "nrf52", name: "nRF52840", clock: "64 MHz", arch: "Cortex-M4 · BLE", mem: "256 KB" },
+                ].map((chip) => {
+                  const isSelected = targetMcu === chip.id;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => handleSelectMcu(chip.id)}
+                      className={`btn-tactile border-2 border-ink p-2 text-left transition-colors flex flex-col justify-between cursor-pointer ${
+                        isSelected
+                          ? "bg-ink text-white font-bold"
+                          : "bg-white text-ink hover:bg-canvas-cream"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-wider mb-0.5">
+                        <span>{chip.name}</span>
+                        <span
+                          className={`text-[8px] font-bold px-1.5 py-0.2 border ${
+                            isSelected
+                              ? "bg-hazard text-white border-hazard"
+                              : "bg-whisper text-ink border-ink/40"
+                          }`}
+                        >
+                          {chip.clock}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[9px] font-mono tabular-nums">
+                        <span className={`truncate max-w-27.5 ${isSelected ? "text-white/75" : "text-slate"}`}>{chip.arch}</span>
+                        <span className={`font-bold shrink-0 ${isSelected ? "text-hazard" : "text-slate"}`}>{chip.mem}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Config Controls (Middle Section, Flex-1, Fits with zero scroll) */}
+            <div className="p-3 sm:p-3.5 flex flex-col gap-2.5 bg-white flex-1 min-h-0 justify-between">
+              {/* Model Architecture Selector - 5 Ensemble Models */}
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate flex justify-between items-center">
+                  <span className="text-ink">Ensemble Classifier Topology</span>
+                  <span className="text-[9px] text-slate/80">5 Estimators</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[
+                    { id: "rf", label: "RF", sub: "30 Trees" },
+                    { id: "svm", label: "SVM", sub: "Linear" },
+                    { id: "logreg", label: "LogReg", sub: "Logits" },
+                    { id: "small_nn", label: "MLP", sub: "16-8 Net" },
+                    { id: "knn", label: "KNN", sub: "5-NN" },
+                  ].map((m) => {
+                    const isSelected = model === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleSelectModel(m.id)}
+                        className={`btn-tactile border-2 border-ink py-1.5 px-0.5 text-center transition-colors cursor-pointer ${
+                          isSelected
+                            ? "bg-ink text-white font-bold"
+                            : "bg-canvas-cream text-ink hover:bg-white"
+                        }`}
+                      >
+                        <div className="text-[10px] font-black uppercase tracking-wider leading-tight">{m.label}</div>
+                        <div className={`text-[7.5px] uppercase tracking-wider mt-0.5 ${isSelected ? "text-white/75" : "text-slate"}`}>
+                          {m.sub}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Quantization Toggle */}
+              <div className="border-2 border-ink p-2.5 bg-canvas-cream flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
+                    <Zap size={12} className="text-hazard shrink-0" />
+                    INT8 Fixed-Point Quantization
+                  </div>
+                  <div className="text-[8.5px] text-slate uppercase mt-0.5">
+                    {quantize ? "75% SRAM reduction · Integer ALU bitshifts · 0 FPU cycles" : "Standard FP32 IEEE floating point representation"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleQuantize}
+                  className={`btn-tactile border-2 border-ink px-2.5 py-1 text-[8.5px] font-bold uppercase tracking-wider transition-colors shrink-0 ml-2 cursor-pointer ${
+                    quantize ? "bg-hazard text-white" : "bg-white text-ink hover:bg-canvas-cream"
+                  }`}
+                >
+                  {quantize ? "Enabled" : "Disabled"}
+                </button>
+              </div>
+
+              {/* Hardware Budget 3-Cell Telemetry Strip */}
+              <div className="border-2 border-ink bg-canvas-cream p-2 text-[9px] font-bold tracking-wider uppercase grid grid-cols-3 gap-2 text-center divide-x-2 divide-ink/20">
+                <div>
+                  <div className="text-[8px] text-slate">STATIC SRAM</div>
+                  <div className="tabular-nums text-ink text-[10.5px] font-black">{getSramEstimate()}</div>
+                </div>
+                <div>
+                  <div className="text-[8px] text-slate">FLASH ROM</div>
+                  <div className="tabular-nums text-ink text-[10.5px] font-black">{getFlashEstimate()}</div>
+                </div>
+                <div>
+                  <div className="text-[8px] text-slate">HEAP ALLOC</div>
+                  <div className="text-hazard tabular-nums text-[10.5px] font-black">0 BYTES</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Compile CTA - Directly connected with no gap */}
+            <div className="p-3.5 sm:p-4 bg-white border-t-2 border-ink shrink-0">
+              <button
+                type="button"
+                onClick={() => handleExport()}
                 disabled={loading}
-                className="inline-flex items-center justify-center h-16 w-full bg-hazard text-white text-[16px] font-bold uppercase tracking-[0.2em] border-[3px] border-ink hover:translate-y-0.5 hover:translate-x-0.5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-tactile-hazard py-2.5 font-bold text-[13px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 w-full cursor-pointer disabled:cursor-not-allowed"
               >
-                {loading ? 'COMPILING...' : 'COMPILE TO C >>'}
+                {loading ? "Compiling C99 Header..." : code ? "Recompile C Header" : "Compile C Header"}
               </button>
             </div>
           </div>
 
-          {/* Output Panel */}
-          <div className="lg:col-span-8 bg-canvas-cream flex flex-col p-8 h-150">
-            <div className="flex justify-between items-center border-b-2 border-ink pb-4 mb-6">
-              <div className="flex flex-col gap-2">
-                <h2 className="text-[16px] font-bold tracking-wider uppercase text-ink flex items-center gap-2">
-                  {'< OUTPUT_BUFFER >'}
-                </h2>
-                {code && (
-                  <div className="flex gap-6 text-[10px] font-bold tracking-[0.15em] text-slate uppercase">
-                    <span>SIZE: {code.length} B ({(code.length / 1024).toFixed(2)} KB)</span>
-                    <span>LINES: {code.split('\n').length}</span>
-                    <span>MD5_CHK: 0x{Array.from(code).reduce((h, c) => Math.imul(31, h) + c.charCodeAt(0) | 0, 0).toString(16).toUpperCase().padStart(8, '0').slice(-8)}</span>
-                  </div>
-                )}
-              </div>
-              {code && (
-                <button 
-                  onClick={handleDownload}
-                  className="inline-flex items-center px-4 py-2 bg-transparent border-2 border-ink text-ink text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-colors"
-                >
-                  [ DOWNLOAD .H ]
-                </button>
-              )}
-            </div>
-
-            <div className="grow bg-white border-2 border-ink overflow-auto relative p-4">
-              {error ? (
-                <div className="absolute inset-0 flex items-center justify-center text-hazard font-bold text-[14px] uppercase p-4 text-center">
-                  [ERR] {error}
-                </div>
-              ) : code ? (
-                <pre className="text-[12px] font-mono text-ink leading-[1.6] whitespace-pre" tabIndex={0}>
-                  {code}
-                </pre>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-slate text-[13px] font-bold uppercase tracking-wider">
-                  AWAITING_COMPILATION...
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Reusable Generated C Header Section - 6 Columns */}
+          <GeneratedCHeader
+            code={code}
+            loading={loading}
+            error={error}
+            onCopy={handleCopy}
+            onDownload={handleDownload}
+            copied={copied}
+            className="lg:col-span-6 h-full min-h-0"
+          />
         </div>
       </div>
     </main>

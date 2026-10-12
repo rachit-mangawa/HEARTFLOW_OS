@@ -1,196 +1,237 @@
 "use client";
 
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Sliders, Activity, Cpu } from "lucide-react";
 import ShapChart from "@/components/ShapChart";
-import { globalSimulator } from "@/lib/edge/simulator";
+import { PatientVitals } from "@/lib/edge/types";
+import { evaluateEdge } from "@/lib/edge/inference";
 
-const easeFluid: [number, number, number, number] = [0.16, 1, 0.3, 1];
+interface PredictionResult {
+  prediction: boolean;
+  prediction_label: string;
+  probability: number;
+  model_outputs?: Record<string, string>;
+  model_probs?: Record<string, number>;
+  weights?: Record<string, number>;
+}
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
-  }
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeFluid } }
+const DEFAULT_VITALS: PatientVitals = {
+  Heart_Rate: 75,
+  SpO2_Level: 98,
+  Systolic_BP: 120,
+  Diastolic_BP: 80,
+  Body_Temp: 37.0,
 };
 
 export default function Analysis() {
-  const [formData, setFormData] = useState({
-    Heart_Rate: 75,
-    SpO2_Level: 98,
-    Systolic_BP: 120,
-    Diastolic_BP: 80,
-    Body_Temp: 37.0
+  const [formData, setFormData] = useState<PatientVitals>(DEFAULT_VITALS);
+  const [submittedData, setSubmittedData] = useState<PatientVitals | null>(DEFAULT_VITALS);
+  const [prediction, setPrediction] = useState<PredictionResult | null>(() => {
+    const edge = evaluateEdge(DEFAULT_VITALS);
+    return {
+      prediction: Boolean(edge.is_at_risk),
+      prediction_label: edge.label,
+      probability: edge.confidence,
+      model_outputs: edge.model_outputs,
+      model_probs: edge.model_probs,
+      weights: edge.weights,
+    };
   });
-
-  useEffect(() => {
-    setFormData(globalSimulator.getSnapshot());
-  }, []);
-
-  const [submittedData, setSubmittedData] = useState<any>(null);
-  const [prediction, setPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const handlePredict = async () => {
+  const handlePredict = async (inputData?: PatientVitals) => {
+    const targetData = inputData || formData;
     setLoading(true);
-    setPrediction(null);
-    setSubmittedData(null);
+    setSubmittedData({ ...targetData });
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       if (apiUrl) {
-        const res = await fetch(apiUrl + "/predict", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData)
+        const res = await fetch(`${apiUrl}/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(targetData)
         });
         if (res.ok) {
           const data = await res.json();
           setPrediction(data);
-          setSubmittedData(formData);
-
-          // Log simulator execution to session audit log
-          const { appendSessionHistory } = await import("@/lib/edge/history");
-          appendSessionHistory({
-            timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-            heart_rate: formData.Heart_Rate,
-            spo2: formData.SpO2_Level,
-            sys_bp: formData.Systolic_BP,
-            dia_bp: formData.Diastolic_BP,
-            body_temp: formData.Body_Temp,
-            prediction_label: data.prediction_label || (data.prediction ? "Anomaly" : "Normal"),
-            confidence: data.probability ?? 0.95,
-            is_at_risk: Boolean(data.prediction)
-          });
-
           setLoading(false);
           return;
         }
       }
-    } catch (err) {
-      // Fall through to local Edge inference
+    } catch {
+      // Cloud API unreachable, seamlessly evaluate on-chip
     }
 
-    // Zero-Cloud Local TinyML Inference Execution (<20 microseconds)
+    // Client-side Zero-Cloud TinyML Ensemble Inference
     try {
-      const { evaluateEdge } = await import("@/lib/edge/inference");
-      const edgeRes = evaluateEdge(formData);
-      setPrediction({
-        prediction: edgeRes.is_at_risk === 1,
-        prediction_label: edgeRes.label,
-        probability: edgeRes.confidence,
-        model_outputs: edgeRes.model_outputs,
-        model_probs: edgeRes.model_probs,
-        weights: edgeRes.weights
-      });
-      setSubmittedData(formData);
+      const edgeResult = evaluateEdge(targetData);
 
-      // Log simulator execution to session audit log
-      const { appendSessionHistory } = await import("@/lib/edge/history");
-      appendSessionHistory({
-        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-        heart_rate: formData.Heart_Rate,
-        spo2: formData.SpO2_Level,
-        sys_bp: formData.Systolic_BP,
-        dia_bp: formData.Diastolic_BP,
-        body_temp: formData.Body_Temp,
-        prediction_label: edgeRes.label,
-        confidence: edgeRes.confidence,
-        is_at_risk: edgeRes.is_at_risk === 1
+      setPrediction({
+        prediction: Boolean(edgeResult.is_at_risk),
+        prediction_label: edgeResult.label,
+        probability: edgeResult.confidence,
+        model_outputs: edgeResult.model_outputs,
+        model_probs: edgeResult.model_probs,
+        weights: edgeResult.weights,
       });
-    } catch (err) {
-      console.error("Local inference error", err);
+    } catch (e) {
+      console.error("Local inference error", e);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <main className="w-full flex-1 bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      {/* Top Nav (Mechanical) */}
+  const handleSelectPreset = (presetData: PatientVitals) => {
+    setFormData({ ...presetData });
+    handlePredict(presetData);
+  };
 
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="max-w-350 mx-auto w-full px-8 py-16 flex-1 flex flex-col"
-      >
-        <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
+  return (
+    <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col">
+        <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
-            <div className="text-[12px] text-hazard font-bold tracking-widest mb-4">
-              {"/// EXPLAINABLE_AI_MODULE"}
+            <div className="text-[12px] text-hazard font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
+              <Sliders size={14} />
+              MODEL EXPLAINABILITY & SIMULATION BENCH
             </div>
-            <h1 className="text-[clamp(3rem,6vw,6rem)]">
+            <h1 className="text-[clamp(2.5rem,5vw,5.5rem)] leading-[0.9]">
               MODEL<br />SIMULATOR
             </h1>
           </div>
-          <div className="text-right hidden md:block max-w-sm">
-            <div className="text-[14px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-canvas-cream text-left">
-              MANUAL OVERRIDE. INPUT CUSTOM TELEMETRY TO TEST ENSEMBLE CLASSIFIER AND VIEW SHAPLEY FEATURE IMPORTANCE VECTORS.
+          <div className="flex flex-col items-start md:items-end gap-2 max-w-sm">
+            <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white">
+              ENSEMBLE: 5 MODELS · SHAP EXPLAINABILITY
+            </div>
+            <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
+              Deterministic In-Browser Inference · Zero Cloud Latency
             </div>
           </div>
-        </motion.header>
+        </header>
 
-        <motion.div variants={staggerContainer} className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink">
+        <div className="crosshair-corner grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink items-stretch">
 
-          {/* Input Panel */}
-          <motion.div variants={fadeUp} className="lg:col-span-5 bg-canvas-cream flex flex-col">
-            <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
-              <h2 className="text-[14px] font-bold tracking-wider">{'< MANUAL_INPUT_MATRIX >'}</h2>
-            </div>
+          {/* Input Panel - 6 Columns */}
+          <div className="lg:col-span-6 bg-canvas-cream flex flex-col justify-between">
+            <div>
+              <div className="h-14 px-4 sm:px-6 border-b-2 border-ink bg-white flex justify-between items-center">
+                <h2 className="text-[14px] font-bold tracking-wider uppercase flex items-center gap-2">
+                  <Activity size={16} />
+                  Patient Parameters
+                </h2>
+                <span className="text-[10px] text-slate uppercase font-bold">5 Telemetry Inputs</span>
+              </div>
 
-            <div className="p-8 flex flex-col gap-8 grow">
-              <InputControl label="HEART_RATE (BPM)" value={formData.Heart_Rate} min={40} max={200} onChange={(v: number) => setFormData({ ...formData, Heart_Rate: v })} />
-              <InputControl label="SPO2_LEVEL (%)" value={formData.SpO2_Level} min={70} max={100} onChange={(v: number) => setFormData({ ...formData, SpO2_Level: v })} />
-              <InputControl label="SYSTOLIC_BP (MMHG)" value={formData.Systolic_BP} min={80} max={220} onChange={(v: number) => setFormData({ ...formData, Systolic_BP: v })} />
-              <InputControl label="DIASTOLIC_BP (MMHG)" value={formData.Diastolic_BP} min={40} max={140} onChange={(v: number) => setFormData({ ...formData, Diastolic_BP: v })} />
-              <InputControl label="BODY_TEMP (°C)" value={formData.Body_Temp} min={30} max={42} step={0.1} onChange={(v: number) => setFormData({ ...formData, Body_Temp: v })} />
-
-              <motion.button
-                onClick={handlePredict}
-                disabled={loading}
-                whileHover={{ y: 2, x: 2, boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)" }}
-                whileTap={{ y: 6, x: 6, boxShadow: "none" }}
-                transition={{ duration: 0.1 }}
-                className="mt-6 border-[3px] border-ink bg-hazard text-white py-6 font-bold text-[18px] tracking-[0.2em] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] uppercase disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'PROCESSING_REQUEST...' : '[ EXECUTE_INFERENCE ]'}
-              </motion.button>
-
-              {/* Terminal Readout */}
-              <div className="mt-8 grow border-[3px] border-ink bg-ink text-[#4AF626] p-0 flex flex-col min-h-37.5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] relative overflow-hidden group">
-                <div className="absolute inset-0 pointer-events-none opacity-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(255,255,255,0.1)_2px,rgba(255,255,255,0.1)_4px)] z-10" />
-                <div className="text-[10px] font-bold tracking-[0.2em] text-ink bg-white border-b-[3px] border-ink px-4 py-3 flex justify-between uppercase">
-                  <span>RAW_PAYLOAD_PREVIEW</span>
-                  <span>{JSON.stringify(formData).length} BYTES {"// SYS_READY"}</span>
+              {/* Quick Clinical Test Vector Presets - Enlarged & Tactile */}
+              <div className="p-5 sm:p-6 bg-canvas-cream border-b-2 border-ink flex flex-col gap-3">
+                <div className="text-[11px] font-bold tracking-widest text-slate uppercase flex justify-between items-center">
+                  <span className="text-ink">Clinical Patient Profiles</span>
+                  <span className="text-hazard text-[10px]">Click to Load Preset</span>
                 </div>
-                <div className="p-6 grow flex flex-col relative z-0">
-                  <pre className="text-[12px] font-mono whitespace-pre-wrap grow overflow-auto leading-relaxed">
-                    {`{
-  "Heart_Rate": ${formData.Heart_Rate},
-  "SpO2_Level": ${formData.SpO2_Level},
-  "Systolic_BP": ${formData.Systolic_BP},
-  "Diastolic_BP": ${formData.Diastolic_BP},
-  "Body_Temp": ${formData.Body_Temp.toFixed(1)}
-}`}
-                    <span className="inline-block w-2 h-4 bg-[#4AF626] animate-pulse ml-1 align-middle" />
-                  </pre>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    {
+                      name: "Resting Normal",
+                      tag: "NORMAL",
+                      desc: "Normotensive baseline vitals",
+                      data: { Heart_Rate: 72, SpO2_Level: 98, Systolic_BP: 118, Diastolic_BP: 78, Body_Temp: 37.0 }
+                    },
+                    {
+                      name: "STEMI / Ischemia",
+                      tag: "CRITICAL",
+                      desc: "Acute ischemic anomaly",
+                      data: { Heart_Rate: 128, SpO2_Level: 91, Systolic_BP: 165, Diastolic_BP: 104, Body_Temp: 37.3 }
+                    },
+                    {
+                      name: "Hypoxic Bradycardia",
+                      tag: "WARNING",
+                      desc: "Hypoxemic rhythm depression",
+                      data: { Heart_Rate: 48, SpO2_Level: 82, Systolic_BP: 88, Diastolic_BP: 54, Body_Temp: 35.8 }
+                    },
+                    {
+                      name: "Hypertensive Crisis",
+                      tag: "WARNING",
+                      desc: "Acute arterial pressure surge",
+                      data: { Heart_Rate: 98, SpO2_Level: 96, Systolic_BP: 195, Diastolic_BP: 118, Body_Temp: 37.1 }
+                    }
+                  ].map((preset) => {
+                    const isActive =
+                      formData.Heart_Rate === preset.data.Heart_Rate &&
+                      formData.SpO2_Level === preset.data.SpO2_Level &&
+                      formData.Systolic_BP === preset.data.Systolic_BP &&
+                      formData.Diastolic_BP === preset.data.Diastolic_BP;
+
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => handleSelectPreset(preset.data)}
+                        className={`btn-tactile border-2 border-ink p-3.5 text-left transition-colors group flex flex-col justify-between cursor-pointer ${
+                          isActive
+                            ? "bg-ink text-white font-bold"
+                            : "bg-white text-ink hover:bg-canvas-cream"
+                        }`}
+                      >
+                        <div className="flex justify-between items-center text-[12px] font-black uppercase tracking-wider mb-1">
+                          <span>{preset.name}</span>
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 border ${
+                              isActive
+                                ? "bg-hazard text-white border-hazard"
+                                : preset.tag === "CRITICAL"
+                                ? "bg-[#fdebec] text-hazard border-hazard"
+                                : preset.tag === "WARNING"
+                                ? "bg-[#fefce8] text-amber-900 border-amber-500"
+                                : "bg-[#d1fae5] text-[#065f46] border-[#065f46]"
+                            }`}
+                          >
+                            {preset.tag}
+                          </span>
+                        </div>
+                        <div className={`text-[10px] mb-2 ${isActive ? "text-white/75" : "text-slate"}`}>
+                          {preset.desc}
+                        </div>
+                        <div className="text-[10px] font-mono pt-2 border-t border-ink/10 flex justify-between tabular-nums">
+                          <span>{preset.data.Heart_Rate} BPM · {preset.data.SpO2_Level}%</span>
+                          <span className="font-bold">{preset.data.Systolic_BP}/{preset.data.Diastolic_BP}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          </motion.div>
 
-          {/* Results Panel */}
-          <motion.div variants={fadeUp} className="lg:col-span-7 bg-canvas-cream flex flex-col overflow-hidden">
-            <div className="border-b-2 border-ink p-4 bg-white flex justify-between items-center">
-              <h2 className="text-[14px] font-bold tracking-wider">{'< INFERENCE_RESULTS_&_XAI >'}</h2>
+              {/* Slider Inputs */}
+              <div className="p-6 sm:p-8 flex flex-col gap-6">
+                <InputControl label="Heart Rate" unit="BPM" value={formData.Heart_Rate} min={40} max={200} onChange={(v: number) => setFormData({ ...formData, Heart_Rate: v })} />
+                <InputControl label="SpO2 Level" unit="%" value={formData.SpO2_Level} min={70} max={100} onChange={(v: number) => setFormData({ ...formData, SpO2_Level: v })} />
+                <InputControl label="Systolic BP" unit="mmHg" value={formData.Systolic_BP} min={80} max={220} onChange={(v: number) => setFormData({ ...formData, Systolic_BP: v })} />
+                <InputControl label="Diastolic BP" unit="mmHg" value={formData.Diastolic_BP} min={40} max={140} onChange={(v: number) => setFormData({ ...formData, Diastolic_BP: v })} />
+                <InputControl label="Body Temperature" unit="°C" value={formData.Body_Temp} min={30} max={42} step={0.1} onChange={(v: number) => setFormData({ ...formData, Body_Temp: v })} />
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-8 pt-0">
+              <button
+                type="button"
+                onClick={() => handlePredict()}
+                disabled={loading}
+                className="btn-tactile-hazard py-5 font-bold text-[15px] sm:text-[16px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 w-full cursor-pointer disabled:cursor-not-allowed"
+              >
+                {loading ? 'Evaluating Model...' : 'Run Inference'}
+              </button>
+            </div>
+          </div>
+
+          {/* Results Panel - 6 Columns */}
+          <div className="lg:col-span-6 bg-canvas-cream flex flex-col overflow-hidden">
+            <div className="h-14 px-4 sm:px-6 border-b-2 border-ink bg-white flex justify-between items-center">
+              <h2 className="text-[14px] font-bold tracking-wider uppercase flex items-center gap-2">
+                <Cpu size={16} />
+                Classification & SHAP Attributions
+              </h2>
+              <span className="text-[10px] text-slate uppercase font-bold">Ensemble Explainability</span>
             </div>
 
             <div className="grow flex flex-col relative bg-white">
@@ -198,13 +239,9 @@ export default function Analysis() {
 
               <div className="z-10 p-8 flex flex-col h-full">
                 {prediction ? (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.6, ease: easeFluid }}
-                  >
+                  <div>
                     <div className="mb-12">
-                      <div className="text-[11px] font-bold text-slate tracking-widest mb-4">MODEL_OUTPUT</div>
+                      <div className="text-[11px] font-bold text-slate tracking-widest mb-4">Model Output</div>
 
                       {(() => {
                         const getStatusStyles = (label: string) => {
@@ -220,7 +257,7 @@ export default function Analysis() {
                         return (
                           <div className={`border-2 p-6 flex flex-col mb-4 ${getStatusStyles(prediction.prediction ? prediction.prediction_label : 'Healthy')}`}>
                             <div className="font-sans text-[clamp(28px,3vw,56px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-words">
-                              {prediction.prediction ? `[!]_${prediction.prediction_label.replace(" ", "_")}` : 'NORMAL'}
+                              {prediction.prediction ? prediction.prediction_label : 'Normal'}
                             </div>
                             <div className="text-[14px] font-bold tracking-widest">
                               CONFIDENCE: {(prediction.probability * 100).toFixed(1)}%
@@ -230,77 +267,88 @@ export default function Analysis() {
                       })()}
 
                       {/* Ensemble Diagnostics */}
-                      {prediction.model_outputs && (
-                        <div className="border-2 border-ink bg-white flex flex-col text-[12px] font-bold uppercase tracking-wider">
-                          <div className="border-b-2 border-ink px-4 py-2 bg-ink text-canvas-cream flex justify-between">
-                            <span>{'< ENSEMBLE_STACK_DIAGNOSTICS >'}</span>
-                            <span className="text-hazard">WEIGHTED_VOTING</span>
+                      {prediction.model_outputs && (() => {
+                        const outputs = prediction.model_outputs;
+                        return (
+                          <div className="border-2 border-ink bg-white flex flex-col text-[12px] font-bold uppercase tracking-wider">
+                            <div className="border-b-2 border-ink px-4 py-2 bg-ink text-canvas-cream flex justify-between">
+                              <span>Ensemble Stack Diagnostics</span>
+                              <span className="text-hazard">Weighted Voting</span>
+                            </div>
+                            <div className="divide-y-2 divide-ink">
+                              {Object.keys(outputs).map((modelName) => (
+                                <div
+                                  key={modelName}
+                                  className="flex justify-between items-center p-3 hover:bg-canvas-cream transition-colors"
+                                >
+                                  <div className="w-[20%] text-slate">{modelName}</div>
+                                  <div className={`w-[40%] ${outputs[modelName] !== 'Healthy' ? 'text-hazard' : ''}`}>
+                                    {outputs[modelName]}
+                                  </div>
+                                  <div className="w-[20%] text-right">
+                                    CONF: {(((prediction.model_probs?.[modelName] ?? prediction.probability ?? 0.95)) * 100).toFixed(1)}%
+                                  </div>
+                                  <div className="w-[20%] text-right text-slate">
+                                    W: {(prediction.weights?.[modelName] ?? 0.25).toFixed(2)}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <div className="divide-y-2 divide-ink">
-                            {Object.keys(prediction.model_outputs).map((modelName, index) => (
-                              <motion.div
-                                key={modelName}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
-                                className="flex justify-between items-center p-3 hover:bg-canvas-cream transition-colors"
-                              >
-                                <div className="w-[20%] text-slate">[{modelName}]</div>
-                                <div className={`w-[40%] ${prediction.model_outputs[modelName] !== 'Healthy' ? 'text-hazard' : ''}`}>
-                                  {prediction.model_outputs[modelName] !== 'Healthy' ? '[!] ' + prediction.model_outputs[modelName] : '[OK] HEALTHY'}
-                                </div>
-                                <div className="w-[20%] text-right">
-                                  CONF: {(((prediction.model_probs?.[modelName] ?? prediction.probability ?? 0.95)) * 100).toFixed(1)}%
-                                </div>
-                                <div className="w-[20%] text-right text-slate">
-                                  W: {(prediction.weights?.[modelName] ?? 0.25).toFixed(2)}
-                                </div>
-                              </motion.div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
 
                     <div className="flex-1 border-2 border-ink bg-white p-8 flex flex-col min-h-75">
-                      <div className="text-[11px] font-bold text-slate tracking-widest mb-6 border-b-2 border-ink pb-2">SHAPLEY_ADDITIVE_EXPLANATIONS</div>
+                      <div className="text-[11px] font-bold text-slate tracking-widest mb-6 border-b-2 border-ink pb-2">SHAP Feature Attributions</div>
                       <div className="flex-1">
                         <ShapChart patientData={submittedData} />
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ) : (
                   <div className="h-full flex items-center justify-center">
-                    <div className="text-slate text-[14px] font-bold tracking-widest uppercase border-2 border-slate px-6 py-4 animate-pulse">
-                      {loading ? 'CALCULATING_SHAP_VALUES...' : 'AWAITING_INPUT...'}
+                    <div className="text-slate text-[14px] font-bold tracking-widest uppercase border-2 border-slate px-6 py-4">
+                      {loading ? 'Evaluating Model...' : 'Awaiting Input...'}
                     </div>
                   </div>
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
 
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </main>
   );
 }
 
-function InputControl({ label, value, min, max, step = 1, onChange }: any) {
+interface InputControlProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+  onChange: (v: number) => void;
+}
+
+function InputControl({ label, value, min, max, step = 1, unit, onChange }: InputControlProps) {
   return (
-    <div className="flex flex-col gap-3 group">
-      <div className="flex justify-between items-end">
-        <label className="text-[13px] font-bold text-slate tracking-widest group-hover:text-ink transition-colors">{label}</label>
-        <motion.span
-          key={value}
-          initial={{ opacity: 0.5, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="font-sans text-[32px] font-black leading-none tabular-nums tracking-tighter"
-        >
-          {value}
-        </motion.span>
+    <div className="flex flex-col gap-2 group">
+      <div className="flex justify-between items-baseline">
+        <label className="text-[12px] font-bold text-slate tracking-widest group-hover:text-ink transition-colors uppercase">
+          {label}
+        </label>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-sans text-[26px] sm:text-[30px] font-black leading-none tabular-nums tracking-tighter">
+            {value}
+          </span>
+          {unit && <span className="text-[11px] font-bold text-hazard">{unit}</span>}
+        </div>
       </div>
-      <div className="relative border-2 border-ink p-1 bg-white">
+
+      <div>
         <input
           type="range"
           min={min}
@@ -308,8 +356,13 @@ function InputControl({ label, value, min, max, step = 1, onChange }: any) {
           step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full appearance-none h-4 bg-ink/10 outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:bg-ink [&::-webkit-slider-thumb]:cursor-pointer relative z-10 block"
+          className="fader-slider"
         />
+        <div className="flex justify-between items-center text-[9px] font-mono font-bold text-slate tracking-widest mt-1">
+          <span>{min}</span>
+          <span className="text-ink/25 tracking-widest">| · · · · | · · · · |</span>
+          <span>{max}</span>
+        </div>
       </div>
     </div>
   );

@@ -30,3 +30,12 @@ def test_export_tinyml_random_forest(client):
             assert "not found" in data["error"].lower() or "models untrained" in data["error"].lower()
         else:
             assert "code" in data or "c_code" in data
+
+def test_metrics_endpoint(client):
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    data = response.json()
+    assert "ensemble_accuracy" in data
+    assert "ensemble_f1_macro" in data
+    assert "models" in data
+
