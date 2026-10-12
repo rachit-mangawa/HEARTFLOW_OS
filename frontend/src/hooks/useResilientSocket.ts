@@ -13,11 +13,21 @@ export function useResilientSocket(url: string, onMessage: (msg: any) => void) {
   }, [onMessage]);
 
   useEffect(() => {
+    if (!url) {
+      setStatus('disconnected');
+      return;
+    }
+
     let ws: WebSocket;
     let isComponentMounted = true;
 
     const connect = () => {
-      ws = new WebSocket(url);
+      try {
+        ws = new WebSocket(url);
+      } catch (e) {
+        setStatus('disconnected');
+        return;
+      }
       
       ws.onopen = () => {
         if (!isComponentMounted) return;

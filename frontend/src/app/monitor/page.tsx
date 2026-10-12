@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useTelemetry } from "@/context/TelemetryContext";
+import { useState } from "react";
 
 const easeFluid: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -19,43 +20,63 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeFluid } }
 };
 
-export default function Dashboard() {
-  const { data, stream, status } = useTelemetry();
+export default function SystemMonitor() {
+  const { data, stream, status, snapshotCurrentVitals } = useTelemetry();
+  const [snapped, setSnapped] = useState(false);
+
+  const handleSnapshot = () => {
+    snapshotCurrentVitals();
+    setSnapped(true);
+    setTimeout(() => setSnapped(false), 2000);
+  };
 
   return (
     <main className="w-full flex-1 bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      {/* Top Nav (Mechanical) */}
-
-      <motion.div 
+      <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="show"
         className="max-w-350 mx-auto w-full px-8 py-16 flex-1 flex flex-col"
       >
-        <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex justify-between items-end">
+        <motion.header variants={fadeUp} className="mb-12 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-4">
           <div>
             <div className="text-[12px] text-hazard font-bold tracking-widest mb-4 flex items-center gap-2">
-              <motion.div 
-                animate={{ opacity: [1, 0.2, 1] }} 
+              <motion.div
+                animate={{ opacity: [1, 0.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 className="w-2 h-2 rounded-full bg-hazard"
               />
-              {"/// TELEMETRY_STREAM_ACTIVE"}
+              {"/// SYS.MONITOR // TELEMETRY_STREAM_ACTIVE"}
             </div>
             <h1 className="text-[clamp(3rem,6vw,6rem)] leading-[0.9]">
               PATIENT<br />TELEMETRY
             </h1>
           </div>
-          <div className="text-right hidden md:block">
-            <div className={`text-[14px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 text-canvas-cream ${status === 'reconnecting' ? 'bg-hazard animate-pulse' : 'bg-ink'}`}>
-              STATUS: {status === 'reconnecting' ? "RECONNECTING..." : (data ? "CONNECTED" : "AWAITING SIGNAL")}
+          <div className="text-right flex flex-col md:items-end gap-2">
+            <div className={`text-[13px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 text-canvas-cream ${status === 'reconnecting' ? 'bg-hazard animate-pulse' : (status === 'edge_active' ? 'bg-ink border-hazard' : 'bg-ink')}`}>
+              STATUS: {status === 'edge_active' ? "EDGE_AI_ACTIVE (ZERO-CLOUD)" : (status === 'reconnecting' ? "RECONNECTING..." : (data ? "CONNECTED" : "AWAITING SIGNAL"))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSnapshot}
+                className="text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-white hover:bg-hazard hover:text-white transition-colors"
+                title="Capture current telemetry snapshot into session DATA.LOG"
+              >
+                {snapped ? "[✓ SNAPSHOT_SAVED]" : "[+ LOG_SNAPSHOT]"}
+              </button>
+              <Link
+                href="/history"
+                className="text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-canvas-cream hover:bg-ink hover:text-white transition-colors"
+              >
+                VIEW_SESSION_LOG →
+              </Link>
             </div>
           </div>
         </motion.header>
 
         {/* Dashboard Grid - Brutalist Tables */}
         <motion.div variants={staggerContainer} className="grid grid-cols-1 bg-ink border-2 border-ink" aria-live="polite">
-          
+
           {/* Main Status Panel */}
           <motion.div variants={fadeUp} className="bg-canvas-cream flex flex-col">
             <div className="border-b-2 border-ink p-4 flex justify-between items-center bg-white">
@@ -69,10 +90,10 @@ export default function Dashboard() {
                     if (normalized.includes('asthma')) return "bg-[#e0f2fe] text-[#075985] border-[#075985]";
                     if (normalized.includes('hypertension')) return "bg-[#f3e8ff] text-[#6b21a8] border-[#6b21a8]";
                     if (normalized.includes('diabetes')) return "bg-[#ffedd5] text-[#9a3412] border-[#9a3412]";
-                    return "bg-hazard text-white border-hazard"; 
+                    return "bg-hazard text-white border-hazard";
                   };
                   return (
-                    <motion.div 
+                    <motion.div
                       key={data.prediction.label}
                       initial={{ scale: 0.95, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -96,7 +117,7 @@ export default function Dashboard() {
               <VitalCard label="BLOOD_PRESSURE" value={data?.sensor_data ? `${Math.round(data.sensor_data.Systolic_BP)}/${Math.round(data.sensor_data.Diastolic_BP)}` : null} unit="MMHG" />
               <VitalCard label="CORE_TEMP" value={data?.sensor_data?.Body_Temp ? data.sensor_data.Body_Temp.toFixed(1) : "---"} unit="°C" />
             </motion.div>
-            
+
             {/* 2-Column Mini Graphs */}
             <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-ink border-b-2 border-ink h-40">
               <div className="bg-white p-3 flex flex-col group"><div className="text-[11px] font-bold text-slate tracking-widest mb-2 group-hover:text-hazard transition-colors">HR_STREAM</div><div className="flex-1 min-h-0 relative"><TelemetryGraph stream={stream.hr} min={60} max={150} color="var(--color-ink)" fill="rgba(5,5,5,0.05)" /></div></div>
@@ -111,36 +132,35 @@ export default function Dashboard() {
               </div>
               <div className="grow p-6 bg-white flex flex-col justify-center gap-6">
                 {data?.prediction?.disease_probs ? (
-                   Object.entries(data.prediction.disease_probs)
-                     .sort((a, b) => (b[1] as number) - (a[1] as number))
-                     .map(([disease, prob], i) => {
-                        const pct = ((prob as number) * 100).toFixed(1);
-                        const isRisk = (prob as number) > 0.4 && disease.toLowerCase() !== 'normal' && disease.toLowerCase() !== 'healthy';
-                        return (
-                          <motion.div 
-                            key={disease} 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.5, delay: i * 0.1, ease: easeFluid }}
-                            className="flex flex-col gap-2"
-                          >
-                            <div className="flex justify-between text-[12px] font-bold uppercase tracking-widest">
-                               <span className={isRisk ? "text-hazard drop-shadow-[0_0_2px_rgba(230,25,25,0.5)]" : "text-ink"}>{disease}</span>
-                               <span className="tabular-nums">{pct}%</span>
-                            </div>
-                            <div className="h-6 bg-canvas-cream border-2 border-ink overflow-hidden relative">
-                              {/* Blueprint tick marks */}
-                              <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '10% 100%' }}></div>
-                              <motion.div 
-                                className={`h-full relative z-10 ${isRisk ? 'bg-hazard shadow-[0_0_8px_var(--hazard-red)]' : 'bg-ink'}`}
-                                initial={{ width: "0%" }}
-                                animate={{ width: `${pct}%` }}
-                                transition={{ duration: 0.8, ease: easeFluid }}
-                              />
-                            </div>
-                          </motion.div>
-                        )
-                     })
+                  Object.entries(data.prediction.disease_probs)
+                    .sort((a, b) => (b[1] as number) - (a[1] as number))
+                    .map(([disease, prob], i) => {
+                      const pct = ((prob as number) * 100).toFixed(1);
+                      const isRisk = (prob as number) > 0.4 && disease.toLowerCase() !== 'normal' && disease.toLowerCase() !== 'healthy';
+                      return (
+                        <motion.div
+                          key={disease}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: i * 0.1, ease: easeFluid }}
+                          className="flex flex-col gap-2"
+                        >
+                          <div className="flex justify-between text-[12px] font-bold uppercase tracking-widest">
+                            <span className={isRisk ? "text-hazard drop-shadow-[0_0_2px_rgba(230,25,25,0.5)]" : "text-ink"}>{disease}</span>
+                            <span className="tabular-nums">{pct}%</span>
+                          </div>
+                          <div className="h-6 bg-canvas-cream border-2 border-ink overflow-hidden relative">
+                            <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '10% 100%' }}></div>
+                            <motion.div
+                              className={`h-full relative z-10 ${isRisk ? 'bg-hazard shadow-[0_0_8px_var(--hazard-red)]' : 'bg-ink'}`}
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${pct}%` }}
+                              transition={{ duration: 0.8, ease: easeFluid }}
+                            />
+                          </div>
+                        </motion.div>
+                      );
+                    })
                 ) : (
                   <div className="h-full flex items-center justify-center text-[12px] font-bold text-slate tracking-widest animate-pulse">
                     AWAITING CLASSIFICATION DATA...
@@ -163,7 +183,7 @@ function VitalCard({ label, value, unit }: { label: string, value: string | numb
         {label}
       </div>
       <div>
-        <motion.div 
+        <motion.div
           key={String(value)}
           initial={{ opacity: 0.5, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
@@ -181,7 +201,7 @@ function VitalCard({ label, value, unit }: { label: string, value: string | numb
 
 function TelemetryGraph({ stream, min, max, color, fill }: { stream: number[], min: number, max: number, color: string, fill: string }) {
   const range = max - min;
-  
+
   const points = stream.map((val, i) => {
     const x = (i / (stream.length - 1)) * 100;
     const y = Math.max(0, Math.min(100, 100 - (((val - min) / range) * 100)));
@@ -196,50 +216,43 @@ function TelemetryGraph({ stream, min, max, color, fill }: { stream: number[], m
 
   return (
     <div className="w-full h-full relative inset-0 border-2 border-ink overflow-hidden bg-white group ">
-      {/* Blueprint Grid lines */}
       <div className="relative inset-0 z-0 opacity-[0.1]" style={{ backgroundImage: 'linear-gradient(var(--ink-black) 1px, transparent 1px), linear-gradient(90deg, var(--ink-black) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-      
-      {/* Signal trace */}
+
       <div className="absolute inset-0 z-10 overflow-hidden">
         <svg className="w-full h-full block" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {/* Fill Area */}
-          <path 
-            d={pathD} 
-            fill={fill} 
+          <path
+            d={pathD}
+            fill={fill}
             className="transition-all duration-300 ease-linear"
           />
-          {/* Stroke Line (Glow) */}
-          <path 
-            d={lineD} 
-            fill="none" 
-            stroke={color} 
-            strokeWidth="1.5" 
+          <path
+            d={lineD}
+            fill="none"
+            stroke={color}
+            strokeWidth="1.5"
             vectorEffect="non-scaling-stroke"
             className="transition-all duration-300 ease-linear"
             style={{ filter: `drop-shadow(0 0 4px ${color})` }}
           />
-          {/* Leading Dot */}
-          <circle 
-            cx="100" 
-            cy={lastY} 
-            r="1.5" 
-            fill={color} 
+          <circle
+            cx="100"
+            cy={lastY}
+            r="1.5"
+            fill={color}
             className="transition-all duration-300 ease-linear"
             style={{ filter: `drop-shadow(0 0 4px ${color})` }}
           />
         </svg>
       </div>
 
-      {/* Sweeping Radar Line */}
-      <motion.div 
+      <motion.div
         className="relative top-0 bottom-0 w-0.5 z-20 opacity-40 pointer-events-none"
         style={{ backgroundColor: color, boxShadow: `0 0 12px 2px ${color}` }}
         initial={{ left: "0%" }}
         animate={{ left: "100%" }}
         transition={{ duration: 1.5, ease: "linear", repeat: Infinity }}
       />
-      
-      {/* Terminal Scanline Overlay */}
+
       <div className="relative inset-0 pointer-events-none z-30 opacity-40 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.2)_50%)] bg-size-[100%_4px]"></div>
     </div>
   );

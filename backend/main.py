@@ -33,23 +33,15 @@ logging.basicConfig(filename="alerts.log", level=logging.WARNING,
 
 ml_engine = None
 
-async def background_sync():
-    while True:
-        await asyncio.sleep(60)
-        await db.sync_from_hub()
-        await db.sync_to_hub()
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global ml_engine
     await db.init_db()
-    sync_task = asyncio.create_task(background_sync())
     
     data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'patient_dataset.csv')
     ml_engine = MLOpsEngine(data_path)
     
     yield
-    sync_task.cancel()
     ml_engine = None
 
 app = FastAPI(title="TinyML Healthcare API", lifespan=lifespan)
