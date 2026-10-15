@@ -187,6 +187,13 @@ async def explain(data: PatientData):
         return {"error": "RF Model unavailable for explanation."}
         
     df = pd.DataFrame([data.model_dump()])
+    df = df.rename(columns={
+        "Heart_Rate": "Heart Rate (bpm)",
+        "SpO2_Level": "SpO2 Level (%)",
+        "Systolic_BP": "Systolic Blood Pressure (mmHg)",
+        "Diastolic_BP": "Diastolic Blood Pressure (mmHg)",
+        "Body_Temp": "Body Temperature (°C)",
+    })
     X_proc, _ = await asyncio.to_thread(preprocess_data, df, False)
     
     def compute_shap():
