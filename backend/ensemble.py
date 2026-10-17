@@ -30,7 +30,10 @@ class EnsembleModel:
         for name in self.model_names:
             path = os.path.join(self.model_dir, f'{name}.pkl')
             if os.path.exists(path):
-                self.models[name] = joblib.load(path)
+                try:
+                    self.models[name] = joblib.load(path)
+                except Exception as e:
+                    print(f"Warning: Failed to load model {name}: {e}")
 
     def decode_label(self, idx: int) -> str:
         """Safely maps class index to clinical label without throwing on unseen labels."""

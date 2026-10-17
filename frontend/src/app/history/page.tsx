@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { 
   getSessionHistory, 
   downloadSessionCSV, 
@@ -144,6 +144,8 @@ export default function PatientHistory() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportCopied, setReportCopied] = useState(false);
 
+  const tableSectionRef = useRef<HTMLDivElement>(null);
+
   const refreshSessionHistory = useCallback(() => {
     setRecords(getSessionHistory());
     setLoading(false);
@@ -209,6 +211,9 @@ export default function PatientHistory() {
       sessionStorage.setItem("heartflow_session_log_v2", JSON.stringify(SAMPLE_CLINICAL_RECORDS));
     }
     setRecords(SAMPLE_CLINICAL_RECORDS);
+    setTimeout(() => {
+      tableSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
   };
 
   const handleOpenReport = () => {
@@ -441,7 +446,7 @@ ${metrics.narrative}
         </div>
 
         {/* Telemetry Log Table */}
-        <div className="crosshair-corner border-2 border-ink bg-ink">
+        <div ref={tableSectionRef} className="crosshair-corner border-2 border-ink bg-ink scroll-mt-24">
           <div className="overflow-x-auto bg-canvas-cream">
             <table className="w-full text-left">
               <thead className="bg-ink text-white font-bold text-[12px] tracking-widest uppercase">

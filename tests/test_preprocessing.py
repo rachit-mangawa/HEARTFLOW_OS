@@ -56,6 +56,17 @@ def test_preprocess_data_inference(tmp_path):
 
 def test_preprocess_data_alias_normalization(tmp_path):
     """Test that schema field names (e.g. Heart_Rate) are automatically normalized without error."""
+    # First fit on dummy data inside tmp_path
+    train_df = pd.DataFrame({
+        'Heart Rate (bpm)': [80, 90],
+        'SpO2 Level (%)': [98, 97],
+        'Systolic Blood Pressure (mmHg)': [120, 125],
+        'Diastolic Blood Pressure (mmHg)': [80, 85],
+        'Body Temperature (°C)': [37.0, 37.2],
+        'Predicted Disease': ['Normal', 'Asthma']
+    })
+    preprocess_data(train_df, is_training=True, model_dir=str(tmp_path))
+
     df = pd.DataFrame({
         'Heart_Rate': [115],
         'SpO2_Level': [92],
@@ -63,7 +74,7 @@ def test_preprocess_data_alias_normalization(tmp_path):
         'Diastolic_BP': [92],
         'Body_Temp': [37.4],
     })
-    X, y = preprocess_data(df, is_training=False)
+    X, y = preprocess_data(df, is_training=False, model_dir=str(tmp_path))
     assert 'Risk_Severity' in X.columns
     assert 'Heart Rate (bpm)' in X.columns
     assert not X.isnull().values.any()

@@ -142,12 +142,18 @@ def preprocess_data(df, is_training=False, model_dir=None):
         joblib.dump(scaler, scaler_path)
     else:
         if os.path.exists(imputer_path):
-            imputer = joblib.load(imputer_path)
-            X_raw[continuous_features] = imputer.transform(X_raw[continuous_features])
+            try:
+                imputer = joblib.load(imputer_path)
+                X_raw[continuous_features] = imputer.transform(X_raw[continuous_features])
+            except Exception:
+                pass
             
         if os.path.exists(scaler_path):
-            scaler = joblib.load(scaler_path)
-            X_raw[continuous_features] = scaler.transform(X_raw[continuous_features])
+            try:
+                scaler = joblib.load(scaler_path)
+                X_raw[continuous_features] = scaler.transform(X_raw[continuous_features])
+            except Exception:
+                pass
             
     return X_raw, y
 
