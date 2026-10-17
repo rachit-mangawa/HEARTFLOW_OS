@@ -86,7 +86,7 @@ export default function DatasetPage() {
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-20">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col animate-enter-subtle">
         {/* Top Medical Provenance Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate border-b border-ink/20 pb-3 mb-6 gap-2">
           <div className="flex items-center gap-2">
@@ -98,7 +98,7 @@ export default function DatasetPage() {
             <div className="flex items-center gap-1.5">
               <span
                 className={`w-2 h-2 rounded-full ${
-                  isLiveApi ? "bg-green-600 animate-pulse" : "bg-hazard"
+                  isLiveApi ? "bg-emerald-600" : "bg-hazard"
                 }`}
               />
               <span className="font-mono text-ink">
@@ -237,7 +237,7 @@ export default function DatasetPage() {
         <div className="border-b-2 border-ink mb-6 flex overflow-x-auto no-scrollbar gap-2 pb-0.5">
           <button
             onClick={() => setActiveTab("heatmap")}
-            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-all flex items-center gap-2 shrink-0 whitespace-nowrap ${
+            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-[transform,background-color,color,box-shadow] duration-140 ease-out active:scale-[0.98] flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "heatmap"
                 ? "bg-ink text-white font-black shadow-[2px_-2px_0px_#9F2F2D]"
                 : "bg-white text-ink hover:bg-canvas-cream"
@@ -249,7 +249,7 @@ export default function DatasetPage() {
 
           <button
             onClick={() => setActiveTab("distributions")}
-            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-all flex items-center gap-2 shrink-0 whitespace-nowrap ${
+            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-[transform,background-color,color,box-shadow] duration-140 ease-out active:scale-[0.98] flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "distributions"
                 ? "bg-ink text-white font-black shadow-[2px_-2px_0px_#9F2F2D]"
                 : "bg-white text-ink hover:bg-canvas-cream"
@@ -261,7 +261,7 @@ export default function DatasetPage() {
 
           <button
             onClick={() => setActiveTab("cohorts")}
-            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-all flex items-center gap-2 shrink-0 whitespace-nowrap ${
+            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-[transform,background-color,color,box-shadow] duration-140 ease-out active:scale-[0.98] flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "cohorts"
                 ? "bg-ink text-white font-black shadow-[2px_-2px_0px_#9F2F2D]"
                 : "bg-white text-ink hover:bg-canvas-cream"
@@ -273,7 +273,7 @@ export default function DatasetPage() {
 
           <button
             onClick={() => setActiveTab("dictionary")}
-            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-all flex items-center gap-2 shrink-0 whitespace-nowrap ${
+            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-[transform,background-color,color,box-shadow] duration-140 ease-out active:scale-[0.98] flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "dictionary"
                 ? "bg-ink text-white font-black shadow-[2px_-2px_0px_#9F2F2D]"
                 : "bg-white text-ink hover:bg-canvas-cream"
@@ -285,7 +285,7 @@ export default function DatasetPage() {
 
           <button
             onClick={() => setActiveTab("records")}
-            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-all flex items-center gap-2 shrink-0 whitespace-nowrap ${
+            className={`min-h-11 px-3.5 sm:px-4 py-2 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 border-b-0 border-ink transition-[transform,background-color,color,box-shadow] duration-140 ease-out active:scale-[0.98] flex items-center gap-2 shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "records"
                 ? "bg-ink text-white font-black shadow-[2px_-2px_0px_#9F2F2D]"
                 : "bg-white text-ink hover:bg-canvas-cream"
@@ -297,7 +297,7 @@ export default function DatasetPage() {
         </div>
 
         {/* Tab Content Display */}
-        <div className="flex-1">
+        <div key={activeTab} className="flex-1 animate-enter-subtle">
           {activeTab === "heatmap" && (
             <CorrelationHeatmap
               correlationData={correlation_matrix}

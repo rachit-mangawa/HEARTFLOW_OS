@@ -13,13 +13,14 @@
 
 ### **Unified Clinical Architecture · Mathematical Formulations · Embedded C99 Hardware ABI**
 
-[![Document Ref](https://img.shields.io/badge/Document_ID-HFL--OS--ARCH--SPEC--01-141413?style=for-the-badge&logo=googledocs&logoColor=white)](ARCHITECTURE.md)
-[![Revision](https://img.shields.io/badge/Revision-3.4.0_(Production_Hardened)-9F2F2D?style=for-the-badge)](ARCHITECTURE.md)
-[![Status](https://img.shields.io/badge/Status-Active_%2F_Approved-16A34A?style=for-the-badge)](ARCHITECTURE.md)
-[![Inference Latency](https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-blue?style=for-the-badge&logo=speedtest&logoColor=white)](ARCHITECTURE.md)
-[![Dynamic Memory](https://img.shields.io/badge/Dynamic_Heap-0_Bytes_(Zero--Malloc)-purple?style=for-the-badge)](ARCHITECTURE.md)
-[![INT8 Quantized](https://img.shields.io/badge/Quantization-INT8_(--76.4%25_SRAM)-orange?style=for-the-badge)](ARCHITECTURE.md)
-[![Test Suite](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-success?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
+[![Document Ref](https://img.shields.io/badge/Document_ID-HFL--OS--ARCH--SPEC--01-141413?style=flat&logo=googledocs&logoColor=white)](ARCHITECTURE.md)
+[![Revision](https://img.shields.io/badge/Revision-3.4.0_(Production_Hardened)-9F2F2D?style=flat&logo=shield&logoColor=white)](ARCHITECTURE.md)
+[![Status](https://img.shields.io/badge/Status-Active_%2F_Approved-16A34A?style=flat&logo=shield&logoColor=white)](ARCHITECTURE.md)
+[![Inference Latency](https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat&logo=speedtest&logoColor=white)](http://localhost:3000/simulator)
+[![Dynamic Memory](https://img.shields.io/badge/Dynamic_Heap-0_Bytes_(Zero--Malloc)-6b21a8?style=flat&logo=c&logoColor=white)](http://localhost:3000/edge)
+[![INT8 Quantized](https://img.shields.io/badge/Quantization-INT8_(-76.4%25_SRAM)-c2410c?style=flat)](http://localhost:3000/edge)
+[![MLOps](https://img.shields.io/badge/MLOps-Hot--Swap_Ensemble-047857?style=flat&logo=shield&logoColor=white)](http://localhost:3000/mlops)
+[![Test Suite](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
 
 </div>
 
@@ -447,17 +448,17 @@ int predict(const float *features);
 
 ## 7. MLOps Automated Retraining & Rollback Continuum
 
+HeartFlow OS includes an autonomous background retraining and model hot-swapping pipeline managed through the [`/mlops`](http://localhost:3000/mlops) interface:
+
 ```mermaid
 flowchart TD
-    A["Batch CSV Telemetry Upload (/retrain)"] --> B["Schema Alias Sanitization<br/>(Normalizes 40+ Header Permutations)"]
-    B --> C["Data Hygiene & Preprocessing<br/>(Strip Leakage Alarms & Fix Encodings)"]
-    C --> D["Fit 5 Estimators in Parallel<br/>(RF, SVM, LogReg, SmallNN, KNN)"]
-    D --> E["Stratified 20% Holdout Split Evaluation"]
-    
-    E --> F{"Holdout F1 ≥ Active Baseline?"}
-    
-    F -->|YES - Validated| G["Atomic Pointer Hot-Swap<br/>(0ms Downtime In-Memory Transition)"]
-    F -->|NO - Degraded| H["Automated Rollback Trigger<br/>(Preserve Active Registry, Log Incident)"]
+    A["Batch CSV Telemetry Upload (POST /retrain)"] --> B["Stage 1: Schema Normalization<br/>(40+ header aliases & character repair)"]
+    B --> C["Stage 2: Dataset Merge & Hygiene<br/>(Merge with patient_dataset.csv, re-index)"]
+    C --> D["Stage 3: Feature Calibration<br/>(StandardScaler fitting & 80/20 holdout)"]
+    D --> E["Stage 4: 5-Model Ensemble Training<br/>(RF, SVM, LogReg, SmallNN, KNN)"]
+    E --> F["Stage 5: Holdout Evaluation Gate<br/>(Stratified holdout macro F1 >= baseline)"]
+    F -->|Validated| G["Stage 6: Atomic Pointer Hot-Swap<br/>(0ms downtime in-memory transition)"]
+    F -->|Degraded| H["Automated Rollback Trigger<br/>(Preserve active registry, log incident)"]
 
     classDef pass fill:#F0FDF4,stroke:#16A34A,stroke-width:2px,color:#14532D;
     classDef fail fill:#FEF2F2,stroke:#DC2626,stroke-width:2px,color:#991B1B;
@@ -467,6 +468,52 @@ flowchart TD
     class G pass;
     class H fail;
 ```
+
+### 7.1. Ingestion Pipeline & Schema Alias Normalization
+The ingestion engine processes incoming CSV files (up to 50 MB) through a multi-pass normalization pipeline (`backend/heartflow_backend/mlops.py`):
+- **Header Alias Resolution**: Maps more than 40 common column name variants to canonical features (`Heart_Rate`, `SpO2_Level`, `Systolic_BP`, `Diastolic_BP`, `Body_Temp`, `Predicted_Disease`).
+- **Encoding Repair**: Automatically fixes corrupted degree symbols (`\ufffd` to `°C`) and strips trailing whitespace.
+- **Data Validation**: Checks that all 5 required physiological channels are present and non-empty. Batches with zero valid rows are rejected before model training begins.
+- **Dataset Re-indexing**: Appends validated observations to the canonical corpus (`data/patient_dataset.csv`), maintaining monotonic `Patient Number` sequences.
+
+### 7.2. Asynchronous Background Task Architecture & Polling Protocol
+To avoid HTTP request timeouts during compute-intensive training, retraining runs asynchronously:
+- **`POST /retrain`**: Reads the payload, checks file size, schedules `engine.ingest_batch_sync()` via FastAPI `BackgroundTasks`, and returns HTTP 200 immediately with a job acknowledgement.
+- **`GET /retrain/status`**: Exposes real-time progress for client polling every 700ms. The response includes:
+  - `status`: `"idle" | "training" | "complete" | "error"`
+  - `progress`: Integer percentage (`0` to `100%`)
+  - `stage`: Granular state machine phase identifier
+  - `current_step`: Human-readable terminal progress string
+  - `current_model`: Active model estimator being fitted
+  - `models_trained`: Array of completed estimator IDs
+  - `f1_scores`: Per-estimator validation scores on the 20% holdout split
+  - `active_version`: Registry version identifier (`v1`, `v2`, etc.)
+
+### 7.3. 6-Stage Telemetry Progression Model
+1. **Validation & Normalization (5%)**: Parses CSV, maps schema aliases, checks numerical ranges.
+2. **Dataset Merging (20%)**: Combines new rows with existing telemetry, saves merged CSV to disk.
+3. **Scaler Calibration (30%)**: Re-fits `StandardScaler` affine parameters ($\mu, \sigma$) and partitions an 80/20 stratified holdout split.
+4. **Ensemble Retraining (35% - 85%)**: Retrains the 5 estimators in sequence:
+   - Random Forest (30 trees, depth 5)
+   - Platt-calibrated Linear SVM
+   - L2-regularized Logistic Regression
+   - Multi-Layer Perceptron (16-8 ReLU)
+   - Distance-weighted k-Nearest Neighbors ($k=5$)
+5. **Holdout Evaluation Gate (90%)**: Measures macro $F_1$ and accuracy across holdout samples. If performance degrades relative to the active baseline, the rollback trigger preserves the active models.
+6. **Atomic Pointer Hot-Swap (98% - 100%)**: Serializes weights to disk and updates in-memory model pointers with zero downtime.
+
+### 7.4. Zero-Downtime Hot-Swap & Memory Registry
+Active models are held in memory under an atomic lock (`self._lock`). When retraining completes:
+1. Updated estimator weights are written to `models/model_weights.pt` and `models/ensemble_weights.json`.
+2. A new version entry is committed to `models/registry.json`.
+3. The active in-memory ensemble instance is replaced atomically.
+Ongoing inference requests (`POST /predict`), WebSocket streams (`/ws/feed`), and C99 export requests (`/export_tinyml`) continue serving without interruption.
+
+### 7.5. Session-Scoped Client Telemetry UX
+In the web application ([`/mlops`](http://localhost:3000/mlops)):
+- The real-time ingestion telemetry panel is displayed only when training is actively underway in the current session (`data.status === "training"`).
+- On new sessions or page refresh, the interface defaults to an idle upload dropzone, avoiding stale telemetry clutter.
+- When training completes, the panel provides explicit `Close [×]` and `Dismiss [×]` controls, alongside a direct `Test in Simulator →` shortcut to verify the new weights in [`/simulator`](http://localhost:3000/simulator).
 
 ---
 

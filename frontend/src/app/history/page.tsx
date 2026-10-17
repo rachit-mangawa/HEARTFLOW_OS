@@ -347,7 +347,7 @@ ${metrics.narrative}
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col animate-enter-subtle">
         {/* Header */}
         <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
@@ -471,7 +471,10 @@ ${metrics.narrative}
                 {isLoading ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-16 text-center bg-white text-slate">
-                      Loading historical records...
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw size={14} className="animate-spin text-hazard" />
+                        <span className="text-[12px] font-bold uppercase tracking-wider">Loading historical records...</span>
+                      </div>
                     </td>
                   </tr>
                 ) : activeRecords.length === 0 ? (

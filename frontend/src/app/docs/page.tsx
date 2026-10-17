@@ -1,21 +1,20 @@
 "use client";
 
-import { API_BASE, WS_BASE, IS_DEV } from "@/config";
+import { API_BASE } from "@/config";
 
 import { useState } from "react";
 import {
   Cpu,
-  Zap,
-  Activity,
   Gauge,
   Terminal,
   Radio,
   ShieldCheck,
+  Shield,
   Binary,
-  Server
+  Server,
+  ArrowRight
 } from "lucide-react";
-import { evaluateEdge } from "@/lib/edge/inference";
-import { InferenceResult } from "@/lib/edge/types";
+import Link from "next/link";
 
 interface EndpointDoc {
   id: string;
@@ -226,25 +225,70 @@ const res = await fetch("https://idkhowtocodefr-hf-backend.hf.space/retrain", {
 const data = await res.json();
 console.log(data.message);`,
     requestBody: {
-      headers: [
-        "Heart Rate (bpm)",
-        "SpO2 Level (%)",
-        "Systolic Blood Pressure (mmHg)",
-        "Diastolic Blood Pressure (mmHg)",
-        "Body Temperature (°C)",
-        "Predicted Disease"
+      content_type: "multipart/form-data",
+      file_field: "file (CSV batch <= 50MB)",
+      required_vitals: [
+        "Heart Rate",
+        "SpO2 Level",
+        "Systolic BP",
+        "Diastolic BP",
+        "Body Temperature"
       ],
-      accepted_aliases: {
-        "Heart_Rate": "Heart Rate (bpm)",
-        "SpO2_Level": "SpO2 Level (%)",
-        "Systolic_BP": "Systolic Blood Pressure (mmHg)",
-        "Diastolic_BP": "Diastolic Blood Pressure (mmHg)",
-        "Body_Temp": "Body Temperature (°C)"
+      accepted_header_aliases: {
+        Heart_Rate: "HR, hr, heart_rate, Heart Rate (bpm)",
+        SpO2_Level: "SpO2, spo2, oxygen, SpO2 Level (%)",
+        Systolic_BP: "sys, sys_bp, Systolic Blood Pressure (mmHg)",
+        Diastolic_BP: "dia, dia_bp, Diastolic Blood Pressure (mmHg)",
+        Body_Temp: "temp, temperature, Body Temperature (°C)"
       }
     },
     responseBody: {
       status: "success",
       message: "Dataset successfully updated (60010 total observations) and ensemble hot-swapped."
+    }
+  },
+  {
+    id: "retrain_status",
+    method: "GET",
+    path: "/retrain/status",
+    title: "MLOps Ingestion Telemetry & Progress Polling",
+    description: "Returns real-time progress percentage, current training stage, active model fitting status, per-model F1 scores, and hot-swap completion status.",
+    latency: "< 5ms (In-Memory Atomic Status Read)",
+    category: "MLOps",
+    curl: `curl -X GET "https://idkhowtocodefr-hf-backend.hf.space/retrain/status" \\
+  -H "Accept: application/json"`,
+    python: `import requests
+import time
+
+while True:
+    status = requests.get("https://idkhowtocodefr-hf-backend.hf.space/retrain/status").json()
+    print(f"[{status['stage']}] {status['progress']}% - {status['current_step']}")
+    if status["status"] in ("complete", "error"):
+        break
+    time.sleep(0.7)`,
+    typescript: `// Polled every 700ms during retraining in /mlops
+const res = await fetch("/heartflow/retrain/status");
+const telemetry = await res.json();
+console.log(\`Stage: \${telemetry.stage}, Progress: \${telemetry.progress}%\`);`,
+    responseBody: {
+      status: "training",
+      progress: 68,
+      stage: "training_mlp",
+      current_step: "Fitting Multi-Layer Perceptron (16-8 ReLU) with early stopping...",
+      current_model: "small_nn",
+      models_trained: ["rf", "svm", "logreg"],
+      total_models: 5,
+      f1_scores: {
+        rf: 0.941,
+        svm: 0.928,
+        logreg: 0.908
+      },
+      active_version: "v1",
+      observations_count: 60250,
+      message: "Retraining ensemble in progress",
+      error: null,
+      started_at: 1715423800.12,
+      completed_at: null
     }
   },
   {
@@ -441,40 +485,10 @@ export default function ApiDocs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Live in-browser tester state
-  const [testHeartRate, setTestHeartRate] = useState(82);
-  const [testSpO2, setTestSpO2] = useState(98);
-  const [testSysBP, setTestSysBP] = useState(124);
-  const [testDiaBP, setTestDiaBP] = useState(82);
-  const [testTemp, setTestTemp] = useState(36.9);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<InferenceResult | null>(() =>
-    evaluateEdge({
-      Heart_Rate: 82,
-      SpO2_Level: 98,
-      Systolic_BP: 124,
-      Diastolic_BP: 82,
-      Body_Temp: 36.9
-    })
-  );
-
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleRunLiveTest = () => {
-    setIsTesting(true);
-    const res = evaluateEdge({
-      Heart_Rate: Number(testHeartRate),
-      SpO2_Level: Number(testSpO2),
-      Systolic_BP: Number(testSysBP),
-      Diastolic_BP: Number(testDiaBP),
-      Body_Temp: Number(testTemp)
-    });
-    setTestResult(res);
-    setTimeout(() => setIsTesting(false), 120);
   };
 
   const filteredEndpoints = ENDPOINTS.filter((ep) => {
@@ -488,7 +502,7 @@ export default function ApiDocs() {
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col animate-enter-subtle">
         {/* Monolithic Swiss Header */}
         <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
@@ -503,26 +517,71 @@ export default function ApiDocs() {
 
           <div className="flex flex-col items-start md:items-end gap-2.5">
             <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-800 bg-emerald-50 text-emerald-900 text-[11px] font-bold shadow-[1px_1px_0px_#065f46]">
+                <ShieldCheck size={13} className="text-emerald-700" />
+                <span>58/58 VERIFIED</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-blue-800 bg-blue-50 text-blue-900 text-[11px] font-bold shadow-[1px_1px_0px_#1e3a8a]">
+                <Shield size={13} className="text-blue-700" />
+                <span>MISRA-C:2012 ABI</span>
+              </span>
               {process.env.NODE_ENV === "development" && (
                 <a
                   href={`${API_BASE}/docs`}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-white text-ink hover:bg-hazard hover:text-white transition-colors flex items-center gap-1.5"
+                  className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 rounded-full bg-white text-ink hover:bg-hazard hover:text-white transition-colors flex items-center gap-1.5"
                 >
                   <span>Swagger Docs ↗</span>
                 </a>
               )}
             </div>
-            <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white flex items-center gap-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-ink text-white rounded-full flex items-center gap-2 shadow-[2px_2px_0px_#141413]">
               <ShieldCheck size={14} className="text-hazard" />
-              <span>SPECIFICATION · REVISION 3.2</span>
+              <span>SPECIFICATION · REVISION 3.4</span>
             </div>
             <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
               In-browser evaluation, C99 export, and cloud REST endpoints.
             </div>
           </div>
         </header>
+
+        {/* Interactive Clinical Workspace Directory */}
+        <div className="border-2 border-ink bg-white p-4 mb-8 shadow-[3px_3px_0px_#141413]">
+          <div className="text-[11px] font-bold text-slate uppercase tracking-widest mb-3 flex items-center justify-between border-b border-ink/20 pb-2">
+            <span className="flex items-center gap-2 text-ink">
+              <ShieldCheck size={14} className="text-hazard" />
+              <span>LIVE APPLICATION DIRECTORY &amp; INTERACTIVE WORKSPACES</span>
+            </span>
+            <span className="text-[10px] text-slate font-bold uppercase">8 Live Routes</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            {[
+              { name: "Simulator", href: "/simulator", desc: "Vitals & drift physics" },
+              { name: "MLOps", href: "/mlops", desc: "Retrain & batch ingest" },
+              { name: "Monitor", href: "/monitor", desc: "60 FPS ECG telemetry" },
+              { name: "Dataset", href: "/dataset", desc: "60k cohort explorer" },
+              { name: "Edge C99", href: "/edge", desc: "Bare-metal code exporter" },
+              { name: "Analytics", href: "/analytics", desc: "Correlations & weights" },
+              { name: "History", href: "/history", desc: "Local session audit log" },
+              { name: "Topology", href: "/architecture", desc: "Dual-plane system map" },
+            ].map((route) => (
+              <Link
+                key={route.href}
+                href={route.href}
+                className="btn-tactile p-2.5 border border-ink/40 hover:border-ink bg-canvas-cream hover:bg-hazard hover:text-white transition-colors group flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider">{route.name}</span>
+                  <ArrowRight size={11} className="text-slate group-hover:text-white transition-transform group-hover:translate-x-0.5" />
+                </div>
+                <div className="text-[9px] text-slate group-hover:text-white/80 font-bold uppercase truncate mt-1">
+                  {route.desc}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {/* Global API Gateway KPI Strip */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-ink border-2 border-ink mb-8 shadow-[4px_4px_0px_0px_#141413]">
@@ -745,30 +804,33 @@ export default function ApiDocs() {
                           {copiedId === endpoint.id ? "[✓ COPIED TO CLIPBOARD]" : "[COPY_CODE]"}
                         </button>
                       </div>
-                      <pre className="p-4 text-[12px] md:text-[13px] overflow-x-auto font-mono leading-relaxed selection:bg-hazard selection:text-white">
+                      <pre className="p-4 text-[12px] md:text-[13px] font-mono leading-relaxed selection:bg-hazard selection:text-white whitespace-pre-wrap wrap-break-word">
                         <code>{endpoint[selectedLang]}</code>
                       </pre>
                     </div>
 
-                    {/* Schema Grid (Request & Response) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
+                    {/* Linear Stack: Request Payload Contract first, then Response Contract (Zero Horizontal Scrolling) */}
+                    <div className="flex flex-col gap-4 mt-1">
                       {endpoint.requestBody && (
-                        <div className="flex flex-col border-2 border-ink bg-canvas-cream">
-                          <div className="border-b-2 border-ink p-3 bg-white text-[12px] font-bold uppercase tracking-widest text-ink">
-                            Request Payload Contract (JSON)
+                        <div className="flex flex-col border-2 border-ink bg-canvas-cream shadow-[2px_2px_0px_#141413]">
+                          <div className="border-b-2 border-ink p-3 bg-white text-[12px] font-bold uppercase tracking-widest text-ink flex items-center justify-between">
+                            <span>Request Payload Contract</span>
+                            <span className="text-slate font-bold text-[10px] bg-canvas-cream border border-ink/30 px-2 py-0.5">
+                              {endpoint.id === "retrain" ? "multipart/form-data" : "application/json"}
+                            </span>
                           </div>
-                          <pre className="p-4 text-[12px] overflow-x-auto text-ink font-bold leading-relaxed">
+                          <pre className="p-4 text-[12px] text-ink font-mono font-bold leading-relaxed whitespace-pre-wrap wrap-break-word">
                             <code>{JSON.stringify(endpoint.requestBody, null, 2)}</code>
                           </pre>
                         </div>
                       )}
 
-                      <div className={`flex flex-col border-2 border-ink bg-canvas-cream ${!endpoint.requestBody ? 'lg:col-span-2' : ''}`}>
+                      <div className="flex flex-col border-2 border-ink bg-canvas-cream shadow-[2px_2px_0px_#141413]">
                         <div className="border-b-2 border-ink p-3 bg-white text-[12px] font-bold uppercase tracking-widest text-ink flex justify-between items-center">
                           <span>Response Contract (200 OK)</span>
                           <span className="text-hazard font-bold text-[11px]">application/json</span>
                         </div>
-                        <pre className="p-4 text-[12px] overflow-x-auto text-ink font-bold leading-relaxed">
+                        <pre className="p-4 text-[12px] text-ink font-mono font-bold leading-relaxed whitespace-pre-wrap wrap-break-word">
                           <code>{JSON.stringify(endpoint.responseBody, null, 2)}</code>
                         </pre>
                       </div>
@@ -778,144 +840,6 @@ export default function ApiDocs() {
               ))}
             </div>
 
-            {/* Live Interactive In-Browser Console */}
-            <section className="mt-8 border-4 border-ink bg-white p-6 md:p-8 shadow-[4px_4px_0px_0px_#141413]">
-              <div className="border-b-2 border-ink pb-4 mb-6 flex flex-col md:flex-row justify-between md:items-end gap-2">
-                <div>
-                  <div className="text-[11px] font-bold text-hazard uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                    <Activity size={14} />
-                    <span>IN-BROWSER EVALUATION</span>
-                  </div>
-                  <h2 className="text-[22px] md:text-[26px] font-black uppercase tracking-tight text-ink">
-                    INTERACTIVE INFERENCE TEST
-                  </h2>
-                </div>
-                <div className="text-[12px] font-bold text-slate uppercase">
-                  Runs directly in browser memory without network requests
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-5 flex flex-col gap-4">
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate flex justify-between mb-1">
-                      <span>HEART RATE:</span>
-                      <span className="text-ink font-black">{testHeartRate} BPM</span>
-                    </label>
-                    <input
-                      type="range"
-                      min={40}
-                      max={180}
-                      value={testHeartRate}
-                      onChange={(e) => setTestHeartRate(Number(e.target.value))}
-                      className="w-full accent-hazard cursor-pointer"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate flex justify-between mb-1">
-                      <span>SPO2 SATURATION:</span>
-                      <span className="text-ink font-black">{testSpO2} %</span>
-                    </label>
-                    <input
-                      type="range"
-                      min={70}
-                      max={100}
-                      value={testSpO2}
-                      onChange={(e) => setTestSpO2(Number(e.target.value))}
-                      className="w-full accent-hazard cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate flex justify-between mb-1">
-                        <span>SYS BP:</span>
-                        <span className="text-ink font-black">{testSysBP}</span>
-                      </label>
-                      <input
-                        type="range"
-                        min={80}
-                        max={200}
-                        value={testSysBP}
-                        onChange={(e) => setTestSysBP(Number(e.target.value))}
-                        className="w-full accent-hazard cursor-pointer"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate flex justify-between mb-1">
-                        <span>DIA BP:</span>
-                        <span className="text-ink font-black">{testDiaBP}</span>
-                      </label>
-                      <input
-                        type="range"
-                        min={50}
-                        max={130}
-                        value={testDiaBP}
-                        onChange={(e) => setTestDiaBP(Number(e.target.value))}
-                        className="w-full accent-hazard cursor-pointer"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate flex justify-between mb-1">
-                      <span>BODY TEMPERATURE:</span>
-                      <span className="text-ink font-black">{testTemp} °C</span>
-                    </label>
-                    <input
-                      type="range"
-                      min={35.0}
-                      max={41.0}
-                      step={0.1}
-                      value={testTemp}
-                      onChange={(e) => setTestTemp(Number(e.target.value))}
-                      className="w-full accent-hazard cursor-pointer"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleRunLiveTest}
-                    disabled={isTesting}
-                    className="mt-2 border-2 border-ink bg-ink text-white hover:bg-hazard hover:border-hazard py-3 font-black uppercase tracking-wider text-[13px] transition-colors cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <Zap size={14} className="text-hazard" />
-                    <span>{isTesting ? "Evaluating TinyML Ensemble..." : "Evaluate Telemetry Now"}</span>
-                  </button>
-                </div>
-
-                <div className="lg:col-span-7 border-2 border-ink bg-canvas-cream flex flex-col">
-                  <div className="border-b-2 border-ink p-3 bg-white flex justify-between items-center text-[12px] font-bold uppercase">
-                    <span>Clinical Evaluation Result</span>
-                    <span className="text-hazard font-mono">LATENCY: ~18.4 µs</span>
-                  </div>
-                  <div className="p-6 flex-1 flex flex-col justify-center">
-                    {testResult ? (
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between border-b-2 border-ink/20 pb-3">
-                          <span className="text-[13px] font-bold uppercase text-slate">Primary Diagnosis:</span>
-                          <span className={`text-[16px] font-black uppercase px-3 py-1 border-2 border-ink ${testResult.is_at_risk ? 'bg-hazard text-white' : 'bg-emerald-100 text-emerald-900'}`}>
-                            {testResult.label} ({(testResult.confidence * 100).toFixed(1)}%)
-                          </span>
-                        </div>
-
-                        <div className="border-2 border-ink bg-white p-4">
-                          <div className="text-[11px] font-bold text-slate uppercase mb-2">Normalized Inference Frame:</div>
-                          <pre suppressHydrationWarning className="text-[11px] overflow-x-auto text-ink font-bold leading-relaxed">
-                            {JSON.stringify(testResult, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center text-slate text-[13px] font-bold">
-                        Adjust vitals sliders and execute to verify the client-side ensemble output.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
           </div>
         </div>
       </main>

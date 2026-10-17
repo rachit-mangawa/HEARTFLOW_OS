@@ -5,7 +5,11 @@ from pathlib import Path
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 def get_p1_dir() -> Path:
-    p = Path(tempfile.gettempdir()) / "p1"
+    custom_dir = os.environ.get("HEARTFLOW_DATA_DIR")
+    if custom_dir:
+        p = Path(custom_dir)
+    else:
+        p = Path(tempfile.gettempdir()) / "p1"
     os.makedirs(p, exist_ok=True)
     return p
 

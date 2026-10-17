@@ -23,19 +23,36 @@ app_port: 8000
 
 <p>
   <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS" target="_blank">
-    <img src="https://img.shields.io/badge/GitHub-Repository-141413.svg?style=for-the-badge&logo=github" alt="GitHub Repository" />
+    <img src="https://img.shields.io/badge/GitHub-Repository-141413?style=flat&logo=github&logoColor=white" alt="GitHub Repository" />
+  </a>
+  <a href="http://localhost:3000" target="_blank">
+    <img src="https://img.shields.io/badge/Web_Application-localhost%3A3000-065f46?style=flat&logo=safari&logoColor=white" alt="Web Application" />
+  </a>
+  <a href="https://idkhowtocodefr-hf-backend.hf.space" target="_blank">
+    <img src="https://img.shields.io/badge/Cloud_API-HF_Spaces-9F2F2D?style=flat&logo=fastapi&logoColor=white" alt="Cloud API" />
   </a>
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-blue.svg?style=for-the-badge&logo=speedtest&logoColor=white" alt="Latency" />
-  <img src="https://img.shields.io/badge/Memory_ABI-Zero--Malloc_C99-purple.svg?style=for-the-badge" alt="Zero-Malloc" />
-  <img src="https://img.shields.io/badge/Quantization-INT8_(--76.4%25_SRAM)-9F2F2D.svg?style=for-the-badge" alt="Quantization" />
-  <img src="https://img.shields.io/badge/CI_Tests-58%2F58_Passing-success.svg?style=for-the-badge&logo=githubactions&logoColor=white" alt="Tests" />
-  <img src="https://img.shields.io/badge/Next.js-16.3-black.svg?style=for-the-badge&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black" alt="React" />
-  <img src="https://img.shields.io/badge/TailwindCSS-v4-38B2AC.svg?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS v4" />
-  <img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License" />
+  <a href="http://localhost:3000/simulator">
+    <img src="https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat&logo=speedtest&logoColor=white" alt="Latency" />
+  </a>
+  <a href="http://localhost:3000/edge">
+    <img src="https://img.shields.io/badge/Memory_ABI-Zero--Malloc_C99-6b21a8?style=flat&logo=c&logoColor=white" alt="Zero-Malloc" />
+  </a>
+  <a href="http://localhost:3000/edge">
+    <img src="https://img.shields.io/badge/Quantization-INT8_(-76.4%25_SRAM)-c2410c?style=flat" alt="Quantization" />
+  </a>
+  <a href="http://localhost:3000/mlops">
+    <img src="https://img.shields.io/badge/MLOps-Hot--Swap_Ensemble-047857?style=flat&logo=shield&logoColor=white" alt="MLOps" />
+  </a>
+  <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS/actions">
+    <img src="https://img.shields.io/badge/CI_Tests-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white" alt="Tests" />
+  </a>
+  <img src="https://img.shields.io/badge/Next.js-16.3-000000?style=flat&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-0284c7?style=flat&logo=react&logoColor=white" alt="React" />
+  <img src="https://img.shields.io/badge/TailwindCSS-v4-0f766e?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS v4" />
+  <img src="https://img.shields.io/badge/License-MIT-374151?style=flat" alt="License" />
 </p>
 
 </div>
@@ -203,22 +220,57 @@ EXAMPLE: $84,97.5,132,86,37.1*4F\n
 
 | Route | View Name | Clinical & Engineering Purpose |
 | :--- | :--- | :--- |
-| **`/`** | **Landing Hub** | Engineering telemetry badges, core specs ticker, and architecture feature overview. |
-| **`/monitor`** | **Clinical Telemetry** | 60 FPS Lead-II ECG canvas, vitals monitors, auto-healing WebSocket feed, and SHAP attribution. |
-| **`/simulator`** | **Physiological Simulator** | Interactive patient vitals simulator, arrhythmia state machine triggers, and edge inference. |
-| **`/dataset`** | **Dataset Explorer** | 60,000 observation ground-truth engine: 9×9 Pearson correlation heatmap, 12-bin continuous histograms, balanced disease cohorts, and 25-row paginated inspector. |
-| **`/edge`** | **TinyML Edge Compiler** | In-browser & cloud C99 generator for ESP32/Cortex-M with INT8 quantization & zero-malloc memory guarantee. |
-| **`/mlops`** | **MLOps Registry & Retrain** | Batch CSV ingestion, schema alias sanitization, F1-macro automated validation gates, and hot-swapping. |
-| **`/architecture`** | **Pipeline Topology** | Native architectural schematic detailing client, API, MLOps, and persistence subsystems. |
-| **`/history`** | **Clinical Audit Logs** | Local session telemetry history with chronological diagnostic records and risk indicators. |
-| **`/analytics`** | **Longitudinal Analytics** | Population distributions, correlation matrices, and model weight arbitration diagnostics. |
-| **`/docs`** | **System & API Specs** | Interactive endpoint reference, SVG topology diagrams, latency benchmarks, and live test console. |
+| **[`/`](http://localhost:3000/)** | **Landing Hub** | Engineering telemetry badges, system specifications, and dual-plane architecture overview. |
+| **[`/monitor`](http://localhost:3000/monitor)** | **Clinical Telemetry** | 60 FPS Lead-II ECG canvas oscillograph, live vitals telemetry, auto-reconnecting WebSocket stream, and SHAP attribution. |
+| **[`/simulator`](http://localhost:3000/simulator)** | **Physiological Simulator** | Interactive patient vitals simulator, arrhythmia state machine triggers, physics drift engine, and instant edge inference. |
+| **[`/dataset`](http://localhost:3000/dataset)** | **Dataset Explorer** | 60,000 observation ground-truth corpus: 9×9 Pearson correlation heatmap, 12-bin continuous histograms, balanced disease cohorts, and 25-row paginated inspector. |
+| **[`/edge`](http://localhost:3000/edge)** | **TinyML Edge Compiler** | In-browser and cloud C99 generator for ESP32 and Cortex-M with INT8 quantization and zero-malloc memory guarantee. |
+| **[`/mlops`](http://localhost:3000/mlops)** | **MLOps Registry & Retraining** | Batch CSV ingestion, schema alias sanitization, F1-macro automated validation gates, real-time stage telemetry, and atomic hot-swapping. |
+| **[`/architecture`](http://localhost:3000/architecture)** | **Pipeline Topology** | Native architectural schematic detailing client, API, MLOps, and persistence subsystems. |
+| **[`/history`](http://localhost:3000/history)** | **Clinical Audit Logs** | Local session telemetry audit history with chronological diagnostic records and risk indicators. |
+| **[`/analytics`](http://localhost:3000/analytics)** | **Longitudinal Analytics** | Population distributions, correlation matrices, and model weight arbitration diagnostics. |
+| **[`/docs`](http://localhost:3000/docs)** | **System & API Specs** | Interactive endpoint reference, live in-browser testing console, schema contracts, and cURL / Python / TypeScript snippets. |
+
+---
+
+## Continuous MLOps & Asynchronous Retraining Pipeline
+
+HeartFlow OS includes an autonomous background retraining and model hot-swapping pipeline managed through [`/mlops`](http://localhost:3000/mlops):
+
+```mermaid
+flowchart TD
+    A["Batch CSV Telemetry Upload (POST /retrain)"] --> B["Stage 1: Validation & Normalization<br/>(Resolves 40+ header aliases, repairs degree characters)"]
+    B --> C["Stage 2: Dataset Ingestion<br/>(Merges new records into patient_dataset.csv)"]
+    C --> D["Stage 3: Calibration & Split<br/>(StandardScaler fitting & 80/20 stratified holdout)"]
+    D --> E["Stage 4: 5-Model Parallel Retraining<br/>(RF 25%, SVM 15%, LogReg 20%, MLP 25%, KNN 15%)"]
+    E --> F["Stage 5: Holdout Evaluation Gate<br/>(Holdout F1-macro >= active baseline)"]
+    F -->|Validated| G["Stage 6: Atomic Pointer Hot-Swap<br/>(0ms downtime in-memory transition)"]
+    F -->|Degraded| H["Automated Rollback<br/>(Preserve active registry pointers, log incident)"]
+```
+
+### Key Retraining Engineering Invariants
+1. **Asynchronous Non-Blocking Execution**:
+   - `POST /retrain` accepts uploaded CSV batches (up to 50 MB), dispatches background processing via FastAPI `BackgroundTasks`, and returns HTTP 200 immediately.
+   - Client polling via `GET /retrain/status` reads in-memory training progress (`0` to `100%`), current pipeline stage, active estimator being fitted, and per-model F1 validation scores.
+2. **Schema Alias Resolution**:
+   - Sanitizes 40+ column header variations (e.g. `Heart Rate (bpm)`, `HR`, `hr`, `systolic_bp`, `temp`).
+   - Automatically repairs corrupted byte sequences (e.g. `\ufffd` to `°C`).
+   - Validates the presence of all five physiological channels before proceeding.
+3. **5-Model Ensemble Re-fitting**:
+   - Sequentially trains and cross-validates Random Forest, Linear SVM (Platt calibrated), Logistic Regression (L2), MLP Neural Network (16-8 ReLU), and k-Nearest Neighbors ($k=5$).
+4. **Zero-Downtime Memory Hot-Swap**:
+   - Saves updated weights to `model_weights.pt` and `ensemble_weights.json`.
+   - Atomically updates active model registry pointers in Python memory without dropping in-flight WebSocket connections or REST queries.
+5. **Session-Scoped Client Telemetry UX**:
+   - The telemetry progress panel in [`/mlops`](http://localhost:3000/mlops) only mounts when an active training job is running (`status: "training"`).
+   - On new sessions or page refresh, completed telemetry is automatically cleared to keep the workspace clean.
+   - Includes tactile `Close [×]` and `Dismiss [×]` controls, with a direct shortcut button to test the new weights in [`/simulator`](http://localhost:3000/simulator).
 
 ---
 
 ## API Specifications Contract
 
-Interactive documentation with live in-browser testing is hosted at `/docs`.
+Interactive documentation with live in-browser testing is hosted at [`/docs`](http://localhost:3000/docs).
 
 | Method | Endpoint | Latency SLA | Description |
 | :---: | :--- | :---: | :--- |
@@ -227,6 +279,7 @@ Interactive documentation with live in-browser testing is hosted at `/docs`.
 | `GET` | `/export_tinyml` | `< 2 ms` | Transpiles trained models to standalone zero-malloc C99 header (`model.h`). |
 | `POST` | `/explain` | `< 15 ms` | TreeExplainer SHAP game-theoretic feature attribution. |
 | `POST` | `/retrain` | `< 3.5 s` | Batch CSV upload, alias resolution, refitting, and zero-downtime hot-swap. |
+| `GET` | `/retrain/status` | `< 5 ms` | Real-time stage progress, active estimator training status, and F1 scores. |
 | `GET` | `/metrics` | `< 10 ms` | Accuracy, F1 macro, per-model weights, and edge latency benchmarks. |
 | `GET` | `/history` | `< 5 ms` | Returns isolated chronological session telemetry audit records. |
 | `GET` | `/dataset/summary` | `< 5 ms` | Precomputed statistical profiling across 60,000 observations (99.8% bandwidth reduction). |

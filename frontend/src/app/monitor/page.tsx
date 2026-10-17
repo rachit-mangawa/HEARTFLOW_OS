@@ -134,7 +134,7 @@ export default function SystemMonitor() {
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col animate-enter-subtle">
         {/* Header */}
         <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
@@ -153,10 +153,11 @@ export default function SystemMonitor() {
                 MODE: {runtimeMode}
               </span>
               <div
-                className={`text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1 text-white ${
-                  isCriticalAnomaly ? "bg-hazard" : "bg-ink"
+                className={`text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1 text-white flex items-center gap-2 ${
+                  isCriticalAnomaly ? "bg-hazard shadow-[2px_2px_0px_#141413]" : "bg-ink"
                 }`}
               >
+                <span className={`w-2 h-2 rounded-full inline-block ${isCriticalAnomaly ? "bg-white" : "bg-emerald-400"}`} />
                 STATUS: {getStatusLabel()}
               </div>
             </div>
@@ -344,7 +345,7 @@ export default function SystemMonitor() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between">
+                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
                   <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Mean Arterial (MAP)</div>
                   <div className="flex items-baseline gap-1 my-1">
                     <span className="text-[20px] font-black tabular-nums text-ink">{mapValue ?? "---"}</span>
@@ -355,7 +356,7 @@ export default function SystemMonitor() {
                   </div>
                 </div>
 
-                <div className="border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between">
+                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
                   <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Pulse Pressure</div>
                   <div className="flex items-baseline gap-1 my-1">
                     <span className="text-[20px] font-black tabular-nums text-ink">{pulsePressure ?? "---"}</span>
@@ -366,7 +367,7 @@ export default function SystemMonitor() {
                   </div>
                 </div>
 
-                <div className="border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between">
+                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
                   <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Shock Index (SI)</div>
                   <div className="flex items-baseline gap-1 my-1">
                     <span className="text-[20px] font-black tabular-nums text-ink">{shockIndex ?? "---"}</span>
@@ -377,7 +378,7 @@ export default function SystemMonitor() {
                   </div>
                 </div>
 
-                <div className="border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between">
+                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
                   <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Rate-Pressure Prod.</div>
                   <div className="flex items-baseline gap-1 my-1">
                     <span className="text-[20px] font-black tabular-nums text-ink">{rpp ?? "---"}</span>
@@ -611,8 +612,8 @@ function VitalCard({
   };
 
   return (
-    <div className="bg-canvas-cream p-5 sm:p-6 flex flex-col justify-between hover:bg-white transition-colors cursor-default overflow-hidden group relative">
-      <span className="absolute top-2 right-2 text-ink/20 group-hover:text-hazard transition-colors text-[10px] select-none">
+    <div className="bg-canvas-cream p-5 sm:p-6 flex flex-col justify-between hover:bg-white transition-all duration-150 cursor-default overflow-hidden group relative">
+      <span className="absolute top-2 right-2 text-ink/20 group-hover:text-hazard transition-all duration-150 text-[10px] select-none group-hover:scale-125">
         +
       </span>
 
@@ -627,7 +628,7 @@ function VitalCard({
           </span>
         </div>
 
-        <div className="font-sans text-[clamp(28px,2.6vw,46px)] font-black tracking-tighter tabular-nums leading-none mb-1.5 break-all text-ink">
+        <div className="font-sans text-[clamp(28px,2.6vw,46px)] font-black tracking-tighter tabular-nums leading-none mb-1.5 break-all text-ink transition-transform duration-150 group-hover:translate-x-0.5">
           {value !== null && value !== undefined ? value : "---"}
         </div>
       </div>

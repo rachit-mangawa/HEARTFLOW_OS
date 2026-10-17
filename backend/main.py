@@ -16,10 +16,25 @@ app = FastAPI(
     version="2.0.0",
 )
 
+cors_origins_raw = os.environ.get("ALLOWED_ORIGINS", "").strip()
+if cors_origins_raw:
+    configured_origins = [orig.strip() for orig in cors_origins_raw.split(",") if orig.strip()]
+    is_wildcard = "*" in configured_origins
+else:
+    configured_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://heartflow.vercel.app",
+        "https://idkhowtocodefr-hf-backend.hf.space",
+    ]
+    is_wildcard = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["*"] if is_wildcard else configured_origins,
+    allow_credentials=not is_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )

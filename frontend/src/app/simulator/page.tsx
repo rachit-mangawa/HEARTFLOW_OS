@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sliders, Activity, Cpu, Shuffle } from "lucide-react";
+import { Sliders, Activity, Cpu, Shuffle, RefreshCw } from "lucide-react";
 import ShapChart from "@/components/ShapChart";
 import { PatientVitals } from "@/lib/edge/types";
 import { evaluateEdge } from "@/lib/edge/inference";
@@ -181,7 +181,7 @@ export default function Simulator() {
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-14 flex-1 flex flex-col">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-14 flex-1 flex flex-col animate-enter-subtle">
         {/* Header */}
         <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
@@ -232,10 +232,10 @@ export default function Simulator() {
                       key={preset.name}
                       type="button"
                       onClick={() => handleSelectPreset(preset.data)}
-                      className={`btn-tactile border-2 border-ink p-3.5 sm:p-4 text-left transition-colors cursor-pointer flex flex-col justify-between gap-2 min-h-24 ${
+                      className={`btn-tactile border-2 border-ink p-3.5 sm:p-4 text-left transition-all duration-150 cursor-pointer flex flex-col justify-between gap-2 min-h-24 active:scale-[0.98] ${
                         isActive
                           ? "bg-ink text-white font-bold"
-                          : "bg-white text-ink hover:bg-canvas-cream"
+                          : "bg-white text-ink hover:bg-canvas-cream hover:-translate-y-0.5"
                       }`}
                     >
                       <div>
@@ -319,10 +319,10 @@ export default function Simulator() {
               <button
                 type="button"
                 onClick={handleRandomize}
-                className="btn-tactile py-3.5 px-5 border-2 border-ink bg-white hover:bg-canvas-cream text-ink font-bold text-[12px] tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                className="group btn-tactile py-3.5 px-5 border-2 border-ink bg-white hover:bg-canvas-cream text-ink font-bold text-[12px] tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer transition-[transform,background-color] duration-140 ease-out active:scale-[0.98]"
                 title="Generate random physiological vitals"
               >
-                <Shuffle size={14} className="text-hazard" />
+                <Shuffle size={14} className="text-hazard transition-transform duration-300 ease-out group-hover:rotate-45" />
                 <span>RANDOMIZE</span>
               </button>
 
@@ -330,18 +330,25 @@ export default function Simulator() {
                 type="button"
                 onClick={handlePredict}
                 disabled={loading}
-                className="btn-tactile-hazard py-3.5 font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 flex-1 cursor-pointer disabled:cursor-not-allowed"
+                className="btn-tactile-hazard py-3.5 font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 flex-1 cursor-pointer disabled:cursor-not-allowed transition-[transform,background-color] duration-140 ease-out active:scale-[0.98]"
               >
-                {loading ? "PROCESSING REQUEST..." : "EXECUTE INFERENCE"}
+                {loading ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin text-white" />
+                    <span>PROCESSING REQUEST...</span>
+                  </>
+                ) : (
+                  "EXECUTE INFERENCE"
+                )}
               </button>
             </div>
             {isSlow && (
-              <div className="mt-3 p-2.5 border-2 border-hazard bg-hazard/10 text-hazard text-[11px] font-bold uppercase tracking-wider">
+              <div className="mt-3 p-2.5 border-2 border-hazard bg-hazard/10 text-hazard text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
                 Waking up the server, first request can take a minute
               </div>
             )}
             {error && (
-              <div className="mt-3 p-2.5 border-2 border-red-500 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-wider">
+              <div className="mt-3 p-2.5 border-2 border-red-500 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
                 {error}
               </div>
             )}
@@ -356,7 +363,7 @@ export default function Simulator() {
               </h2>
               {isStagedDirty && (
                 <span className="text-[10px] text-hazard font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-hazard animate-pulse" />
+                  <span className="w-1.5 h-1.5 bg-hazard inline-block" />
                   INPUT MODIFIED · RE-RUN REQUIRED
                 </span>
               )}
@@ -374,7 +381,7 @@ export default function Simulator() {
 
               <div className="z-10 p-5 sm:p-6 flex flex-col h-full gap-6">
                 {prediction && submittedData ? (
-                  <>
+                  <div className="animate-enter-subtle flex flex-col gap-6">
                     <div>
                       <div className="text-[11px] font-bold text-slate tracking-widest mb-3 uppercase">
                         MODEL OUTPUT
@@ -406,7 +413,7 @@ export default function Simulator() {
                               prediction.prediction ? prediction.prediction_label : "Healthy"
                             )}`}
                           >
-                            <div className="font-sans text-[clamp(26px,2.5vw,48px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-words">
+                            <div className="font-sans text-[clamp(26px,2.5vw,48px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-word">
                               {diagnosisText}
                             </div>
                             <div className="text-[12px] font-bold tracking-widest uppercase">
@@ -460,11 +467,18 @@ export default function Simulator() {
                         <ShapChart patientData={submittedData} />
                       </div>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="h-full min-h-95 flex items-center justify-center">
-                    <div className="text-slate text-[13px] font-bold tracking-widest uppercase border-2 border-slate px-6 py-4 animate-pulse text-center max-w-sm">
-                      {loading ? "CALCULATING SHAP VALUES..." : "Awaiting Input · Click Execute Inference to Generate Attributions"}
+                    <div className="text-slate text-[12px] font-bold tracking-widest uppercase border-2 border-dashed border-ink/30 px-6 py-4 text-center max-w-sm bg-canvas-cream/50">
+                      {loading ? (
+                        <div className="flex items-center justify-center gap-2 text-ink">
+                          <Cpu size={14} className="animate-spin text-hazard" />
+                          <span>CALCULATING SHAP ATTRIBUTIONS...</span>
+                        </div>
+                      ) : (
+                        "Awaiting Input · Click Execute Inference to Generate Attributions"
+                      )}
                     </div>
                   </div>
                 )}

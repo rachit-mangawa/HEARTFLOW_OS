@@ -36,34 +36,8 @@ def _get_or_create_shap_explainer(rf_model):
 
 def log_prediction_background(data, final_pred, conf):
     try:
-        import sqlite3
-        from datetime import datetime
-        import zoneinfo
-        from .paths import get_db_path
-        from .database import init_db_sync
-        db_path = get_db_path()
-        if not os.path.exists(db_path):
-            init_db_sync(db_path)
-        try:
-            ist = zoneinfo.ZoneInfo("Asia/Kolkata")
-            ts = datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception:
-            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with sqlite3.connect(db_path, timeout=20.0) as conn:
-            conn.execute('''
-                INSERT INTO predictions (timestamp, heart_rate, spo2, sys_bp, dia_bp, temp, prediction_label, confidence)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                ts,
-                getattr(data, "Heart_Rate", 0.0),
-                getattr(data, "SpO2_Level", 0.0),
-                getattr(data, "Systolic_BP", 0.0),
-                getattr(data, "Diastolic_BP", 0.0),
-                getattr(data, "Body_Temp", 0.0),
-                final_pred,
-                conf
-            ))
-            conn.commit()
+        from .database import log_prediction_sync
+        log_prediction_sync(data, final_pred, conf)
     except Exception as e:
         logger.warning(f"DB logging skipped: {e}")
 
@@ -230,7 +204,8 @@ def get_dataset(
                 )
 
             import pandas as pd
-            df = pd.read_csv(dpath, encoding='utf-8')
+            max_unpaginated = None if all else 100
+            df = pd.read_csv(dpath, nrows=max_unpaginated, encoding='utf-8')
             df.columns = [c.strip() for c in df.columns]
             return df.to_dict(orient="records")
         except Exception as e:
@@ -262,6 +237,11 @@ def retrain(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
             
     background_tasks.add_task(bg_task)
     return {"status": "success", "message": "Dataset uploaded and ensemble retrain started in background!"}
+
+@router.get("/retrain/status")
+def retrain_status():
+    engine = get_engine()
+    return engine.get_retrain_status()
 
 @router.websocket("/ws/feed")
 async def websocket_feed(websocket: WebSocket):

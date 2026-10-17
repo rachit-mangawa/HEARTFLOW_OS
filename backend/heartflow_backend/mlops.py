@@ -76,6 +76,23 @@ class MLOpsEngine:
         self.dataset_path = dataset_path
         self.active_ensemble = None
         self._lock = threading.Lock()
+        self._retrain_lock = threading.Lock()
+        self._retrain_status = {
+            "status": "idle",
+            "progress": 0,
+            "stage": "idle",
+            "current_step": "Awaiting dataset batch",
+            "current_model": None,
+            "models_trained": [],
+            "total_models": 5,
+            "f1_scores": {},
+            "active_version": "v1",
+            "observations_count": 0,
+            "message": "Ensemble ready for retraining",
+            "error": None,
+            "started_at": None,
+            "completed_at": None
+        }
         self._load_active_models()
 
     def _load_active_models(self):
@@ -87,6 +104,21 @@ class MLOpsEngine:
 
     def get_ensemble(self):
         return self.active_ensemble
+
+    def get_retrain_status(self) -> dict:
+        import json
+        with self._retrain_lock:
+            status = dict(self._retrain_status)
+            if status["status"] == "idle":
+                reg_path = os.path.join(str(get_p1_dir()), "registry.json")
+                if os.path.exists(reg_path):
+                    try:
+                        with open(reg_path, "r") as f:
+                            reg = json.load(f)
+                            status["active_version"] = reg.get("active_version", "v1")
+                    except Exception:
+                        pass
+            return status
 
     def normalize_batch(self, df):
         import pandas as pd
@@ -134,13 +166,37 @@ class MLOpsEngine:
         return df[[c for c in CANONICAL_COLUMNS if c in df.columns]]
 
     def ingest_batch_sync(self, csv_bytes: bytes) -> RetrainResult:
+        import time
+        import json
         import pandas as pd
         with self._lock:
+            with self._retrain_lock:
+                self._retrain_status.update({
+                    "status": "training",
+                    "progress": 5,
+                    "stage": "normalizing",
+                    "current_step": "Parsing uploaded telemetry and resolving schema aliases...",
+                    "current_model": None,
+                    "models_trained": [],
+                    "f1_scores": {},
+                    "error": None,
+                    "started_at": time.time(),
+                    "completed_at": None,
+                })
+
             try:
                 raw_df = pd.read_csv(io.BytesIO(csv_bytes), encoding_errors='replace')
                 new_df = self.normalize_batch(raw_df)
 
                 if len(new_df) == 0:
+                    with self._retrain_lock:
+                        self._retrain_status.update({
+                            "status": "error",
+                            "stage": "error",
+                            "error": "Uploaded CSV contains no valid telemetry rows.",
+                            "current_step": "Validation failed: 0 valid rows",
+                            "completed_at": time.time(),
+                        })
                     return RetrainResult(False, "Uploaded CSV contains no valid telemetry rows.")
 
                 dest_dataset = str(get_p1_dir() / "patient_dataset.csv")
@@ -161,11 +217,68 @@ class MLOpsEngine:
                 combined_df.to_csv(dest_dataset, index=False, encoding='utf-8')
                 self.dataset_path = dest_dataset
 
+                with self._retrain_lock:
+                    self._retrain_status.update({
+                        "progress": 20,
+                        "stage": "merging",
+                        "current_step": f"Merged {len(combined_df)} observations. Splitting train/test data...",
+                        "observations_count": len(combined_df),
+                    })
+
+                def on_progress(pct: int, stage: str, msg: str, model_name: str | None = None, f1_dict: dict | None = None):
+                    with self._retrain_lock:
+                        self._retrain_status["progress"] = pct
+                        self._retrain_status["stage"] = stage
+                        self._retrain_status["current_step"] = msg
+                        if model_name:
+                            self._retrain_status["current_model"] = model_name
+                            if model_name not in self._retrain_status["models_trained"]:
+                                self._retrain_status["models_trained"].append(model_name)
+                        if f1_dict:
+                            self._retrain_status["f1_scores"] = dict(f1_dict)
+
                 from .models import train_models
-                train_models(data_path=dest_dataset, model_dir=str(get_p1_dir()))
+                train_models(data_path=dest_dataset, model_dir=str(get_p1_dir()), progress_callback=on_progress)
+
+                with self._retrain_lock:
+                    self._retrain_status.update({
+                        "progress": 98,
+                        "stage": "hot_swapping",
+                        "current_step": "Hot-swapping active ensemble weights into memory...",
+                    })
 
                 self._load_active_models()
 
-                return RetrainResult(True, f"Dataset successfully updated ({len(combined_df)} total observations) and ensemble hot-swapped.")
+                reg_path = os.path.join(str(get_p1_dir()), "registry.json")
+                active_v = "v1"
+                if os.path.exists(reg_path):
+                    try:
+                        with open(reg_path, "r") as f:
+                            active_v = json.load(f).get("active_version", "v1")
+                    except Exception:
+                        pass
+
+                with self._retrain_lock:
+                    self._retrain_status.update({
+                        "status": "complete",
+                        "progress": 100,
+                        "stage": "complete",
+                        "active_version": active_v,
+                        "current_model": None,
+                        "current_step": f"Retraining complete. Active version {active_v} hot-swapped into memory.",
+                        "message": f"Dataset updated ({len(combined_df)} observations) and ensemble hot-swapped ({active_v}).",
+                        "completed_at": time.time(),
+                    })
+
+                return RetrainResult(True, f"Dataset successfully updated ({len(combined_df)} total observations) and ensemble hot-swapped ({active_v}).")
             except Exception as e:
+                with self._retrain_lock:
+                    self._retrain_status.update({
+                        "status": "error",
+                        "stage": "error",
+                        "error": str(e),
+                        "current_step": f"Ingestion error: {str(e)}",
+                        "message": f"Ingestion failed: {str(e)}",
+                        "completed_at": time.time(),
+                    })
                 return RetrainResult(False, f"Ingestion failed: {str(e)}")

@@ -189,6 +189,16 @@ def test_retrain_enabled(client, monkeypatch):
     data = response.json()
     assert data["status"] == "success"
 
+def test_retrain_status_endpoint(client):
+    response = client.get("/heartflow/retrain/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert "status" in data
+    assert "progress" in data
+    assert "stage" in data
+    assert "total_models" in data
+    assert data["total_models"] == 5
+
 def test_websocket_connect_and_receive(client):
     with client.websocket_connect("/heartflow/ws/feed") as ws:
         frame1 = ws.receive_json()

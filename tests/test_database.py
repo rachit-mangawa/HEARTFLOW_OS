@@ -6,19 +6,22 @@ from collections import namedtuple
 import heartflow_backend.database as database
 
 database.settings.hf_token = None
-database.DB_PATH = "test_patient_history.db"
+ORIGINAL_DB_PATH = database.DB_PATH
 
 @pytest_asyncio.fixture(autouse=True)
-async def setup_teardown():
-    if os.path.exists(database.DB_PATH):
-        os.remove(database.DB_PATH)
+async def setup_teardown(tmp_path):
+    test_db = str(tmp_path / "test_patient_history.db")
+    database.DB_PATH = test_db
+    if os.path.exists(test_db):
+        os.remove(test_db)
     await database.init_db()
     yield
-    if os.path.exists(database.DB_PATH):
+    if os.path.exists(test_db):
         try:
-            os.remove(database.DB_PATH)
+            os.remove(test_db)
         except PermissionError:
             pass
+    database.DB_PATH = ORIGINAL_DB_PATH
 
 @pytest.mark.asyncio
 async def test_init_db():

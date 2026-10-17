@@ -11,6 +11,10 @@
   --healthy-bg: #EDF3EC;
   --healthy-text: #346538;
   --soft-bone: #F4F4F4;
+
+  /* Emil Kowalski Strong Custom Easing Curves */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @theme inline {
@@ -80,14 +84,16 @@ h2, h3, h4, h5, h6 {
 
 /* Tactile Physical Button Micro-Interactions (Emil Kowalski Physics) */
 .btn-tactile {
-  transition: transform 70ms ease-out, box-shadow 70ms ease-out, background-color 150ms ease-out, color 150ms ease-out;
+  transition: transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), background-color 150ms ease, color 150ms ease;
   box-shadow: 3px 3px 0px 0px var(--ink-black);
 }
-.btn-tactile:hover {
-  box-shadow: 4px 4px 0px 0px var(--ink-black);
+@media (hover: hover) and (pointer: fine) {
+  .btn-tactile:hover {
+    box-shadow: 4px 4px 0px 0px var(--ink-black);
+  }
 }
 .btn-tactile:active {
-  transform: translate(2px, 2px);
+  transform: scale(0.98) translate(1px, 1px);
   box-shadow: 1px 1px 0px 0px var(--ink-black);
 }
 .btn-tactile:disabled {
@@ -101,15 +107,17 @@ h2, h3, h4, h5, h6 {
   background-color: var(--hazard-red);
   color: #FFFFFF;
   border: 2px solid var(--ink-black);
-  transition: transform 70ms ease-out, box-shadow 70ms ease-out, background-color 150ms ease-out;
+  transition: transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), background-color 150ms ease;
   box-shadow: 3px 3px 0px 0px var(--ink-black);
 }
-.btn-tactile-hazard:hover {
-  background-color: #872624;
-  box-shadow: 4px 4px 0px 0px var(--ink-black);
+@media (hover: hover) and (pointer: fine) {
+  .btn-tactile-hazard:hover {
+    background-color: #872624;
+    box-shadow: 4px 4px 0px 0px var(--ink-black);
+  }
 }
 .btn-tactile-hazard:active {
-  transform: translate(2px, 2px);
+  transform: scale(0.98) translate(1px, 1px);
   box-shadow: 1px 1px 0px 0px var(--ink-black);
 }
 .btn-tactile-hazard:disabled {
@@ -247,5 +255,107 @@ h2, h3, h4, h5, h6 {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ==========================================================================
+   Emil Kowalski Design Engineering Animation System
+   - Zero looping visual noise (no beeping dots, no glowing radar sweeps)
+   - Fast, intentional feedback under 200ms
+   - Strong custom ease-out: cubic-bezier(0.23, 1, 0.32, 1)
+   - Purposeful loading spinners (750ms linear) & subtle skeleton states
+   - Tactile button and card feedback on hover/active
+   ========================================================================== */
+
+/* Page Section & Card Micro-Entrance: Fast, calm settle without delay slop */
+@keyframes enter-subtle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter-subtle {
+  animation: enter-subtle 180ms var(--ease-out) both;
+}
+
+/* Stagger entrance utility delays (fast, tight cascades) */
+.delay-1, .stagger-1 { animation-delay: 35ms; }
+.delay-2, .stagger-2 { animation-delay: 70ms; }
+.delay-3, .stagger-3 { animation-delay: 105ms; }
+.delay-4, .stagger-4 { animation-delay: 140ms; }
+
+/* Snappy Purposeful Spinner for Loading States (Emil Kowalski Perceived Performance) */
+@keyframes spin-snappy {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-snappy {
+  animation: spin-snappy 750ms linear infinite;
+}
+
+/* Subtle Loading Shimmer (Calm, Low-Contrast, Anti-Slop) */
+@keyframes loading-shimmer {
+  0%, 100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+.animate-loading-pulse {
+  animation: loading-shimmer 1.4s var(--ease-in-out) infinite;
+}
+
+/* Interactive Brutalist Card Lift - Zero idle noise, crisp hover feedback */
+.card-tactile {
+  transition: transform 150ms var(--ease-out),
+              box-shadow 150ms var(--ease-out),
+              background-color 150ms ease,
+              border-color 150ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-tactile:hover {
+    transform: translateY(-1px);
+    box-shadow: 5px 5px 0px 0px var(--ink-black);
+  }
+}
+.card-tactile:active {
+  transform: scale(0.99) translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px var(--ink-black);
+}
+
+/* Menu Dropdown Expansion (Emil Kowalski Origin-Anchored Scaling) */
+@keyframes menu-slide-down {
+  from {
+    opacity: 0;
+    transform: scaleY(0.98);
+    transform-origin: top;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+}
+
+.animate-menu-slide-down {
+  animation: menu-slide-down 160ms var(--ease-out) both;
+}
+
+/* Accessibility: Respect Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 

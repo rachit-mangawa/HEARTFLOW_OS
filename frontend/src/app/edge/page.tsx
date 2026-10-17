@@ -106,7 +106,7 @@ export default function EdgeDeployment() {
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-12">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-6 md:py-8 flex-1 flex flex-col">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-6 md:py-8 flex-1 flex flex-col animate-enter-subtle">
         {/* Header */}
         <header className="mb-6 border-b-4 border-ink pb-6 flex flex-col md:flex-row justify-between md:items-end gap-4">
           <div>

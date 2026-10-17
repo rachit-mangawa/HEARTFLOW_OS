@@ -242,7 +242,7 @@ export default function Architecture() {
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col space-y-10">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col space-y-10 animate-enter-subtle">
         
         {/* HEADER BLOCK */}
         <header className="border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
@@ -447,7 +447,7 @@ export default function Architecture() {
           </div>
 
           {/* INTERACTIVE STAGE DEEP-DIVE INSPECTOR */}
-          <div className="border-2 border-ink bg-canvas-cream p-6">
+          <div key={activeStage} className="border-2 border-ink bg-canvas-cream p-6 animate-enter-subtle">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b-2 border-ink pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-[12px] font-black bg-hazard text-white px-2 py-0.5 uppercase">

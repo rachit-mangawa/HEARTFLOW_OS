@@ -1,8 +1,8 @@
+import asyncio
 import pytest
 from heartflow_backend.simulator import PatientDataSimulator
 
-@pytest.mark.asyncio
-async def test_simulator_initialization():
+def test_simulator_initialization():
     sim = PatientDataSimulator(initial_hr=80.0, initial_spo2=97.0, initial_sys=125.0, initial_dia=82.0, initial_temp=36.8)
     assert sim.hr == 80.0
     assert sim.spo2 == 97.0
@@ -10,8 +10,7 @@ async def test_simulator_initialization():
     assert sim.dia_bp == 82.0
     assert sim.temp == 36.8
 
-@pytest.mark.asyncio
-async def test_simulator_clamping_limits():
+def test_simulator_clamping_limits():
     sim_upper = PatientDataSimulator(initial_hr=250.0, initial_spo2=120.0, initial_temp=45.0)
     sim_upper._step_physics()
     assert sim_upper.hr <= 180.0
@@ -24,8 +23,7 @@ async def test_simulator_clamping_limits():
     assert sim_lower.spo2 >= 80.0
     assert sim_lower.temp >= 36.0
 
-@pytest.mark.asyncio
-async def test_simulator_all_clinical_state_transitions():
+def test_simulator_all_clinical_state_transitions():
     sim = PatientDataSimulator()
     
     states_and_targets = {
@@ -53,8 +51,7 @@ async def test_simulator_all_clinical_state_transitions():
         assert sim.target_sys == exp_sys
         assert sim.target_dia == exp_dia
 
-@pytest.mark.asyncio
-async def test_simulator_physics_convergence():
+def test_simulator_physics_convergence():
     sim = PatientDataSimulator(initial_hr=75.0)
     sim.target_hr = 140.0
     
@@ -63,11 +60,13 @@ async def test_simulator_physics_convergence():
         
     assert sim.hr > 110.0
 
-@pytest.mark.asyncio
-async def test_simulator_run_yields_dict_with_rounding():
-    sim = PatientDataSimulator()
-    generator = sim.run()
-    data = await anext(generator)
+def test_simulator_run_yields_dict_with_rounding():
+    async def _sample():
+        sim = PatientDataSimulator()
+        generator = sim.run()
+        return await anext(generator)
+        
+    data = asyncio.run(_sample())
     
     assert isinstance(data, dict)
     assert "Heart_Rate" in data
@@ -81,8 +80,7 @@ async def test_simulator_run_yields_dict_with_rounding():
         assert isinstance(val, (int, float))
         assert round(val, 1) == val
 
-@pytest.mark.asyncio
-async def test_simulator_dynamic_variance_across_frames():
+def test_simulator_dynamic_variance_across_frames():
     sim = PatientDataSimulator()
     hr_samples = []
     for _ in range(10):
