@@ -176,7 +176,7 @@ Before feeding raw signals into estimators, the pipeline executes deterministic 
 1. **Target Leakage Prevention**: Strips redundant alarm flags (`Heart Rate Alert`, `SpO2 Alert`, `Blood Pressure Alert`).
 2. **Encoding Normalization**: Replaces corrupt degree characters (`\ufffd` or ISO artifacts) with UTF-8 `°`.
 3. **Risk Severity Interaction Feature**:
-   $$\text{Risk\_Severity} = \mathbb{I}(\text{Heart\_Rate} > 105) + \mathbb{I}(\text{SpO2\_Level} < 94)$$
+   $$\text{Risk}_{\text{Severity}} = \mathbb{I}(\text{Heart}_{\text{Rate}} > 105) + \mathbb{I}(\text{SpO2}_{\text{Level}} < 94)$$
 4. **Standard Scaling**:
    $$z_j = \frac{x_j - \mu_j}{\sigma_j} \quad \text{for } j \in [0, 5]$$
 

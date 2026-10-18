@@ -129,7 +129,7 @@ $$z_j = \frac{x_j - \mu_j}{\sigma_j} \quad \text{for } j \in \{0, 1, 2, 3, 4, 5\
 ### 3.3. Synthetic Clinical Interaction Feature (Risk Severity)
 To capture non-linear cardiogenic shock risk without expanding deep tree depth, a deterministic clinical heuristic is synthesized prior to inference:
 
-$$\text{Risk\_Severity} = \mathbb{I}(\text{Heart\_Rate} > 105) + \mathbb{I}(\text{SpO2\_Level} < 94)$$
+$$\text{Risk}_{\text{Severity}} = \mathbb{I}(\text{Heart}_{\text{Rate}} > 105) + \mathbb{I}(\text{SpO2}_{\text{Level}} < 94)$$
 
 Where $\mathbb{I}(\cdot)$ is the indicator function:
 
