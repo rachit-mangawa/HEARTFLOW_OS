@@ -17,11 +17,77 @@ import {
   ShieldCheck,
   Binary,
   FileSpreadsheet,
-  Copy
+  Copy,
+  SlidersHorizontal
 } from "lucide-react";
 import MermaidChart from "@/components/MermaidChart";
 
-const MERMAID_PIPELINE_GRAPH = `flowchart TD
+const MERMAID_PIPELINE_GRAPH_LR = `flowchart LR
+    subgraph S1["1. RAW INGESTION"]
+        direction TB
+        AFE["⚡ AD8232 ECG + MAX30102 PPG"]
+        CSV["📄 patient_data.csv (60,000 Records)"]
+        MCU["ESP32-S3 Firmware (C99)<br/>12-bit SAR ADC Sampling"]
+        SERIAL["W3C navigator.serial (115.2k)<br/>Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
+        INGEST["backend/main.py & mlops/page.tsx<br/>Schema Ingestion Engine"]
+        
+        AFE --> MCU --> SERIAL --> INGEST
+        CSV --> INGEST
+    end
+
+    subgraph S2["2. FEATURE ENGINEERING"]
+        direction TB
+        LEAKAGE["Target Leakage Protection<br/>Strip alarms, patient_id"]
+        DEGREE["Character Encoding Repair<br/>Fix corrupt ISO-8859 (°C)"]
+        SYNTH["Risk Severity Synthesis<br/>I(HR > 105) + I(SpO2 < 94)"]
+        SCALE["StandardScaler Affine Transform<br/>z_j = (x_j - μ_j) / σ_j"]
+        
+        LEAKAGE --> DEGREE --> SYNTH --> SCALE
+    end
+
+    subgraph S3["3. 5-MODEL ENSEMBLE"]
+        direction TB
+        subgraph ESTIMATORS["Parallel Classifiers (< 20 µs)"]
+            direction TB
+            RF["Random Forest (25% | 95.4%)"]
+            MLP["Small-NN MLP (25% | 94.9%)"]
+            LOGREG["Logistic Reg (20% | 92.2%)"]
+            SVM["Linear SVM (15% | 93.5%)"]
+            KNN["KNN k=5 (15% | 91.8%)"]
+        end
+        SOFTVOTE["Calibrated Soft-Voting Arbitration<br/>P(Class_c | X) = Σ w_i · P_i"]
+        ESTIMATORS --> SOFTVOTE
+    end
+
+    subgraph S4["4. C99 & INT8 QUANT"]
+        direction TB
+        EXPORT["backend/export.py<br/>Scikit-Learn AST Transpiler"]
+        QUANT["INT8 Symmetric Quantization<br/>-76.4% SRAM (34.8 KB → 8.2 KB)"]
+        HEADER["📁 firmware/include/model.h<br/>Zero-Malloc predict() C99 ABI"]
+        
+        EXPORT --> QUANT --> HEADER
+    end
+
+    subgraph S5["5. MULTI-PLANE RUNTIME"]
+        direction TB
+        BAREMETAL["Plane A: ESP32-S3 Firmware<br/>Bare-Metal Flash ROM (< 20 µs)"]
+        TINYML["Plane B: Browser TinyML Client<br/>V8 In-Memory Engine (< 20 µs)"]
+        CLOUD["Plane C: Secondary Cloud REST<br/>FastAPI Container (35 ms)"]
+        MONITOR["Real-Time Oscillograph & Audit<br/>60 FPS Canvas + Diagnostic Matrix"]
+        
+        BAREMETAL --> MONITOR
+        TINYML --> MONITOR
+        CLOUD --> MONITOR
+    end
+
+    INGEST --> LEAKAGE
+    SCALE --> ESTIMATORS
+    SOFTVOTE --> EXPORT
+    HEADER --> BAREMETAL
+    HEADER --> TINYML
+    EXPORT --> CLOUD`;
+
+const MERMAID_PIPELINE_GRAPH_TD = `flowchart TD
     subgraph S1["1. RAW TELEMETRY & FILE INGESTION"]
         CSV["📄 patient_data.csv / batch_upload.csv<br/>(Continuous Vitals Observations)"]
         AFE["⚡ Physical Biosensors<br/>AD8232 Lead-II ECG (250 Hz) + MAX30102 PPG"]
@@ -80,7 +146,7 @@ P(\\text{Class}_c \\mid X) = \\frac{\\sum_{i=1}^{M=5} w_i \\cdot P_i(\\text{Clas
 z_j = \\frac{x_j - \\mu_j}{\\sigma_j} \\quad \\text{for } j \\in \\{0, 1, 2, 3, 4, 5\\}
 
 % 3. Clinical Risk Severity Interaction Feature
-\\text{Risk\\textunderscore Severity} = \\mathbb{I}(\\text{Heart\\textunderscore Rate} > 105) + \\mathbb{I}(\\text{SpO2\\textunderscore Level} < 94)
+\\text{Risk Severity} = \\mathbb{I}(\\text{Heart Rate} > 105) + \\mathbb{I}(\\text{SpO2 Level} < 94)
 
 % 4. INT8 Fixed-Point Affine Quantization
 Q = \\text{clamp}\\left( \\left\\lfloor \\frac{W}{\\text{scale}} \\right\\rceil, -128, 127 \\right), \\quad \\text{scale} = \\frac{\\max(|W|)}{127}
@@ -91,6 +157,7 @@ P(\\text{Class}_c \\mid f_c(X)) = \\frac{1}{1 + \\exp(A_c \\cdot f_c(X) + B_c)}`
 export default function Architecture() {
   const [activeStage, setActiveStage] = useState<number>(1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [diagramLayout, setDiagramLayout] = useState<"LR" | "TD">("LR");
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -270,10 +337,20 @@ export default function Architecture() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              {/* Diagram Layout Orientation Switcher */}
               <button
-                onClick={() => handleCopy("mermaid-spec", MERMAID_PIPELINE_GRAPH)}
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-white hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5"
+                onClick={() => setDiagramLayout(diagramLayout === "LR" ? "TD" : "LR")}
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-canvas-cream hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Toggle diagram layout between compact horizontal pipeline and expanded vertical view"
+              >
+                <SlidersHorizontal size={13} className="text-hazard" />
+                <span>{diagramLayout === "LR" ? "Compact Horizontal (Default)" : "Expanded Vertical"}</span>
+              </button>
+
+              <button
+                onClick={() => handleCopy("mermaid-spec", diagramLayout === "LR" ? MERMAID_PIPELINE_GRAPH_LR : MERMAID_PIPELINE_GRAPH_TD)}
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-white hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 {copiedId === "mermaid-spec" ? (
                   <>
@@ -293,8 +370,8 @@ export default function Architecture() {
           {/* PRIMARY VISUAL MERMAID FLOWCHART RENDERER */}
           <div className="mb-8">
             <MermaidChart
-              chart={MERMAID_PIPELINE_GRAPH}
-              title="TELEMETRY INGESTION TO DUAL-PLANE INFERENCE PIPELINE"
+              chart={diagramLayout === "LR" ? MERMAID_PIPELINE_GRAPH_LR : MERMAID_PIPELINE_GRAPH_TD}
+              title={`TELEMETRY INGESTION TO DUAL-PLANE INFERENCE PIPELINE (${diagramLayout === "LR" ? "COMPACT HORIZONTAL" : "VERTICAL STACK"})`}
             />
           </div>
 
