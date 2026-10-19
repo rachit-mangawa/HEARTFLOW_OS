@@ -44,12 +44,14 @@ COLUMN_ALIASES = {
     'systolic blood pressure (mmhg)': 'Systolic Blood Pressure (mmHg)',
     'systolic blood pressure': 'Systolic Blood Pressure (mmHg)',
     'systolic_bp': 'Systolic Blood Pressure (mmHg)',
+    'systolic bp': 'Systolic Blood Pressure (mmHg)',
     'sys_bp': 'Systolic Blood Pressure (mmHg)',
     'systolic': 'Systolic Blood Pressure (mmHg)',
 
     'diastolic blood pressure (mmhg)': 'Diastolic Blood Pressure (mmHg)',
     'diastolic blood pressure': 'Diastolic Blood Pressure (mmHg)',
     'diastolic_bp': 'Diastolic Blood Pressure (mmHg)',
+    'diastolic bp': 'Diastolic Blood Pressure (mmHg)',
     'dia_bp': 'Diastolic Blood Pressure (mmHg)',
     'diastolic': 'Diastolic Blood Pressure (mmHg)',
 

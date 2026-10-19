@@ -3,13 +3,22 @@ from fastapi.testclient import TestClient
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend')))
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend'))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
 from main import app
 
 @pytest.fixture
 def client():
     with TestClient(app) as c:
         yield c
+
+def test_health_endpoint(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert "status" in data
 
 def test_history_endpoint(client):
     response = client.get("/history")
@@ -46,15 +55,74 @@ def test_dataset_download_endpoint(client):
     assert response.status_code == 200
     assert "text/csv" in response.headers.get("content-type", "")
 
-def test_export_tinyml_random_forest(client):
-    response = client.get("/export_tinyml?model_name=rf")
-    
-    if response.status_code == 200:
-        data = response.json()
-        if "error" in data:
-            assert "not found" in data["error"].lower() or "models untrained" in data["error"].lower()
-        else:
-            assert "code" in data or "c_code" in data
+def test_predict_endpoint_valid_telemetry(client):
+    payload = {
+        "Heart_Rate": 78.0,
+        "SpO2_Level": 98.5,
+        "Systolic_BP": 120.0,
+        "Diastolic_BP": 80.0,
+        "Body_Temp": 37.0
+    }
+    response = client.post("/predict", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    if "error" not in data:
+        assert "prediction" in data
+        assert "prediction_label" in data
+        assert "probability" in data
+        assert "disease_probs" in data
+        assert "model_outputs" in data
+
+def test_predict_endpoint_acute_vitals(client):
+    # Acute tachycardia + hypoxemia
+    payload = {
+        "Heart_Rate": 165.0,
+        "SpO2_Level": 85.0,
+        "Systolic_BP": 170.0,
+        "Diastolic_BP": 105.0,
+        "Body_Temp": 38.5
+    }
+    response = client.post("/predict", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    if "error" not in data:
+        assert "prediction" in data
+        assert "prediction_label" in data
+        assert data["prediction"] in [True, False, 0, 1]
+
+def test_explain_endpoint(client):
+    payload = {
+        "Heart_Rate": 82.0,
+        "SpO2_Level": 97.0,
+        "Systolic_BP": 125.0,
+        "Diastolic_BP": 82.0,
+        "Body_Temp": 37.1
+    }
+    response = client.post("/explain", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    if "error" not in data:
+        assert "shap_values" in data
+        assert "feature_names" in data
+        assert len(data["shap_values"]) == len(data["feature_names"])
+
+@pytest.mark.parametrize("model_name", ["rf", "svm", "logreg", "small_nn", "knn"])
+@pytest.mark.parametrize("quantize", [False, True])
+def test_export_tinyml_all_models_parameterized(client, model_name, quantize):
+    response = client.get(f"/export_tinyml?model_name={model_name}&quantize={str(quantize).lower()}")
+    assert response.status_code == 200
+    data = response.json()
+    if "error" in data:
+        assert "not found" in data["error"].lower() or "cannot be exported" in data["error"].lower()
+    else:
+        assert "code" in data
+        assert "#ifndef HEARTFLOW_MODEL_H" in data["code"]
+
+def test_export_tinyml_invalid_model(client):
+    response = client.get("/export_tinyml?model_name=unknown_nonexistent_model")
+    assert response.status_code == 200
+    data = response.json()
+    assert "error" in data
 
 def test_metrics_endpoint(client):
     response = client.get("/metrics")
@@ -63,4 +131,3 @@ def test_metrics_endpoint(client):
     assert "ensemble_accuracy" in data
     assert "ensemble_f1_macro" in data
     assert "models" in data
-
