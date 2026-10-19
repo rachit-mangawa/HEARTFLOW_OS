@@ -23,7 +23,7 @@ app_port: 8000
 
 <p>
   <a href="https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend" target="_blank">
-    <img src="https://img.shields.io/badge/🤗_HuggingFace-Live_Spaces_Backend-FFD21E.svg?style=for-the-badge" alt="Hugging Face Space" />
+    <img src="https://img.shields.io/badge/HuggingFace-Live_Spaces_Backend-FFD21E.svg?style=for-the-badge&logo=huggingface" alt="Hugging Face Space" />
   </a>
   <a href="https://idkhowtocodefr-tinyml-backend.hf.space/docs" target="_blank">
     <img src="https://img.shields.io/badge/FastAPI-Interactive_Swagger_Docs-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white" alt="Hugging Face API Docs" />
@@ -36,7 +36,7 @@ app_port: 8000
 <p>
   <img src="https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-blue.svg?style=for-the-badge&logo=speedtest&logoColor=white" alt="Latency" />
   <img src="https://img.shields.io/badge/Memory_ABI-Zero--Malloc_C99-purple.svg?style=for-the-badge" alt="Zero-Malloc" />
-  <img src="https://img.shields.io/badge/Quantization-INT8_(-76.4%25_SRAM)-9F2F2D.svg?style=for-the-badge" alt="Quantization" />
+  <img src="https://img.shields.io/badge/Quantization-INT8_(--76.4%25_SRAM)-9F2F2D.svg?style=for-the-badge" alt="Quantization" />
   <img src="https://img.shields.io/badge/CI_Tests-58%2F58_Passing-success.svg?style=for-the-badge&logo=githubactions&logoColor=white" alt="Tests" />
   <img src="https://img.shields.io/badge/Next.js-16.3-black.svg?style=for-the-badge&logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black" alt="React" />

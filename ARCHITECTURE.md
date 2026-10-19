@@ -18,7 +18,7 @@
 [![Status](https://img.shields.io/badge/Status-Active_%2F_Approved-16A34A?style=for-the-badge)](ARCHITECTURE.md)
 [![Inference Latency](https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-blue?style=for-the-badge&logo=speedtest&logoColor=white)](ARCHITECTURE.md)
 [![Dynamic Memory](https://img.shields.io/badge/Dynamic_Heap-0_Bytes_(Zero--Malloc)-purple?style=for-the-badge)](ARCHITECTURE.md)
-[![INT8 Quantized](https://img.shields.io/badge/Quantization-INT8_(-76.4%25_SRAM)-orange?style=for-the-badge)](ARCHITECTURE.md)
+[![INT8 Quantized](https://img.shields.io/badge/Quantization-INT8_(--76.4%25_SRAM)-orange?style=for-the-badge)](ARCHITECTURE.md)
 [![Test Suite](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-success?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
 
 </div>
@@ -106,7 +106,7 @@ flowchart TB
     end
 
     subgraph SERIAL["🔌 PHYSICAL TRANSPORT BUS"]
-        UART["W3C navigator.serial (115,200 Baud)<br/>ASCII Frame: $HR,SPO2,SYS,DIA,TEMP*CRC\n"]
+        UART["W3C navigator.serial (115,200 Baud)<br/>ASCII Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
     end
 
     subgraph CLIENT["💻 CLINICAL BROWSER CLIENT (PRIMARY PLANE: ZERO-CLOUD)"]
@@ -115,33 +115,43 @@ flowchart TB
         PRE["StandardScaler & Feature Engineering<br/>z_j = (x_j - μ_j) / σ_j + Risk_Severity"]
         
         subgraph ENSEMBLE["5-Model Soft-Voting Ensemble (< 20 µs Latency | 0.0 KB Egress)"]
+            direction TB
             RF["Random Forest (w=0.25)"]
             MLP["Small-NN MLP (w=0.25)"]
             LOG["Logistic Reg (w=0.20)"]
             SVM["Linear SVM (w=0.15)"]
             KNN["KNN k=5 (w=0.15)"]
+            VOTE["Calibrated Soft-Voting Arbitration<br/>P(Class_c | X) = Σ(w_i · P_i) / Σ(w_i)"]
+            
+            RF --> VOTE
+            MLP --> VOTE
+            LOG --> VOTE
+            SVM --> VOTE
+            KNN --> VOTE
         end
         
         DIAG["Real-Time Diagnostic Decision Matrix<br/>Healthy · Hypertension · Heart Disease · Asthma · Diabetes"]
+        
+        PRE --> RF
+        PRE --> MLP
+        PRE --> LOG
+        PRE --> SVM
+        PRE --> KNN
+        VOTE --> DIAG
     end
 
     subgraph CLOUD["☁️ SECONDARY CLOUD BACKEND (Hugging Face Spaces · Docker / FastAPI)"]
-        REST["FastAPI Gateway (/predict, /ws/feed)"]
-        MLOPS["MLOps Automated Retrain Engine<br/>Batch CSV Ingest & Alias Normalization"]
-        REG["Model Registry (5 .pkl Estimators)"]
-        C99["AST C99 Code Exporter (/export_tinyml)<br/>Zero-Malloc model.h Generator"]
+        direction LR
+        REST["FastAPI Gateway (/predict, /ws/feed)"] --> MLOPS["MLOps Automated Retrain Engine<br/>Batch CSV Ingest & Alias Normalization"]
+        MLOPS --> REG["Model Registry (5 .pkl Estimators)"]
+        REG --> C99["AST C99 Code Exporter (/export_tinyml)<br/>Zero-Malloc model.h Generator"]
     end
 
     HW -->|UART Serial Stream| UART
     UART --> OSC
     UART --> PRE
-    PRE --> ENSEMBLE
-    ENSEMBLE --> DIAG
     
-    CLIENT -.->|Optional Telemetry Sync & WS Feed| REST
-    REST --> MLOPS
-    MLOPS --> REG
-    REG --> C99
+    DIAG -.->|Optional Telemetry Sync & WS Feed| REST
 
     classDef primary fill:#FBFBFA,stroke:#141413,stroke-width:2px,color:#141413;
     classDef accent fill:#9F2F2D,stroke:#9F2F2D,stroke-width:2px,color:#ffffff;
@@ -151,7 +161,7 @@ flowchart TB
     class HW primary;
     class CLIENT edgeBox;
     class CLOUD cloudBox;
-    class DIAG,C99 accent;
+    class DIAG,C99,VOTE accent;
 ```
 
 > [!IMPORTANT]
@@ -269,12 +279,17 @@ Where:
 Before feeding raw signals into estimators, the pipeline executes deterministic preprocessing:
 1. **Target Leakage Prevention**: Strips redundant diagnostic alarm flags (`Heart Rate Alert`, `SpO2 Alert`, `Blood Pressure Alert`).
 2. **Encoding Normalization**: Replaces corrupt degree characters (`\ufffd` or ISO artifacts) with UTF-8 `°C`.
-3. **Synthetic Clinical Interaction Feature (Risk Severity)**:
-   $$\text{Risk\textunderscore Severity} = \mathbb{I}(\text{Heart\textunderscore Rate} > 105) + \mathbb{I}(\text{SpO2\textunderscore Level} < 94)$$
-   Where $\mathbb{I}(\cdot)$ is the indicator function:
-   $$\mathbb{I}(P) = \begin{cases} 1 & \text{if } P \text{ is true} \\ 0 & \text{if } P \text{ is false} \end{cases}$$
+3. **Synthetic Clinical Interaction Feature (`Risk_Severity`)**:
+
+$$\text{Risk\_Severity} = \mathbb{I}(\text{Heart\_Rate} > 105) + \mathbb{I}(\text{SpO2\_Level} < 94)$$
+
+Where $\mathbb{I}(\cdot)$ is the binary indicator evaluation function:
+
+$$\mathbb{I}(P) = \begin{cases} 1, & \text{if } P \text{ is true} \\ 0, & \text{if } P \text{ is false} \end{cases}$$
+
 4. **Standard Scaling Affine Transformation**:
-   $$z_j = \frac{x_j - \mu_j}{\sigma_j} \quad \text{for } j \in \{0, 1, 2, 3, 4, 5\}$$
+
+$$z_j = \frac{x_j - \mu_j}{\sigma_j} \quad \text{for } j \in \{0, 1, 2, 3, 4, 5\}$$
 
 #### Precomputed Scaling Constants (Flash ROM & In-Memory Registry)
 
@@ -439,10 +454,10 @@ flowchart TD
     C --> D["Fit 5 Estimators in Parallel<br/>(RF, SVM, LogReg, SmallNN, KNN)"]
     D --> E["Stratified 20% Holdout Split Evaluation"]
     
-    E --> F{"Holdout F1 >= Active Baseline?"}
+    E --> F{"Holdout F1 ≥ Active Baseline?"}
     
-    F -->|YES (Validated)| G["Atomic Pointer Hot-Swap<br/>(0ms Downtime In-Memory Transition)"]
-    F -->|NO (Degraded)| H["Automated Rollback Trigger<br/>(Preserve Active Registry, Log Incident)"]
+    F -->|YES - Validated| G["Atomic Pointer Hot-Swap<br/>(0ms Downtime In-Memory Transition)"]
+    F -->|NO - Degraded| H["Automated Rollback Trigger<br/>(Preserve Active Registry, Log Incident)"]
 
     classDef pass fill:#F0FDF4,stroke:#16A34A,stroke-width:2px,color:#14532D;
     classDef fail fill:#FEF2F2,stroke:#DC2626,stroke-width:2px,color:#991B1B;
