@@ -5,6 +5,7 @@ colorFrom: gray
 colorTo: red
 sdk: docker
 pinned: false
+app_port: 8000
 ---
 
 <div align="center">
@@ -12,8 +13,11 @@ pinned: false
   <p><strong>Clinical Cardiovascular Telemetry & Edge TinyML Transpilation Engine</strong></p>
   
   <p>
-    <a href="https://rachit-mangawa-heartflow-os.hf.space/docs" target="_blank">
-      <img src="https://img.shields.io/badge/🤗_HuggingFace-API_Docs-FFD21E.svg?style=for-the-badge" alt="Hugging Face API" />
+    <a href="https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend" target="_blank">
+      <img src="https://img.shields.io/badge/🤗_HuggingFace-Spaces_Backend-FFD21E.svg?style=for-the-badge" alt="Hugging Face Space" />
+    </a>
+    <a href="https://idkhowtocodefr-tinyml-backend.hf.space/docs" target="_blank">
+      <img src="https://img.shields.io/badge/FastAPI-Swagger_Docs-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white" alt="Hugging Face API Docs" />
     </a>
     <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS" target="_blank">
       <img src="https://img.shields.io/badge/GitHub-Repository-black.svg?style=for-the-badge&logo=github" alt="GitHub Repository" />
@@ -195,6 +199,7 @@ EXAMPLE: $84,97.5,132,86,37.1*4F\n
 | `/` | **Landing Hub** | Engineering telemetry badges, core specs ticker, and architecture feature cards. |
 | `/monitor` | **Clinical Telemetry** | 60 FPS Lead-II ECG canvas, vitals monitors, auto-healing WebSocket feed, and SHAP attribution. |
 | `/simulator` | **Physiological Simulator** | Interactive patient vitals simulator, arrhythmia state machine triggers, and edge inference. |
+| `/dataset` | **Dataset Explorer** | 60,000 clinical observation ground-truth engine: 9×9 Pearson correlation heatmap, 12-bin continuous histograms, balanced disease cohorts, and 25-row paginated inspector. |
 | `/edge` | **TinyML Edge Compiler** | In-browser & cloud C99 generator for ESP32/Cortex-M with INT8 quantization & zero-malloc memory guarantee. |
 | `/mlops` | **MLOps Registry & Retrain** | Batch CSV ingestion, schema alias sanitization, F1-macro automated validation gates, and hot-swapping. |
 | `/architecture` | **Pipeline Topology** | Native neo-industrial architectural schematic detailing client, API, MLOps, and persistence subsystems. |
@@ -217,14 +222,32 @@ Interactive documentation with live in-browser testing is hosted at `/docs`.
 | `POST` | `/retrain` | `< 3.5 s` | Batch CSV upload, alias resolution, refitting, and zero-downtime hot-swap. |
 | `GET` | `/metrics` | `< 10 ms` | Accuracy, F1 macro, per-model weights, and edge latency benchmarks. |
 | `GET` | `/history` | `< 5 ms` | Returns isolated chronological session telemetry audit records. |
-| `GET` | `/dataset` | `< 25 ms` | Queries active ground-truth patient telemetry dataset. |
+| `GET` | `/dataset/summary` | `< 5 ms` | Precomputed statistical profiling across 60,000 observations (99.8% bandwidth reduction). |
+| `GET` | `/dataset` | `< 5 ms` | Paginated 25-row clinical record windowing with patient search and diagnosis filters. |
+| `GET` | `/dataset/download` | `< 100 ms` | Direct streaming download of the verified 4.49 MB ground-truth CSV corpus. |
 | `GET` | `/health` | `< 1 ms` | Verifies FastAPI readiness and model memory residency. |
 
 ---
 
 ## Quickstart Guide
 
-### Option 1: Docker Compose (Full Stack)
+### Option 1: Live Cloud Hugging Face Space (Zero Local Install)
+
+The backend is deployed and running live on Hugging Face Spaces:
+- **Hugging Face Space**: [https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend](https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend)
+- **Direct REST API Gateway**: [https://idkhowtocodefr-tinyml-backend.hf.space](https://idkhowtocodefr-tinyml-backend.hf.space)
+- **Interactive Swagger OpenAPI Docs**: [https://idkhowtocodefr-tinyml-backend.hf.space/docs](https://idkhowtocodefr-tinyml-backend.hf.space/docs)
+- **WebSocket Telemetry Stream**: `wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed`
+
+To connect the Next.js frontend to the live cloud backend, set:
+```bash
+NEXT_PUBLIC_API_URL=https://idkhowtocodefr-tinyml-backend.hf.space
+NEXT_PUBLIC_WS_URL=wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed
+```
+
+---
+
+### Option 2: Docker Compose (Full Stack Local)
 
 ```bash
 docker compose up --build
@@ -234,7 +257,7 @@ docker compose up --build
 
 ---
 
-### Option 2: Local Development Setup
+### Option 3: Local Development Setup
 
 #### 1. Backend (Python 3.10+)
 ```bash

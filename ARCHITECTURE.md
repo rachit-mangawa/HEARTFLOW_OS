@@ -2,7 +2,7 @@
 
 ```
 Document Ref:    HFL-OS-ARCH-SPEC-01
-Revision:        3.2.0 (Production Hardened)
+Revision:        3.4.0 (Production Hardened)
 Classification:  Distributed Edge AI / Clinical Telemetry Systems
 Status:          Active / Approved
 ```
@@ -176,7 +176,7 @@ Before feeding raw signals into estimators, the pipeline executes deterministic 
 1. **Target Leakage Prevention**: Strips redundant alarm flags (`Heart Rate Alert`, `SpO2 Alert`, `Blood Pressure Alert`).
 2. **Encoding Normalization**: Replaces corrupt degree characters (`\ufffd` or ISO artifacts) with UTF-8 `°`.
 3. **Risk Severity Interaction Feature**:
-   $$\text{Risk}_{\text{Severity}} = \mathbb{I}(\text{Heart}_{\text{Rate}} > 105) + \mathbb{I}(\text{SpO2}_{\text{Level}} < 94)$$
+   $$\text{Risk\textunderscore Severity} = \mathbb{I}(\text{Heart\textunderscore Rate} > 105) + \mathbb{I}(\text{SpO2\textunderscore Level} < 94)$$
 4. **Standard Scaling**:
    $$z_j = \frac{x_j - \mu_j}{\sigma_j} \quad \text{for } j \in [0, 5]$$
 
@@ -310,3 +310,29 @@ Legacy Cloud (PyTorch Container) 160.0 ms             6 req/sec   4.5x slower th
 | **Cloud Backend Offline** | REST timeout (500ms) or HTTP 5xx | Client evaluates via local in-memory TinyML JavaScript engine | `0.0 ms` |
 | **Corrupted Serial Frame** | Checksum validation failure ($*CRC$) | Drops single frame, retains last valid vitals in FIFO buffer | `< 4 ms` |
 | **Degraded Retraining Run** | Holdout F1 score `<` active baseline | Automated rollback preserves active `model/*.pkl` files | `0.0 ms` |
+
+---
+
+## 10. High-Performance Ground-Truth Telemetry Engine & Hugging Face Cloud Infrastructure
+
+### 10.1. 60,000 Observation Ground-Truth Telemetry Corpus
+To benchmark clinical anomaly detection, feature interactions, and model generalization, HeartFlow OS integrates a verified 60,000 observation patient vitals dataset (`backend/model/patient_data.csv`, 4.49 MB):
+
+- **Precomputed Profiling Architecture (`backend/dataset_analytics.py`)**:
+  - Computes statistical moments ($\mu$, $\sigma$, median, $IQR$, skewness) across continuous clinical channels (Heart Rate, $SpO_2$, Systolic/Diastolic BP, Body Temperature).
+  - Generates a full $9 \times 9$ Pearson correlation matrix ($r \in [-1.0, 1.0]$) mapping physiological indicators, diagnostic targets, and alert triggers.
+  - Bins continuous vitals into 12-bin distribution histograms for high-speed client-side visual inspection.
+  - **Bandwidth Reduction**: Serving precomputed profiles via `GET /dataset/summary` compresses data payload from **4.49 MB** to **~8.2 KB** (**99.8% network transfer reduction**), yielding `< 5 ms` response times.
+
+- **Windowed Paginated Exploration (`GET /dataset`)**:
+  - 25-row responsive chunking with server-side disease cohort filtering and client-side substring search.
+  - Raw streaming download endpoint (`GET /dataset/download`) with Content-Disposition headers for reproducible offline verification.
+
+### 10.2. Cloud Production Deployment: Hugging Face Spaces
+The secondary cloud orchestration and MLOps engine is containerized and live-deployed on **Hugging Face Spaces**:
+- **Hugging Face Space Registry**: [https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend](https://huggingface.co/spaces/IDKHowToCodeFr/tinyml-backend)
+- **Production REST Gateway**: `https://idkhowtocodefr-tinyml-backend.hf.space`
+- **FastAPI OpenAPI / Swagger Documentation**: `https://idkhowtocodefr-tinyml-backend.hf.space/docs`
+- **Real-Time WebSocket Ingestion Stream**: `wss://idkhowtocodefr-tinyml-backend.hf.space/ws/feed`
+- **Container Architecture**: Docker SDK (`app_port: 8000`) executing Uvicorn with ASGI multi-worker concurrency and automated container healthcheck monitoring.
+

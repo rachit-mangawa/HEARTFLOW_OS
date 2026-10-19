@@ -21,6 +21,31 @@ def test_dataset_endpoint(client):
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+def test_dataset_paginated_endpoint(client):
+    response = client.get("/dataset?page=1&limit=25")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "total" in data
+    assert "rows" in data
+    assert isinstance(data["rows"], list)
+    assert len(data["rows"]) <= 25
+
+def test_dataset_summary_endpoint(client):
+    response = client.get("/dataset/summary")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, dict)
+    assert "summary" in data
+    assert data["summary"]["total_records"] == 60000
+    assert "target_distribution" in data
+    assert "correlation_matrix" in data
+
+def test_dataset_download_endpoint(client):
+    response = client.get("/dataset/download")
+    assert response.status_code == 200
+    assert "text/csv" in response.headers.get("content-type", "")
+
 def test_export_tinyml_random_forest(client):
     response = client.get("/export_tinyml?model_name=rf")
     

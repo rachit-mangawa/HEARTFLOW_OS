@@ -224,7 +224,7 @@ export default function Simulator() {
                       key={preset.name}
                       type="button"
                       onClick={() => handleSelectPreset(preset.data)}
-                      className={`btn-tactile border-2 border-ink p-3.5 sm:p-4 text-left transition-colors cursor-pointer flex flex-col justify-between gap-2 min-h-[96px] ${
+                      className={`btn-tactile border-2 border-ink p-3.5 sm:p-4 text-left transition-colors cursor-pointer flex flex-col justify-between gap-2 min-h-24 ${
                         isActive
                           ? "bg-ink text-white font-bold"
                           : "bg-white text-ink hover:bg-canvas-cream"
@@ -444,7 +444,7 @@ export default function Simulator() {
                     </div>
                   </>
                 ) : (
-                  <div className="h-full min-h-[380px] flex items-center justify-center">
+                  <div className="h-full min-h-95 flex items-center justify-center">
                     <div className="text-slate text-[13px] font-bold tracking-widest uppercase border-2 border-slate px-6 py-4 animate-pulse text-center max-w-sm">
                       {loading ? "CALCULATING SHAP VALUES..." : "Awaiting Input · Click Execute Inference to Generate Attributions"}
                     </div>

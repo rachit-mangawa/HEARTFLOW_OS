@@ -240,3 +240,12 @@ h2, h3, h4, h5, h6 {
   color: #FFFFFF;
 }
 
+/* Horizontal Scroll with No Scrollbar for Mobile Touch UX */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
