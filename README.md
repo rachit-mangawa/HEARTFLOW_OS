@@ -1,13 +1,3 @@
----
-title: HeartFlow OS Backend
-emoji: 🫀
-colorFrom: gray
-colorTo: red
-sdk: docker
-pinned: false
-app_port: 8000
----
-
 <div align="center">
 
 ```
@@ -22,28 +12,25 @@ app_port: 8000
 ### **Clinical Cardiovascular Telemetry & Distributed Edge TinyML Transpilation Engine**
 
 <p>
-  <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS" target="_blank">
-    <img src="https://img.shields.io/badge/GitHub-Repository-141413?style=flat&logo=github&logoColor=white" alt="GitHub Repository" />
+  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/" target="_blank">
+    <img src="https://img.shields.io/badge/Live_Application-rachit--mangawa.github.io%2FHEARTFLOW__OS-065f46?style=flat&logo=safari&logoColor=white" alt="Live Application" />
   </a>
-  <a href="http://localhost:3000" target="_blank">
-    <img src="https://img.shields.io/badge/Web_Application-localhost%3A3000-065f46?style=flat&logo=safari&logoColor=white" alt="Web Application" />
-  </a>
-  <a href="https://idkhowtocodefr-hf-backend.hf.space" target="_blank">
-    <img src="https://img.shields.io/badge/Cloud_API-HF_Spaces-9F2F2D?style=flat&logo=fastapi&logoColor=white" alt="Cloud API" />
+  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/docs" target="_blank">
+    <img src="https://img.shields.io/badge/API_Documentation-Online_Reference-9F2F2D?style=flat&logo=fastapi&logoColor=white" alt="Live API Documentation" />
   </a>
 </p>
 
 <p>
-  <a href="http://localhost:3000/simulator">
+  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator">
     <img src="https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat&logo=speedtest&logoColor=white" alt="Latency" />
   </a>
-  <a href="http://localhost:3000/edge">
+  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/edge">
     <img src="https://img.shields.io/badge/Memory_ABI-Zero--Malloc_C99-6b21a8?style=flat&logo=c&logoColor=white" alt="Zero-Malloc" />
   </a>
-  <a href="http://localhost:3000/edge">
+  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/edge">
     <img src="https://img.shields.io/badge/Quantization-INT8_(-76.4%25_SRAM)-c2410c?style=flat" alt="Quantization" />
   </a>
-  <a href="http://localhost:3000/mlops">
+  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops">
     <img src="https://img.shields.io/badge/MLOps-Hot--Swap_Ensemble-047857?style=flat&logo=shield&logoColor=white" alt="MLOps" />
   </a>
   <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS/actions">
@@ -66,9 +53,10 @@ HeartFlow OS is a distributed Edge AI clinical intelligence architecture enginee
 Continuous multi-channel physiological vitals are evaluated across a calibrated **5-model weighted soft-voting ensemble** (Random Forest, Linear SVM, Logistic Regression, MLP Neural Network, and KNN), providing **sub-20µs in-browser anomaly classification**, automated INT8 fixed-point quantization, 250 Hz Lead-II ECG waveform streaming, and zero-malloc C99 embedded transpilation.
 
 > [!NOTE]
-> **Complete Technical Documentation**:
+> **Complete Technical Documentation & Live Workspace**:
+> - 🌐 **Live Web Application**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/](https://rachit-mangawa.github.io/HEARTFLOW_OS/)
+> - 📚 **Live API Specifications & Documentation**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/docs](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)
 > - 📄 **[ARCHITECTURE.md](ARCHITECTURE.md)**: Unified canonical architecture specification (v3.4.0), mathematical calibration proofs, embedded C99 hardware ABI, MLOps continuum, and telemetry engine specifications.
-> - 🌐 **Interactive Docs**: Hosted live in the application at `/docs` with interactive in-browser API testing consoles.
 
 ---
 
@@ -140,7 +128,7 @@ Measured across 10,000 synthetic patient telemetry vectors:
 | :--- | :--- | :---: | :---: | :--- |
 | **ESP32-S3 (Bare-Metal)** | PlatformIO C99 Static Header | **18.4 µs** | **54,340 vec/sec** | `█` **(1,902x faster than cloud REST)** |
 | **Client In-Browser** | TinyML V8 / SpiderMonkey | **120.0 µs** | **8,330 vec/sec** | `██` **(291x faster than cloud REST)** |
-| **Cloud Container** | FastAPI + Uvicorn (HF Spaces) | **35.0 ms** | **28 req/sec** | `██████████████████████████` (Baseline) |
+| **Cloud Container** | FastAPI + Uvicorn (Cloud Gateway) | **35.0 ms** | **28 req/sec** | `██████████████████████████` (Baseline) |
 | **Legacy Cloud** | Standard PyTorch Container | **160.0 ms** | **6 req/sec** | `████████████████████████████████████` |
 
 ### Deterministic SLA Guarantees
@@ -220,22 +208,22 @@ EXAMPLE: $84,97.5,132,86,37.1*4F\n
 
 | Route | View Name | Clinical & Engineering Purpose |
 | :--- | :--- | :--- |
-| **[`/`](http://localhost:3000/)** | **Landing Hub** | Engineering telemetry badges, system specifications, and dual-plane architecture overview. |
-| **[`/monitor`](http://localhost:3000/monitor)** | **Clinical Telemetry** | 60 FPS Lead-II ECG canvas oscillograph, live vitals telemetry, auto-reconnecting WebSocket stream, and SHAP attribution. |
-| **[`/simulator`](http://localhost:3000/simulator)** | **Physiological Simulator** | Interactive patient vitals simulator, arrhythmia state machine triggers, physics drift engine, and instant edge inference. |
-| **[`/dataset`](http://localhost:3000/dataset)** | **Dataset Explorer** | 60,000 observation ground-truth corpus: 9×9 Pearson correlation heatmap, 12-bin continuous histograms, balanced disease cohorts, and 25-row paginated inspector. |
-| **[`/edge`](http://localhost:3000/edge)** | **TinyML Edge Compiler** | In-browser and cloud C99 generator for ESP32 and Cortex-M with INT8 quantization and zero-malloc memory guarantee. |
-| **[`/mlops`](http://localhost:3000/mlops)** | **MLOps Registry & Retraining** | Batch CSV ingestion, schema alias sanitization, F1-macro automated validation gates, real-time stage telemetry, and atomic hot-swapping. |
-| **[`/architecture`](http://localhost:3000/architecture)** | **Pipeline Topology** | Native architectural schematic detailing client, API, MLOps, and persistence subsystems. |
-| **[`/history`](http://localhost:3000/history)** | **Clinical Audit Logs** | Local session telemetry audit history with chronological diagnostic records and risk indicators. |
-| **[`/analytics`](http://localhost:3000/analytics)** | **Longitudinal Analytics** | Population distributions, correlation matrices, and model weight arbitration diagnostics. |
-| **[`/docs`](http://localhost:3000/docs)** | **System & API Specs** | Interactive endpoint reference, live in-browser testing console, schema contracts, and cURL / Python / TypeScript snippets. |
+| **[`/`](https://rachit-mangawa.github.io/HEARTFLOW_OS/)** | **Landing Hub** | Engineering telemetry badges, system specifications, and dual-plane architecture overview. |
+| **[`/monitor`](https://rachit-mangawa.github.io/HEARTFLOW_OS/monitor)** | **Clinical Telemetry** | 60 FPS Lead-II ECG canvas oscillograph, live vitals telemetry, auto-reconnecting WebSocket stream, and SHAP attribution. |
+| **[`/simulator`](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)** | **Physiological Simulator** | Interactive patient vitals simulator, arrhythmia state machine triggers, physics drift engine, and instant edge inference. |
+| **[`/dataset`](https://rachit-mangawa.github.io/HEARTFLOW_OS/dataset)** | **Dataset Explorer** | 60,000 observation ground-truth corpus: 9×9 Pearson correlation heatmap, 12-bin continuous histograms, balanced disease cohorts, and 25-row paginated inspector. |
+| **[`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)** | **TinyML Edge Compiler** | In-browser and cloud C99 generator for ESP32 and Cortex-M with INT8 quantization and zero-malloc memory guarantee. |
+| **[`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops)** | **MLOps Registry & Retraining** | Batch CSV ingestion, schema alias sanitization, F1-macro automated validation gates, real-time stage telemetry, and atomic hot-swapping. |
+| **[`/architecture`](https://rachit-mangawa.github.io/HEARTFLOW_OS/architecture)** | **Pipeline Topology** | Native architectural schematic detailing client, API, MLOps, and persistence subsystems. |
+| **[`/history`](https://rachit-mangawa.github.io/HEARTFLOW_OS/history)** | **Clinical Audit Logs** | Local session telemetry audit history with chronological diagnostic records and risk indicators. |
+| **[`/analytics`](https://rachit-mangawa.github.io/HEARTFLOW_OS/analytics)** | **Longitudinal Analytics** | Population distributions, correlation matrices, and model weight arbitration diagnostics. |
+| **[`/docs`](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)** | **System & API Specs** | Interactive endpoint reference, schema contracts, and cURL / Python / TypeScript snippets. |
 
 ---
 
 ## Continuous MLOps & Asynchronous Retraining Pipeline
 
-HeartFlow OS includes an autonomous background retraining and model hot-swapping pipeline managed through [`/mlops`](http://localhost:3000/mlops):
+HeartFlow OS includes an autonomous background retraining and model hot-swapping pipeline managed through [`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops):
 
 ```mermaid
 flowchart TD
@@ -262,15 +250,15 @@ flowchart TD
    - Saves updated weights to `model_weights.pt` and `ensemble_weights.json`.
    - Atomically updates active model registry pointers in Python memory without dropping in-flight WebSocket connections or REST queries.
 5. **Session-Scoped Client Telemetry UX**:
-   - The telemetry progress panel in [`/mlops`](http://localhost:3000/mlops) only mounts when an active training job is running (`status: "training"`).
+   - The telemetry progress panel in [`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops) only mounts when an active training job is running (`status: "training"`).
    - On new sessions or page refresh, completed telemetry is automatically cleared to keep the workspace clean.
-   - Includes tactile `Close [×]` and `Dismiss [×]` controls, with a direct shortcut button to test the new weights in [`/simulator`](http://localhost:3000/simulator).
+   - Includes tactile `Close [×]` and `Dismiss [×]` controls, with a direct shortcut button to test the new weights in [`/simulator`](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator).
 
 ---
 
 ## API Specifications Contract
 
-Interactive documentation with live in-browser testing is hosted at [`/docs`](http://localhost:3000/docs).
+Interactive endpoint reference, schema contracts, and protocol specifications are hosted live at [`https://rachit-mangawa.github.io/HEARTFLOW_OS/docs`](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs).
 
 | Method | Endpoint | Latency SLA | Description |
 | :---: | :--- | :---: | :--- |
@@ -291,31 +279,17 @@ Interactive documentation with live in-browser testing is hosted at [`/docs`](ht
 
 ## Quickstart Guide
 
-### Option 1: Remote Cloud API Gateway (Zero Local Install)
+### Option 1: Live Web Application & Documentation (Zero Local Setup)
 
-The backend runs as a hosted cloud API service:
-- **Direct REST API Gateway**: `https://idkhowtocodefr-hf-backend.hf.space`
-- **WebSocket Telemetry Stream**: `wss://idkhowtocodefr-hf-backend.hf.space/ws/feed`
-
-To connect the Next.js frontend to the live cloud backend, set:
-```bash
-NEXT_PUBLIC_API_URL=https://idkhowtocodefr-hf-backend.hf.space
-NEXT_PUBLIC_WS_URL=wss://idkhowtocodefr-hf-backend.hf.space/ws/feed
-```
+HeartFlow OS is live and directly accessible via GitHub Pages:
+- 🌐 **Live Web Application**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/](https://rachit-mangawa.github.io/HEARTFLOW_OS/)
+- 📚 **Live API Specifications & Documentation**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/docs](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)
+- ⚡ **Interactive Physics Simulator**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)
+- 🔌 **Standalone C99 Firmware Transpiler**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/edge](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
 
 ---
 
-### Option 2: Docker Compose (Full Stack Local)
-
-```bash
-docker compose up --build
-```
-- **Web App**: [http://localhost:3000](http://localhost:3000)
-- **FastAPI OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-### Option 3: Local Development Setup
+### Option 2: Local Development Setup
 
 #### 1. Backend (Python 3.10+)
 ```bash
@@ -328,6 +302,8 @@ pip install -r requirements.txt
 python models.py                # Train initial baseline ensemble
 uvicorn main:app --reload --port 8000
 ```
+- **Local FastAPI Gateway**: [http://localhost:8000](http://localhost:8000)
+- **Local Swagger OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 #### 2. Frontend (Node.js 20+)
 ```bash
@@ -335,13 +311,13 @@ cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser during local development.
 
 ---
 
-### Option 4: Hardware Firmware Deployment (ESP32)
+### Option 3: Hardware Firmware Deployment (ESP32)
 
-1. Open `/edge` in the application or call `/export_tinyml?model_name=rf&quantize=true`.
+1. Open [`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge) in the application or call `/export_tinyml?model_name=rf&quantize=true`.
 2. Save the emitted C header to `firmware/src/model.h`.
 3. Compile and upload via PlatformIO:
 
