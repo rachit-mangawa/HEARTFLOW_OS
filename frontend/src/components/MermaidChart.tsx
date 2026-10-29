@@ -31,7 +31,7 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
         const mermaid = (await import("mermaid")).default;
         mermaid.initialize({
           startOnLoad: false,
-          securityLevel: "loose",
+          securityLevel: "strict",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
           theme: "base",
           themeVariables: {

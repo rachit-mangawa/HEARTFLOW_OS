@@ -61,6 +61,8 @@ export default function Navigation() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="btn-tactile min-h-11 px-3.5 py-1.5 border-2 border-ink bg-white text-ink text-[11px] font-bold tracking-widest uppercase hover:bg-ink hover:text-white transition-colors flex items-center justify-center cursor-pointer"
             aria-label="Toggle Navigation Menu"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation-menu"
           >
             {mobileMenuOpen ? "CLOSE [×]" : "MENU [≡]"}
           </button>
@@ -69,7 +71,10 @@ export default function Navigation() {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="animate-menu-slide-down md:hidden border-t-2 border-ink bg-white p-4 flex flex-col gap-2 shadow-[0_4px_0_0_#141413]">
+        <div
+          id="mobile-navigation-menu"
+          className="animate-menu-slide-down md:hidden border-t-2 border-ink bg-white p-4 flex flex-col gap-2 shadow-[0_4px_0_0_#141413]"
+        >
           <div className="text-[10px] font-bold tracking-widest text-slate uppercase px-2 pb-1 border-b border-ink/20 flex justify-between">
             <span>NAVIGATION</span>
             <span className="text-hazard">{NAV_LINKS.length} ROUTES</span>

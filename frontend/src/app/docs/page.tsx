@@ -15,6 +15,53 @@ import {
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import MermaidChart from "@/components/MermaidChart";
+
+const MERMAID_API_ARCHITECTURE = `flowchart LR
+    subgraph CLIENT["CLINICAL CONSUMERS"]
+        direction TB
+        BROWSER["In-Browser TinyML Client"]
+        ESP["ESP32-S3 Firmware (UART)"]
+        SCRIPT["External Automation (cURL/Python)"]
+    end
+
+    subgraph GATEWAY["API & TELEMETRY PROTOCOL GATEWAY"]
+        direction TB
+        REST["REST API Gateway (/predict, /explain, /dataset)"]
+        WS["Real-Time WebSocket Feed (/ws/feed)"]
+        EXPORT["TinyML C99 AST Exporter (/export_tinyml)"]
+        RETRAIN["Async MLOps Pipeline (/retrain)"]
+    end
+
+    subgraph CORE["HEARTFLOW_OS CORE ENGINES"]
+        direction TB
+        ENS["5-Model Soft-Voting Ensemble (RF, SVM, MLP, LogReg, KNN)"]
+        SHAP["SHAP Attribution Engine (TreeExplainer)"]
+        REG["Model Registry & Hot-Swap Storage"]
+        DATA["60k Observation Corpus & Analytics Profiler"]
+    end
+
+    BROWSER -->|"POST /predict"| REST
+    BROWSER -->|"POST /explain"| REST
+    BROWSER <-->|"WSS Stream"| WS
+    ESP -->|"UART Serial Bus"| BROWSER
+    SCRIPT -->|"GET /export_tinyml"| EXPORT
+    SCRIPT -->|"POST /retrain"| RETRAIN
+
+    REST --> ENS
+    REST --> SHAP
+    REST --> DATA
+    EXPORT --> REG
+    RETRAIN --> REG
+    WS --> ENS
+
+    classDef client fill:#EFF6FF,stroke:#2563EB,stroke-width:1.5px,color:#1E3A8A;
+    classDef gateway fill:#FBFBFA,stroke:#141413,stroke-width:1.5px,color:#141413;
+    classDef core fill:#F0FDF4,stroke:#16A34A,stroke-width:1.5px,color:#14532D;
+
+    class BROWSER,ESP,SCRIPT client;
+    class REST,WS,EXPORT,RETRAIN gateway;
+    class ENS,SHAP,REG,DATA core;`;
 
 interface EndpointDoc {
   id: string;
@@ -694,6 +741,23 @@ export default function ApiDocs() {
                   <span className="border border-ink px-2 py-0.5 bg-canvas-cream text-[10px] font-bold">C99_ABI</span>
                 </div>
               </div>
+            </div>
+
+            {/* Architectural Pipeline Topology Flowchart */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] font-black uppercase tracking-wider text-ink flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-hazard inline-block" />
+                  <span>SERVICE &amp; TELEMETRY PROTOCOL ARCHITECTURE</span>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate bg-white border border-ink/40 px-2 py-0.5">
+                  VECTOR FLOWCHART (SVG)
+                </span>
+              </div>
+              <MermaidChart
+                chart={MERMAID_API_ARCHITECTURE}
+                title="HEARTFLOW_OS TELEMETRY &amp; API SERVICE TOPOLOGY"
+              />
             </div>
 
             {/* Filter & Syntax Toolbar */}

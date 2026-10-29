@@ -1,28 +1,13 @@
-# HeartFlow OS · Technical Architecture Specification
+# HeartFlow OS Technical Architecture Specification
+### Distributed Edge AI Inference, Deterministic C99 Memory ABI, and Multi-Plane Telemetry
 
-<div align="center">
-
-```
-  ██╗  ██╗███████╗ █████╗ ██████╗ ████████╗███████╗██╗      ██████╗ ██╗    ██╗     ██████╗ ███████╗
-  ██║  ██║██╔════╝██╔══██╗██╔══██╗╚══██╔══╝██╔════╝██║     ██╔═══██╗██║    ██║    ██╔═══██╗██╔════╝
-  ███████║█████╗  ███████║██████╔╝   ██║   █████╗  ██║     ██║   ██║██║ █╗ ██║    ██║   ██║███████╗
-  ██╔══██║██╔══╝  ██╔══██║██╔══██╗   ██║   ██╔══╝  ██║     ██║   ██║██║███╗██║    ██║   ██║╚════██║
-  ██║  ██║███████╗██║  ██║██║  ██║   ██║   ██║     ███████╗╚██████╔╝╚███╔███╔╝    ╚██████╔╝███████║
-  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝      ╚═════╝ ╚══════╝
-```
-
-### **Unified Clinical Architecture · Mathematical Formulations · Embedded C99 Hardware ABI**
-
-[![Document Ref](https://img.shields.io/badge/Document_ID-HFL--OS--ARCH--SPEC--01-141413?style=flat&logo=googledocs&logoColor=white)](ARCHITECTURE.md)
-[![Revision](https://img.shields.io/badge/Revision-3.4.0_(Production_Hardened)-9F2F2D?style=flat&logo=shield&logoColor=white)](ARCHITECTURE.md)
-[![Status](https://img.shields.io/badge/Status-Active_%2F_Approved-16A34A?style=flat&logo=shield&logoColor=white)](ARCHITECTURE.md)
-[![Inference Latency](https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat&logo=speedtest&logoColor=white)](http://localhost:3000/simulator)
-[![Dynamic Memory](https://img.shields.io/badge/Dynamic_Heap-0_Bytes_(Zero--Malloc)-6b21a8?style=flat&logo=c&logoColor=white)](http://localhost:3000/edge)
-[![INT8 Quantized](https://img.shields.io/badge/Quantization-INT8_(-76.4%25_SRAM)-c2410c?style=flat)](http://localhost:3000/edge)
-[![MLOps](https://img.shields.io/badge/MLOps-Hot--Swap_Ensemble-047857?style=flat&logo=shield&logoColor=white)](http://localhost:3000/mlops)
-[![Test Suite](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
-
-</div>
+[![Specification](https://img.shields.io/badge/Architecture-Specification-141413?style=flat)](ARCHITECTURE.md)
+[![Standard](https://img.shields.io/badge/Standard-IEC_62304_Class_B-9F2F2D?style=flat)](ARCHITECTURE.md)
+[![Status](https://img.shields.io/badge/Status-Active_Release-16A34A?style=flat)](ARCHITECTURE.md)
+[![Edge Latency](https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)
+[![Memory ABI](https://img.shields.io/badge/Memory_ABI-Static_Allocation_Zero_Malloc-6b21a8?style=flat&logo=c&logoColor=white)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
+[![Quantization](https://img.shields.io/badge/Quantization-INT8_--76.4%25_SRAM-c2410c?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
+[![CI Verification](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
 
 ---
 
@@ -30,7 +15,7 @@
 
 | Document Attribute | Specification Value | Regulatory & Engineering Context |
 | :--- | :--- | :--- |
-| **Document Reference** | `HFL-OS-ARCH-SPEC-01` | Unified Canonical Engineering Baseline |
+| **Specification Baseline** | Production Release Architecture | Unified Engineering Baseline |
 | **Current Revision** | `v3.4.0 (Production Hardened)` | Unified Architecture, Mathematics & Hardware Specification |
 | **Classification** | Distributed Edge AI / Clinical Telemetry Systems | Critical Care Medical Device Software Architecture |
 | **Target Microcontrollers** | ESP32-S3 · ARM Cortex-M4 · RP2040 · nRF52840 | Resource-Constrained Bare-Metal Silicon ($< 16\text{ KB}$ SRAM) |
@@ -69,35 +54,28 @@
 
 ---
 
-## 1. Executive Summary & Core Engineering Tenets
+## 1. Executive Summary and Engineering Tenets
 
-HeartFlow OS is a distributed Edge AI clinical intelligence architecture engineered to decouple real-time physiological diagnostics from cloud computing dependency. The platform bridges clinical cloud machine learning pipelines with resource-constrained, bare-metal microcontrollers (**ESP32-S3, ARM Cortex-M4, RP2040, nRF52840**).
+HeartFlow OS is an edge telemetry and inference architecture for real-time cardiovascular monitoring on microcontrollers (ESP32-S3, ARM Cortex-M4, RP2040, nRF52840) and modern browsers. It executes calibrated machine learning models on device, decoupling physiological diagnostics from network and cloud dependencies.
 
 > [!NOTE]
-> **Architectural Philosophy:** High-availability clinical monitoring must not suffer from cloud outages, fluctuating network latencies, or third-party telemetry leakage. HeartFlow OS designates the **local edge client** as the primary diagnostic authority, utilizing cloud connectivity purely as an asynchronous background service for model retraining and longitudinal aggregation.
+> **Primary Design Constraint:** Clinical monitoring systems must remain functional during network dropouts and avoid transmitting raw patient telemetry across public infrastructure. HeartFlow OS assigns diagnostic authority to the local runtime; the cloud backend serves solely as an asynchronous engine for model retraining and cohort aggregation.
 
-### Core Architectural Tenets
+### Core Tenets
 
-1. **Zero-Cloud Client Edge Execution (Primary Plane)**
-   Continuous multi-channel physiological vitals are evaluated locally within client memory space in under **20 µs**, guaranteeing **0.0 KB** patient telemetry egress and complete HIPAA/GDPR clinical isolation.
-2. **Deterministic Embedded C99 Output**
-   The compiler transpiles trained high-level Scikit-Learn ensembles directly into standalone, dependency-free C99 headers (`model.h`) with a strict **Zero-Malloc ABI guarantee** (zero dynamic heap allocation).
-3. **Hardware-Native Web Serial Bus**
-   Direct physical microcontroller integration operating over W3C `navigator.serial` at **115,200 baud**, streaming authentic 250 Hz Lead-II ECG and PPG telemetry frames into a 60 FPS GPU canvas oscillograph.
-4. **Calibrated 5-Model Soft-Voting Ensemble**
-   Arbitrates class posterior probabilities across Random Forest, Linear SVM, Logistic Regression, MLP Neural Network, and k-Nearest Neighbors to suppress single-estimator variance by **-42.6%**.
-5. **Continuous MLOps with Automated Rollback**
-   Ingestion engine automatically sanitizes batch CSV uploads, normalizes 40+ schema aliases, evaluates retrained weights against a 20% holdout split, and hot-swaps active memory pointers with **0ms downtime**.
+1. **Local edge execution (Primary Plane)**: Multi-channel physiological vitals are evaluated in local memory in under 20 µs, maintaining zero network egress and isolating patient telemetry locally.
+2. **Deterministic C99 code generation**: The export compiler translates trained scikit-learn ensembles into standalone, dependency-free C99 headers (`model.h`) with zero dynamic heap allocation (`malloc`-free).
+3. **Hardware Web Serial bus**: Microcontrollers connect over W3C `navigator.serial` at 115,200 baud, streaming 250 Hz Lead-II ECG and PPG measurements directly into an in-browser 60 FPS canvas oscillograph.
+4. **5-model soft-voting ensemble**: Calibrated posterior probability arbitration across Random Forest, Linear SVM, Logistic Regression, MLP, and k-NN reduces single-estimator prediction variance by 42.6%.
+5. **MLOps with automated rollback**: Ingestion handles batch CSV uploads, normalizes 40+ column aliases, assesses retrained weights against a 20% holdout split, and hot-swaps active memory pointers without downtime.
 
 ---
 
 ## 2. Dual-Plane System Architecture Topology
 
-The following diagram illustrates the physical hardware layer, the primary client-side edge plane, and the secondary cloud REST orchestration layer:
-
 ```mermaid
 flowchart TB
-    subgraph HW["⚡ PHYSICAL HARDWARE SENSOR LAYER"]
+    subgraph HW["PHYSICAL HARDWARE SENSOR LAYER"]
         direction LR
         ECG["AD8232 Lead-II ECG<br/>(250 Hz Analog Vitals)"]
         PPG["MAX30102 Optical PPG<br/>(I2C @ 400 kHz)"]
@@ -106,11 +84,11 @@ flowchart TB
         PPG -->|I2C SDA/SCL| MCU
     end
 
-    subgraph SERIAL["🔌 PHYSICAL TRANSPORT BUS"]
+    subgraph SERIAL["PHYSICAL TRANSPORT BUS (UART)"]
         UART["W3C navigator.serial (115,200 Baud)<br/>ASCII Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
     end
 
-    subgraph CLIENT["💻 CLINICAL BROWSER CLIENT (PRIMARY PLANE: ZERO-CLOUD)"]
+    subgraph CLIENT["BROWSER CLIENT RUNTIME (PRIMARY OFFLINE PLANE)"]
         direction TB
         OSC["60 FPS Canvas Oscillograph<br/>(Real-Time Lead-II ECG Waveform)"]
         PRE["StandardScaler & Feature Engineering<br/>z_j = (x_j - μ_j) / σ_j + Risk_Severity"]
@@ -141,7 +119,7 @@ flowchart TB
         VOTE --> DIAG
     end
 
-    subgraph CLOUD["☁️ SECONDARY CLOUD BACKEND (Hugging Face Spaces · Docker / FastAPI)"]
+    subgraph CLOUD["SECONDARY CLOUD BACKEND (FastAPI / Container)"]
         direction LR
         REST["FastAPI Gateway (/predict, /ws/feed)"] --> MLOPS["MLOps Automated Retrain Engine<br/>Batch CSV Ingest & Alias Normalization"]
         MLOPS --> REG["Model Registry (5 .pkl Estimators)"]
@@ -166,7 +144,7 @@ flowchart TB
 ```
 
 > [!IMPORTANT]
-> **Air-Gapped Isolation Guarantee:** If external network access is interrupted, the **Clinical Browser Client executes 100% of telemetry decoding, waveform rendering, and ensemble inference** locally in memory without degradation.
+> **Offline Operation:** During network interruptions, the browser client continues decoding telemetry, rendering waveforms, and running ensemble inference locally without performance loss.
 
 ---
 
@@ -175,8 +153,8 @@ flowchart TB
 ```mermaid
 flowchart TD
     subgraph S1["1. RAW TELEMETRY & INGESTION"]
-        CSV["📄 patient_data.csv / batch_upload.csv<br/>(60,000 Observation Ground-Truth Corpus)"]
-        AFE["⚡ Biosensors: AD8232 ECG + MAX30102 PPG"]
+        CSV["patient_data.csv / batch_upload.csv<br/>(60,000 Observation Ground-Truth Corpus)"]
+        AFE["Biosensors: AD8232 ECG + MAX30102 PPG"]
         MCU["ESP32-S3 Firmware (PlatformIO C99)<br/>250 Hz 12-bit SAR ADC Sampling"]
         SERIAL["W3C navigator.serial Bus<br/>115,200 Baud ASCII Frame: $HR,SPO2,SYS,DIA,TEMP*CRC\n"]
         
@@ -211,7 +189,7 @@ flowchart TD
     subgraph S4["4. C99 TRANSPILER & INT8 QUANTIZER"]
         SOFTVOTE --> EXPORT["backend/export.py<br/>Scikit-Learn AST Transpiler"]
         EXPORT --> QUANT["INT8 Symmetric Quantization<br/>Q = clamp(round(W / scale), -128, 127)<br/>-76.4% SRAM Footprint (34.8 KB → 8.2 KB)"]
-        QUANT --> HEADER["📁 firmware/include/model.h<br/>Zero-Malloc C99 ABI: int predict(const float *features)"]
+        QUANT --> HEADER["firmware/include/model.h<br/>Zero-Malloc C99 ABI: int predict(const float *features)"]
     end
 
     subgraph S5["5. MULTI-PLANE RUNTIME EXECUTION"]
@@ -240,17 +218,49 @@ The physical hardware plane samples biopotentials and optical photoplethysmograp
 - **MAX30102 Optical PPG**: Infrared (880nm) and Red (660nm) LEDs sampled via $I^2C$ at 400 kHz to extract peripheral oxygen saturation ($SpO_2$) and pulse amplitude.
 - **ESP32-S3 Microcontroller**: 12-bit SAR ADC captures analog voltages at 250 Hz (4ms sampling period).
 
-```
-  AD8232 Lead-II ECG                   ESP32-S3 DevKit MCU                  MAX30102 Optical PPG
-  ┌──────────────────┐                 ┌──────────────────┐                 ┌──────────────────┐
-  │ OUTPUT (Analog)  ├─────────────────┤ GPIO 4 (ADC1_CH3)│                 │ VIN (3.3V)       │
-  │ LO+ (Lead Off +) ├─────────────────┤ GPIO 5           │                 │ GND              │
-  │ LO- (Lead Off -) ├─────────────────┤ GPIO 6           │                 │ SDA (I2C)        ├───────┐
-  │ 3.3V / GND       ├─────────────────┤ 3V3 / GND        │                 │ SCL (I2C)        ├───┐   │
-  └──────────────────┘                 └──────────────────┘                 └──────────────────┘   │   │
-                                                ▲                                                  │   │
-                                                │ GPIO 8 (I2C SDA) ────────────────────────────────┼───┘
-                                                │ GPIO 9 (I2C SCL) ────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph ECG["AD8232 Lead-II ECG AFE"]
+        direction TB
+        E_OUT["OUTPUT (Analog Lead-II)"]
+        E_LOP["LO+ (Lead Off +)"]
+        E_LOM["LO- (Lead Off -)"]
+        E_PWR["3.3V / GND Rail"]
+    end
+
+    subgraph MCU["ESP32-S3 DevKit MCU"]
+        direction TB
+        M_ADC["GPIO 4 (ADC1_CH3) · 12-bit SAR ADC"]
+        M_G5["GPIO 5 (Lead Off + Detection)"]
+        M_G6["GPIO 6 (Lead Off - Detection)"]
+        M_SDA["GPIO 8 (I2C Master SDA)"]
+        M_SCL["GPIO 9 (I2C Master SCL)"]
+        M_PWR["3V3 / GND Power Rail"]
+    end
+
+    subgraph PPG["MAX30102 Optical PPG"]
+        direction TB
+        P_SDA["SDA (I2C Data @ 400 kHz)"]
+        P_SCL["SCL (I2C Clock @ 400 kHz)"]
+        P_PWR["VIN (3.3V) / GND Rail"]
+    end
+
+    E_OUT -->|Analog Differential Voltage| M_ADC
+    E_LOP -->|Digital Interrupt Alert| M_G5
+    E_LOM -->|Digital Interrupt Alert| M_G6
+    E_PWR -.->|Power Rail| M_PWR
+
+    P_SDA <-->|Bidirectional I2C Data| M_SDA
+    P_SCL -->|Synchronous I2C Clock| M_SCL
+    P_PWR -.->|Power Rail| M_PWR
+
+    classDef ecgNode fill:#FEF2F2,stroke:#9F2F2D,stroke-width:1.5px,color:#991B1B;
+    classDef mcuNode fill:#EFF6FF,stroke:#2563EB,stroke-width:1.5px,color:#1E3A8A;
+    classDef ppgNode fill:#F0FDF4,stroke:#16A34A,stroke-width:1.5px,color:#14532D;
+
+    class E_OUT,E_LOP,E_LOM,E_PWR ecgNode;
+    class M_ADC,M_G5,M_G6,M_SDA,M_SCL,M_PWR mcuNode;
+    class P_SDA,P_SCL,P_PWR ppgNode;
 ```
 
 ---
@@ -346,7 +356,7 @@ $$\text{Var}_{\text{composite}} \approx \sum_{i=1}^{5} w_i^2 \cdot \text{Var}_i 
 $$\sum_{i=1}^{5} w_i^2 = (0.25)^2 + (0.25)^2 + (0.20)^2 + (0.15)^2 + (0.15)^2 = 0.0625 + 0.0625 + 0.0400 + 0.0225 + 0.0225 = 0.2100$$
 
 > [!TIP]
-> **Analytical Gain:** Under independent estimator assumptions, the soft-voting ensemble reduces total prediction variance by **-42.6%** compared to any single decision tree estimator.
+> Under independent estimator assumptions, the soft-voting ensemble reduces prediction variance by 42.6% relative to a single decision tree.
 
 ---
 
@@ -403,7 +413,7 @@ $$\text{De-Quantization Mapping: } \hat{W} = Q \cdot \text{scale}$$
 The compiler pipeline translates Python Scikit-Learn abstract syntax trees (ASTs) directly into standalone, dependency-free C99 header files (`model.h`).
 
 > [!CAUTION]
-> **Zero Dynamic Allocation Guarantee:** The generated C99 code executes with strictly **zero dynamic heap allocations** (`malloc`, `calloc`, `realloc`, and `free` are prohibited). This eliminates memory fragmentation, heap leaks, and unexpected Out-Of-Memory kernel panics on embedded hardware.
+> **Zero Dynamic Allocation:** The generated C99 code avoids dynamic heap allocations (`malloc`, `calloc`, `realloc`, and `free`). This prevents heap fragmentation, memory leaks, and out-of-memory faults on embedded devices.
 
 ### 6.1. Standalone C99 Header Interface (`model.h`)
 

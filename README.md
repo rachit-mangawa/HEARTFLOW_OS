@@ -1,229 +1,236 @@
-<div align="center">
+# HeartFlow OS
+### Deterministic Edge AI Telemetry System and Embedded Transpilation Architecture
 
-```
-  ██╗  ██╗███████╗ █████╗ ██████╗ ████████╗███████╗██╗      ██████╗ ██╗    ██╗     ██████╗ ███████╗
-  ██║  ██║██╔════╝██╔══██╗██╔══██╗╚══██╔══╝██╔════╝██║     ██╔═══██╗██║    ██║    ██╔═══██╗██╔════╝
-  ███████║█████╗  ███████║██████╔╝   ██║   █████╗  ██║     ██║   ██║██║ █╗ ██║    ██║   ██║███████╗
-  ██╔══██║██╔══╝  ██╔══██║██╔══██╗   ██║   ██╔══╝  ██║     ██║   ██║██║███╗██║    ██║   ██║╚════██║
-  ██║  ██║███████╗██║  ██║██║  ██║   ██║   ██║     ███████╗╚██████╔╝╚███╔███╔╝    ╚██████╔╝███████║
-  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝      ╚═════╝ ╚══════╝
-```
-
-### **Clinical Cardiovascular Telemetry & Distributed Edge TinyML Transpilation Engine**
-
-<p>
-  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/" target="_blank">
-    <img src="https://img.shields.io/badge/Live_Application-rachit--mangawa.github.io%2FHEARTFLOW__OS-065f46?style=flat&logo=safari&logoColor=white" alt="Live Application" />
-  </a>
-  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/docs" target="_blank">
-    <img src="https://img.shields.io/badge/API_Documentation-Online_Reference-9F2F2D?style=flat&logo=fastapi&logoColor=white" alt="Live API Documentation" />
-  </a>
-</p>
-
-<p>
-  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator">
-    <img src="https://img.shields.io/badge/Edge_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat&logo=speedtest&logoColor=white" alt="Latency" />
-  </a>
-  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/edge">
-    <img src="https://img.shields.io/badge/Memory_ABI-Zero--Malloc_C99-6b21a8?style=flat&logo=c&logoColor=white" alt="Zero-Malloc" />
-  </a>
-  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/edge">
-    <img src="https://img.shields.io/badge/Quantization-INT8_(-76.4%25_SRAM)-c2410c?style=flat" alt="Quantization" />
-  </a>
-  <a href="https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops">
-    <img src="https://img.shields.io/badge/MLOps-Hot--Swap_Ensemble-047857?style=flat&logo=shield&logoColor=white" alt="MLOps" />
-  </a>
-  <a href="https://github.com/rachit-mangawa/HEARTFLOW_OS/actions">
-    <img src="https://img.shields.io/badge/CI_Tests-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white" alt="Tests" />
-  </a>
-  <img src="https://img.shields.io/badge/Next.js-16.3-000000?style=flat&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-19-0284c7?style=flat&logo=react&logoColor=white" alt="React" />
-  <img src="https://img.shields.io/badge/TailwindCSS-v4-0f766e?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS v4" />
-  <img src="https://img.shields.io/badge/License-MIT-374151?style=flat" alt="License" />
-</p>
-
-</div>
+[![Architecture](https://img.shields.io/badge/Architecture-Specification-141413?style=flat)](ARCHITECTURE.md)
+[![Standard](https://img.shields.io/badge/Design_Standard-IEC_62304_Class_B-9F2F2D?style=flat)](ARCHITECTURE.md)
+[![Memory ABI](https://img.shields.io/badge/Memory_ABI-Static_Allocation_Zero_Malloc-6b21a8?style=flat&logo=c&logoColor=white)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
+[![Edge Latency](https://img.shields.io/badge/Inference_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)
+[![INT8 Quantization](https://img.shields.io/badge/SRAM_Reduction---76.4%25-c2410c?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
+[![CI Tests](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
+[![License](https://img.shields.io/badge/License-MIT-374151?style=flat)](LICENSE)
 
 ---
 
-## Executive Architectural Summary
+## Overview
 
-HeartFlow OS is a distributed Edge AI clinical intelligence architecture engineered to decouple real-time physiological diagnostics from cloud computing dependency. The platform bridges clinical cloud machine learning pipelines with resource-constrained, bare-metal microcontrollers (**ESP32-S3, ARM Cortex-M4, RP2040, nRF52840**).
+HeartFlow OS monitors physiological vitals and flags cardiac anomalies on resource-constrained microcontrollers (ESP32-S3, ARM Cortex-M4, RP2040) and modern web browsers. It runs a calibrated 5-model soft-voting ensemble across Random Forest, Linear SVM, Logistic Regression, MLP, and k-NN.
 
-Continuous multi-channel physiological vitals are evaluated across a calibrated **5-model weighted soft-voting ensemble** (Random Forest, Linear SVM, Logistic Regression, MLP Neural Network, and KNN), providing **sub-20µs in-browser anomaly classification**, automated INT8 fixed-point quantization, 250 Hz Lead-II ECG waveform streaming, and zero-malloc C99 embedded transpilation.
+The system evaluates incoming data locally in under 20 µs without transmitting vitals over the network. It transpiles trained scikit-learn models into standalone C99 headers with zero dynamic memory allocation (`malloc`-free), quantizes weights to INT8 to reduce RAM requirements by 76.4%, and renders live 250 Hz Lead-II ECG signals in an in-browser 60 FPS canvas oscillograph.
 
 > [!NOTE]
-> **Complete Technical Documentation & Live Workspace**:
-> - 🌐 **Live Web Application**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/](https://rachit-mangawa.github.io/HEARTFLOW_OS/)
-> - 📚 **Live API Specifications & Documentation**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/docs](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)
-> - 📄 **[ARCHITECTURE.md](ARCHITECTURE.md)**: Unified canonical architecture specification (v3.4.0), mathematical calibration proofs, embedded C99 hardware ABI, MLOps continuum, and telemetry engine specifications.
+> **Key Links:**
+> - Live Application: [https://rachit-mangawa.github.io/HEARTFLOW_OS/](https://rachit-mangawa.github.io/HEARTFLOW_OS/)
+> - API Documentation: [https://rachit-mangawa.github.io/HEARTFLOW_OS/docs](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)
+> - Technical Specification: [ARCHITECTURE.md](ARCHITECTURE.md) (system topology, mathematical calibration proofs, C99 ABI, and MLOps pipeline)
 
 ---
 
-## Dual-Plane System Architecture
+## System Architecture
 
-```
-+───────────────────────────────────────────────────────────────────────────────────────────────+
-|                                  PHYSICAL HARDWARE LAYER                                      |
-|  [ AD8232 Lead-II ECG ]  ──(250 Hz Analog)──>  [ ESP32-S3 Microcontroller (12-bit SAR ADC) ]  |
-|  [ MAX30102 PPG SpO2  ]  ──(I2C 400 kHz  )──>  [ firmware/src/main.cpp - PlatformIO C99     ]  |
-+───────────────────────────────────────────────────────┬───────────────────────────────────────+
-                                                        │
-                                                        │ UART Serial Frame: $HR,SPO2,SYS,DIA,TEMP*CRC\n
-                                                        │ Baud Rate: 115,200 bps
-                                                        ▼
-+───────────────────────────────────────────────────────────────────────────────────────────────+
-|                                    CLINICAL BROWSER CLIENT                                    |
-|                                (Next.js 16 + React 19 + Tailwind v4)                          |
-|                                                                                               |
-|   ┌──────────────────────────┐     ┌────────────────────────────┐     ┌───────────────────┐   |
-|   │ Web Serial API Bridge    │ ──> │ Lead-II ECG Oscilloscope   │ ──> │ Telemetry Monitor │   |
-|   │ (W3C navigator.serial)   │     │ (60 FPS Canvas GPU Render) │     │ (/monitor)        │   |
-|   └─────────────┬────────────┘     └────────────────────────────┘     └───────────────────┘   |
-|                 │                                                                             |
-|                 ▼                                                                             |
-|   ┌───────────────────────────────────────────────────────────────────────────────────────┐   |
-|   │                   PRIMARY PLANE: ZERO-CLOUD CLIENT TINYML RUNTIME                     │   |
-|   │                         Latency: < 20 µs | Egress: 0.0 KB                             │   |
-|   │                                                                                       │   |
-|   │   Feature Preprocessor ──> Scaler Normalization + Risk_Severity Feature Synthesis     │   |
-|   │                                    │                                                  │   |
-|   │                 ┌──────────────────┴──────────────────┐                               │   |
-|   │                 ▼                                     ▼                               │   |
-|   │        [ INT8 Quantized Weights ]            [ 5-Model Soft-Voting ]                  │   |
-|   │        • RF (30 Trees, Depth 5)              • P(Healthy | X)                         │   |
-|   │        • Linear SVM Hyperplane               • P(Hypertension | X)                    │   |
-|   │        • Logistic Regression (L2)            • P(Heart Disease | X)                   │   |
-|   │        • Small-NN MLP (16x8 ReLU)            • P(Asthma | X)                          │   |
-|   │        • KNN (k=5 Distance Weighted)         • P(Diabetes | X)                        │   |
-|   └────────────────────────────────────────┬──────────────────────────────────────────────┘   |
-+────────────────────────────────────────────┼──────────────────────────────────────────────────+
-                                             │
-                                             │ Fallback Tunnel / Cloud REST / Telemetry Ingest
-                                             │ HTTP POST / WebSocket (/ws/feed)
-                                             ▼
-+───────────────────────────────────────────────────────────────────────────────────────────────+
-|                                  SECONDARY CLOUD BACKEND                                      |
-|                               (FastAPI + Uvicorn Async Core)                                  |
-|                                                                                               |
-|   ┌──────────────────────────┐     ┌────────────────────────────┐     ┌───────────────────┐   |
-|   │ REST & WS Gateways       │ ──> │ MLOps Retrain Pipeline     │ ──> │ Model Registry    │   |
-|   │ /predict, /ws/feed, etc. │     │ CSV Ingest & Validation    │     │ 5 .pkl Estimators │   |
-|   └─────────────┬────────────┘     └────────────────────────────┘     └───────────────────┘   |
-|                 │                                                                             |
-|                 ▼                                                                             |
-|   ┌───────────────────────────────────────────────────────────────────────────────────────┐   |
-|   │ AST C99 Code Exporter (/export_tinyml) ──> Zero-Malloc Header (model.h) for Embedded  │   |
-|   └───────────────────────────────────────────────────────────────────────────────────────┘   |
-+───────────────────────────────────────────────────────────────────────────────────────────────+
+```mermaid
+flowchart TB
+    subgraph HW["PHYSICAL HARDWARE SENSOR LAYER"]
+        direction LR
+        ECG["AD8232 Lead-II ECG<br/>(250 Hz Analog Vitals)"]
+        PPG["MAX30102 Optical PPG<br/>(I2C @ 400 kHz)"]
+        MCU["ESP32-S3 Microcontroller<br/>12-bit SAR ADC & PlatformIO C99"]
+        ECG -->|Analog Differential| MCU
+        PPG -->|I2C SDA / SCL| MCU
+    end
+
+    subgraph BUS["PHYSICAL TRANSPORT BUS"]
+        UART["W3C navigator.serial (115,200 Baud)<br/>ASCII Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
+    end
+
+    subgraph CLIENT["BROWSER CLIENT (PRIMARY OFFLINE RUNTIME)"]
+        direction TB
+        OSC["60 FPS Canvas Oscillograph<br/>(Real-Time Lead-II ECG Waveform)"]
+        PRE["Feature Preprocessor<br/>StandardScaler Transform & Risk_Severity Synthesis"]
+        
+        subgraph ENSEMBLE["5-Model Soft-Voting Ensemble (< 20 µs Latency · 0.0 KB Egress)"]
+            direction TB
+            RF["Random Forest (w=0.25)"]
+            MLP["Small-NN MLP (w=0.25)"]
+            LOG["Logistic Reg (w=0.20)"]
+            SVM["Linear SVM (w=0.15)"]
+            KNN["KNN k=5 (w=0.15)"]
+            VOTE["Calibrated Soft-Voting Arbitration<br/>P(Class_c | X) = Σ(w_i · P_i) / Σ(w_i)"]
+            
+            RF --> VOTE
+            MLP --> VOTE
+            LOG --> VOTE
+            SVM --> VOTE
+            KNN --> VOTE
+        end
+        
+        DIAG["Real-Time Diagnostic Decision Matrix<br/>Healthy · Hypertension · Heart Disease · Asthma · Diabetes"]
+        
+        PRE --> RF
+        PRE --> MLP
+        PRE --> LOG
+        PRE --> SVM
+        PRE --> KNN
+        VOTE --> DIAG
+    end
+
+    subgraph CLOUD["CLOUD BACKEND (FastAPI + Docker Container)"]
+        direction LR
+        REST["FastAPI Gateway (/predict, /ws/feed)"] --> MLOPS["MLOps Automated Retrain Engine<br/>Batch CSV Ingest & Schema Normalization"]
+        MLOPS --> REG["Model Registry (5 .pkl Estimators)"]
+        REG --> C99["AST C99 Code Exporter (/export_tinyml)<br/>Zero-Malloc model.h for Embedded Silicon"]
+    end
+
+    HW -->|UART Serial Stream| UART
+    UART --> OSC
+    UART --> PRE
+    DIAG -.->|Optional Telemetry Sync & WS Feed| REST
+
+    classDef primary fill:#FBFBFA,stroke:#141413,stroke-width:2px,color:#141413;
+    classDef accent fill:#9F2F2D,stroke:#9F2F2D,stroke-width:2px,color:#ffffff;
+    classDef edgeBox fill:#EFF6FF,stroke:#2563EB,stroke-width:2px,color:#1E3A8A;
+    classDef cloudBox fill:#F0FDF4,stroke:#16A34A,stroke-width:2px,color:#14532D;
+    
+    class HW primary;
+    class CLIENT edgeBox;
+    class CLOUD cloudBox;
+    class DIAG,C99,VOTE accent;
 ```
 
 ---
 
-## Performance & Latency Benchmark Matrix
+## Performance and Latency Benchmarks
 
-Measured across 10,000 synthetic patient telemetry vectors:
+Benchmarks measured across 10,000 synthetic clinical vital vectors:
 
-| Execution Target | Runtime Architecture | Latency ($p_{50}$) | Throughput | Visual Latency Comparison |
+| Execution Target | Runtime Architecture | Latency ($p_{50}$) | Throughput | Relative Speed |
 | :--- | :--- | :---: | :---: | :--- |
-| **ESP32-S3 (Bare-Metal)** | PlatformIO C99 Static Header | **18.4 µs** | **54,340 vec/sec** | `█` **(1,902x faster than cloud REST)** |
-| **Client In-Browser** | TinyML V8 / SpiderMonkey | **120.0 µs** | **8,330 vec/sec** | `██` **(291x faster than cloud REST)** |
-| **Cloud Container** | FastAPI + Uvicorn (Cloud Gateway) | **35.0 ms** | **28 req/sec** | `██████████████████████████` (Baseline) |
-| **Legacy Cloud** | Standard PyTorch Container | **160.0 ms** | **6 req/sec** | `████████████████████████████████████` |
+| **ESP32-S3** | PlatformIO C99 Static Header | **18.4 µs** | 54,340 vec/sec | 1,902x faster than cloud REST |
+| **Client Browser** | Web JavaScript Engine (V8) | **120.0 µs** | 8,330 vec/sec | 291x faster than cloud REST |
+| **Cloud Container** | FastAPI + Uvicorn | **35.0 ms** | 28 req/sec | Baseline |
+| **Standard Cloud** | PyTorch Container | **160.0 ms** | 6 req/sec | 4.5x slower than FastAPI |
 
-### Deterministic SLA Guarantees
-- **Local TinyML Execution**: Guaranteed `< 20 µs` processing budget per telemetry frame.
-- **Microcontroller Jitter ($p_{99}$)**: `± 1.2 µs` deterministic execution variance without heap allocation (`malloc`-free).
-- **Network Egress**: `0.0 KB/s` client data transmission in primary offline mode.
-
----
-
-## SRAM Footprint & INT8 Fixed-Point Quantization
-
-Continuous 32-bit floating point weights ($W \in \mathbb{R}$) are quantized to signed 8-bit integers ($Q \in [-128, 127]$) using affine scaling:
-
-$$Q = \text{clamp}\left( \text{round}\left( \frac{W}{\text{scale}} \right), -128, 127 \right) \quad \text{where} \quad \text{scale} = \frac{\max(|W|)}{127}$$
-
-| Estimator Architecture | FP32 Footprint | INT8 Quantized | SRAM Savings | Visual Compression | MCU Compatibility |
-| :--- | :---: | :---: | :---: | :--- | :--- |
-| **Random Forest (30 Trees, D=5)** | 16,384 bytes | 4,096 bytes | **-75.0%** | `██████████░░` 75.0% | ESP32-S3, RP2040, M4 |
-| **Small-NN (MLP 16x8 ReLU)** | 7,168 bytes | 1,792 bytes | **-75.0%** | `██████████░░` 75.0% | ESP32-S3, RP2040, M4 |
-| **Linear Support Vector Machine** | 3,584 bytes | 896 bytes | **-75.0%** | `██████████░░` 75.0% | ESP32-S3, RP2040, M4 |
-| **Logistic Regression (L2)** | 3,072 bytes | 768 bytes | **-75.0%** | `██████████░░` 75.0% | ESP32-S3, RP2040, M4 |
-| **k-Nearest Neighbors ($k=5$)** | 4,400 bytes | 600 bytes | **-86.4%** | `███████████░` 86.4% | ESP32-S3, RP2040, M4 |
-| **COMPOSITE ENSEMBLE TOTAL** | **34,608 bytes** | **8,152 bytes** | **-76.4%** | `██████████░░` **-76.4%** | **All MCUs (> 16KB SRAM)** |
+### Execution Characteristics
+- Local execution runs within a 20 µs window per telemetry frame.
+- Microcontroller jitter ($p_{99}$) stays within ±1.2 µs because the runtime avoids dynamic heap allocations.
+- Telemetry egress is 0.0 KB/s in primary offline mode.
 
 ---
 
-## Calibrated 5-Model Ensemble Arbitration
+## SRAM Footprint and INT8 Quantization
 
-Individual estimator posterior probabilities are aggregated using weighted soft-voting to cancel estimator-specific variance:
+Floating-point model weights ($W \in \mathbb{R}$) are mapped to signed 8-bit integers ($Q \in [-128, 127]$) using symmetric affine scaling:
+
+$$Q = \text{clamp}\left( \left\lfloor \frac{W}{\text{scale}} \right\rceil, -128, 127 \right) \quad \text{where} \quad \text{scale} = \frac{\max(|W|)}{127}$$
+
+| Estimator | FP32 Size | INT8 Size | SRAM Reduction | Target Hardware |
+| :--- | :---: | :---: | :---: | :--- |
+| **Random Forest (30 Trees, Depth 5)** | 16,384 B | 4,096 B | -75.0% | ESP32-S3, RP2040, Cortex-M4 |
+| **Small-NN (MLP 16x8 ReLU)** | 7,168 B | 1,792 B | -75.0% | ESP32-S3, RP2040, Cortex-M4 |
+| **Linear SVM** | 3,584 B | 896 B | -75.0% | ESP32-S3, RP2040, Cortex-M4 |
+| **Logistic Regression (L2)** | 3,072 B | 768 B | -75.0% | ESP32-S3, RP2040, Cortex-M4 |
+| **k-Nearest Neighbors ($k=5$)** | 4,400 B | 600 B | -86.4% | ESP32-S3, RP2040, Cortex-M4 |
+| **Full Ensemble Total** | **34,608 B** | **8,152 B** | **-76.4%** | Fits microcontrollers with > 16 KB SRAM |
+
+---
+
+## 5-Model Ensemble Arbitration
+
+Estimator posteriors are combined using weighted soft-voting:
 
 $$P(\text{Class}_c \mid X) = \frac{\sum_{i=1}^{5} w_i \cdot P_i(\text{Class}_c \mid X)}{\sum_{i=1}^{5} w_i}$$
 
-| Model ID | Estimator Architecture | Weight ($w_i$) | Accuracy | Macro $F_1$ | Primary Architectural Advantage |
+| Model ID | Estimator | Weight ($w_i$) | Standalone Accuracy | Macro $F_1$ | Role |
 | :---: | :--- | :---: | :---: | :---: | :--- |
-| `rf` | **Random Forest (30 trees, depth 5)** | **25%** | 95.4% | 0.938 | Captures non-linear physiological interactions |
-| `small_nn` | **MLP Neural Net (16-8 hidden layers)** | **25%** | 94.9% | 0.931 | Smooth continuous decision manifold |
-| `logreg` | **Logistic Regression (L2 Regularized)** | **20%** | 92.2% | 0.904 | Robust linear baseline calibration |
-| `svm` | **Linear SVM (Platt Calibrated)** | **15%** | 93.5% | 0.912 | Maximum-margin class separation hyperplane |
-| `knn` | **k-Nearest Neighbors ($k=5$, Weighted)** | **15%** | 91.8% | 0.897 | Localized density anomaly cluster identification |
-| **ENSEMBLE** | **Composite Soft-Voting Classifier** | **100%** | **96.2%** | **0.948** | **-42.6% variance reduction vs single tree** |
+| `rf` | Random Forest (30 trees, depth 5) | 25% | 95.4% | 0.938 | Non-linear threshold interaction |
+| `small_nn` | MLP Neural Net (16-8 hidden layers) | 25% | 94.9% | 0.931 | Continuous decision manifold |
+| `logreg` | Logistic Regression (L2 regularized) | 20% | 92.2% | 0.904 | Linear baseline calibration |
+| `svm` | Linear SVM (Platt calibrated) | 15% | 93.5% | 0.912 | Maximum-margin hyperplane |
+| `knn` | k-Nearest Neighbors ($k=5$, weighted) | 15% | 91.8% | 0.897 | Local density anomaly detection |
+| **Ensemble** | **Composite Soft-Voting Classifier** | **100%** | **96.2%** | **0.948** | **-42.6% variance reduction vs single tree** |
 
 ---
 
-## Hardware Sensor Bridge & UART Protocol
+## Hardware Sensor Bridge and Serial Protocol
 
-The ESP32 firmware continuously polls the AD8232 ECG analog pin and MAX30102 $I^2C$ registers, assembling packets in NMEA-style ASCII framing:
+The microcontroller firmware reads biopotentials from the AD8232 analog pin and optical measurements from the MAX30102 $I^2C$ registers, packaging them into comma-delimited ASCII frames with an XOR checksum:
 
 ```text
 FORMAT:  $HR,SPO2,SYS_BP,DIA_BP,TEMP*CHECKSUM\n
 EXAMPLE: $84,97.5,132,86,37.1*4F\n
 ```
 
-### Microcontroller Pinout (ESP32-S3)
+```mermaid
+flowchart LR
+    subgraph MCU["ESP32-S3 DevKit MCU"]
+        direction TB
+        M_3V3["3V3 (3.3V DC Rail)"]
+        M_GND["GND (Ground)"]
+        M_G4["GPIO 4 (ADC1_CH3)"]
+        M_G5["GPIO 5 (Digital In)"]
+        M_G6["GPIO 6 (Digital In)"]
+        M_G8["GPIO 8 (I2C SDA)"]
+        M_G9["GPIO 9 (I2C SCL)"]
+    end
 
-```
-  ESP32-S3 DevKit                      AD8232 ECG Sensor
-  ┌──────────────┐                     ┌──────────────┐
-  │         3V3  ├─────────────────────┤ 3.3V         │
-  │         GND  ├─────────────────────┤ GND          │
-  │       GPIO4  ├─────────────────────┤ OUTPUT (ADC) │
-  │       GPIO5  ├─────────────────────┤ LO+ (LeadOff)│
-  │       GPIO6  ├─────────────────────┤ LO- (LeadOff)│
-  └──────────────┘                     └──────────────┘
+    subgraph AD8232["AD8232 ECG Sensor"]
+        direction TB
+        A_3V3["3.3V"]
+        A_GND["GND"]
+        A_OUT["OUTPUT (Analog ADC)"]
+        A_LOP["LO+ (Lead Off +)"]
+        A_LOM["LO- (Lead Off -)"]
+    end
 
-  ESP32-S3 DevKit                      MAX30102 PPG Sensor
-  ┌──────────────┐                     ┌──────────────┐
-  │         3V3  ├─────────────────────┤ VIN          │
-  │         GND  ├─────────────────────┤ GND          │
-  │       GPIO8  ├─────────────────────┤ SDA (I2C)    │
-  │       GPIO9  ├─────────────────────┤ SCL (I2C)    │
-  └──────────────┘                     └──────────────┘
+    subgraph MAX30102["MAX30102 PPG Sensor"]
+        direction TB
+        P_VIN["VIN (3.3V)"]
+        P_GND["GND"]
+        P_SDA["SDA (I2C Data)"]
+        P_SCL["SCL (I2C Clock)"]
+    end
+
+    M_3V3 -.->|Power Rail| A_3V3
+    M_GND -.->|Ground Rail| A_GND
+    A_OUT -->|Lead-II Biopotential| M_G4
+    A_LOP -->|Lead-Off Detection| M_G5
+    A_LOM -->|Lead-Off Detection| M_G6
+
+    M_3V3 -.->|Power Rail| P_VIN
+    M_GND -.->|Ground Rail| P_GND
+    P_SDA <-->|I2C Data @ 400 kHz| M_G8
+    P_SCL -->|I2C Clock @ 400 kHz| M_G9
+
+    classDef ecgNode fill:#FEF2F2,stroke:#9F2F2D,stroke-width:1.5px,color:#991B1B;
+    classDef mcuNode fill:#EFF6FF,stroke:#2563EB,stroke-width:1.5px,color:#1E3A8A;
+    classDef ppgNode fill:#F0FDF4,stroke:#16A34A,stroke-width:1.5px,color:#14532D;
+
+    class A_3V3,A_GND,A_OUT,A_LOP,A_LOM ecgNode;
+    class M_3V3,M_GND,M_G4,M_G5,M_G6,M_G8,M_G9 mcuNode;
+    class P_VIN,P_GND,P_SDA,P_SCL ppgNode;
 ```
 
 ---
 
-## Workspace Navigation & Interactive Clinical Routes
+## Workspace Navigation
 
-| Route | View Name | Clinical & Engineering Purpose |
+| Route | View Name | Purpose |
 | :--- | :--- | :--- |
-| **[`/`](https://rachit-mangawa.github.io/HEARTFLOW_OS/)** | **Landing Hub** | Engineering telemetry badges, system specifications, and dual-plane architecture overview. |
-| **[`/monitor`](https://rachit-mangawa.github.io/HEARTFLOW_OS/monitor)** | **Clinical Telemetry** | 60 FPS Lead-II ECG canvas oscillograph, live vitals telemetry, auto-reconnecting WebSocket stream, and SHAP attribution. |
-| **[`/simulator`](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)** | **Physiological Simulator** | Interactive patient vitals simulator, arrhythmia state machine triggers, physics drift engine, and instant edge inference. |
-| **[`/dataset`](https://rachit-mangawa.github.io/HEARTFLOW_OS/dataset)** | **Dataset Explorer** | 60,000 observation ground-truth corpus: 9×9 Pearson correlation heatmap, 12-bin continuous histograms, balanced disease cohorts, and 25-row paginated inspector. |
-| **[`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)** | **TinyML Edge Compiler** | In-browser and cloud C99 generator for ESP32 and Cortex-M with INT8 quantization and zero-malloc memory guarantee. |
-| **[`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops)** | **MLOps Registry & Retraining** | Batch CSV ingestion, schema alias sanitization, F1-macro automated validation gates, real-time stage telemetry, and atomic hot-swapping. |
-| **[`/architecture`](https://rachit-mangawa.github.io/HEARTFLOW_OS/architecture)** | **Pipeline Topology** | Native architectural schematic detailing client, API, MLOps, and persistence subsystems. |
-| **[`/history`](https://rachit-mangawa.github.io/HEARTFLOW_OS/history)** | **Clinical Audit Logs** | Local session telemetry audit history with chronological diagnostic records and risk indicators. |
-| **[`/analytics`](https://rachit-mangawa.github.io/HEARTFLOW_OS/analytics)** | **Longitudinal Analytics** | Population distributions, correlation matrices, and model weight arbitration diagnostics. |
-| **[`/docs`](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)** | **System & API Specs** | Interactive endpoint reference, schema contracts, and cURL / Python / TypeScript snippets. |
+| **[`/`](https://rachit-mangawa.github.io/HEARTFLOW_OS/)** | Overview | System specifications, telemetry badges, and architecture overview. |
+| **[`/monitor`](https://rachit-mangawa.github.io/HEARTFLOW_OS/monitor)** | Telemetry Monitor | 60 FPS Lead-II ECG canvas oscillograph, live vitals, WebSocket stream, and SHAP attribution. |
+| **[`/simulator`](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)** | Simulator | Patient vitals generator, arrhythmia condition triggers, physics drift, and local inference. |
+| **[`/dataset`](https://rachit-mangawa.github.io/HEARTFLOW_OS/dataset)** | Dataset Explorer | 60,000 observation corpus: 9×9 Pearson correlation matrix, continuous histograms, and 25-row record inspector. |
+| **[`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)** | Edge Compiler | Standalone C99 header generator for ESP32 and Cortex-M with INT8 quantization and zero-malloc ABI. |
+| **[`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops)** | MLOps Console | CSV upload, schema alias resolution, holdout validation gates, and in-memory model hot-swapping. |
+| **[`/architecture`](https://rachit-mangawa.github.io/HEARTFLOW_OS/architecture)** | Architecture | Detailed system diagrams for client, API, MLOps, and persistence subsystems. |
+| **[`/history`](https://rachit-mangawa.github.io/HEARTFLOW_OS/history)** | Audit History | Session telemetry log with chronological records and risk indicators. |
+| **[`/analytics`](https://rachit-mangawa.github.io/HEARTFLOW_OS/analytics)** | Population Analytics | Feature distributions, correlation matrices, and model weight diagnostics. |
+| **[`/docs`](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)** | API Reference | Endpoint reference, schema contracts, and cURL, Python, and TypeScript examples. |
 
 ---
 
-## Continuous MLOps & Asynchronous Retraining Pipeline
+## Automated Retraining and MLOps Pipeline
 
-HeartFlow OS includes an autonomous background retraining and model hot-swapping pipeline managed through [`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops):
+HeartFlow OS includes a background retraining and model hot-swapping pipeline available through [`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops):
 
 ```mermaid
 flowchart TD
@@ -236,62 +243,46 @@ flowchart TD
     F -->|Degraded| H["Automated Rollback<br/>(Preserve active registry pointers, log incident)"]
 ```
 
-### Key Retraining Engineering Invariants
-1. **Asynchronous Non-Blocking Execution**:
-   - `POST /retrain` accepts uploaded CSV batches (up to 50 MB), dispatches background processing via FastAPI `BackgroundTasks`, and returns HTTP 200 immediately.
-   - Client polling via `GET /retrain/status` reads in-memory training progress (`0` to `100%`), current pipeline stage, active estimator being fitted, and per-model F1 validation scores.
-2. **Schema Alias Resolution**:
-   - Sanitizes 40+ column header variations (e.g. `Heart Rate (bpm)`, `HR`, `hr`, `systolic_bp`, `temp`).
-   - Automatically repairs corrupted byte sequences (e.g. `\ufffd` to `°C`).
-   - Validates the presence of all five physiological channels before proceeding.
-3. **5-Model Ensemble Re-fitting**:
-   - Sequentially trains and cross-validates Random Forest, Linear SVM (Platt calibrated), Logistic Regression (L2), MLP Neural Network (16-8 ReLU), and k-Nearest Neighbors ($k=5$).
-4. **Zero-Downtime Memory Hot-Swap**:
-   - Saves updated weights to `model_weights.pt` and `ensemble_weights.json`.
-   - Atomically updates active model registry pointers in Python memory without dropping in-flight WebSocket connections or REST queries.
-5. **Session-Scoped Client Telemetry UX**:
-   - The telemetry progress panel in [`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops) only mounts when an active training job is running (`status: "training"`).
-   - On new sessions or page refresh, completed telemetry is automatically cleared to keep the workspace clean.
-   - Includes tactile `Close [×]` and `Dismiss [×]` controls, with a direct shortcut button to test the new weights in [`/simulator`](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator).
+### Pipeline Steps
+1. **Asynchronous execution**: `POST /retrain` accepts CSV files up to 50 MB, starts background processing via FastAPI `BackgroundTasks`, and returns HTTP 200 immediately. Clients poll `GET /retrain/status` for progress (0-100%), active estimator, and validation F1 scores.
+2. **Schema normalization**: Resolves 40+ column header aliases (such as `Heart Rate`, `HR`, `systolic_bp`, `temp`), repairs encoding issues (`\ufffd` to `°C`), and verifies all five physiological channels exist.
+3. **Model refitting**: Trains Random Forest, Platt-calibrated Linear SVM, L2 Logistic Regression, MLP (16-8 ReLU), and k-NN ($k=5$) against an 80/20 stratified split.
+4. **Zero-downtime hot-swap**: Writes new weights to `model_weights.pt` and updates in-memory pointers atomically without dropping active WebSocket connections or REST requests.
 
 ---
 
-## API Specifications Contract
+## API Specifications
 
-Interactive endpoint reference, schema contracts, and protocol specifications are hosted live at [`https://rachit-mangawa.github.io/HEARTFLOW_OS/docs`](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs).
+Endpoint reference and schema contracts are hosted live at [`https://rachit-mangawa.github.io/HEARTFLOW_OS/docs`](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs).
 
 | Method | Endpoint | Latency SLA | Description |
 | :---: | :--- | :---: | :--- |
 | `POST` | `/predict` | `< 20 µs` (Edge) / `< 35 ms` (Cloud) | Evaluates 5 vitals against calibrated 5-model ensemble. |
-| `WS` | `/ws/feed` | `< 5 ms` / frame | 60 Hz bidirectional telemetry streaming with concurrent predictions. |
-| `GET` | `/export_tinyml` | `< 2 ms` | Transpiles trained models to standalone zero-malloc C99 header (`model.h`). |
-| `POST` | `/explain` | `< 15 ms` | TreeExplainer SHAP game-theoretic feature attribution. |
-| `POST` | `/retrain` | `< 3.5 s` | Batch CSV upload, alias resolution, refitting, and zero-downtime hot-swap. |
-| `GET` | `/retrain/status` | `< 5 ms` | Real-time stage progress, active estimator training status, and F1 scores. |
-| `GET` | `/metrics` | `< 10 ms` | Accuracy, F1 macro, per-model weights, and edge latency benchmarks. |
-| `GET` | `/history` | `< 5 ms` | Returns isolated chronological session telemetry audit records. |
+| `WS` | `/ws/feed` | `< 5 ms` / frame | Bidirectional telemetry streaming with concurrent predictions. |
+| `GET` | `/export_tinyml` | `< 2 ms` | Transpiles models to standalone zero-malloc C99 header (`model.h`). |
+| `POST` | `/explain` | `< 15 ms` | TreeExplainer SHAP feature attribution. |
+| `POST` | `/retrain` | `< 3.5 s` | Batch CSV upload, alias resolution, refitting, and hot-swapping. |
+| `GET` | `/retrain/status` | `< 5 ms` | Real-time stage progress, active estimator, and F1 scores. |
+| `GET` | `/metrics` | `< 10 ms` | Accuracy, F1 macro, model weights, and edge latency numbers. |
+| `GET` | `/history` | `< 5 ms` | Chronological session telemetry audit records. |
 | `GET` | `/dataset/summary` | `< 5 ms` | Precomputed statistical profiling across 60,000 observations (99.8% bandwidth reduction). |
-| `GET` | `/dataset` | `< 5 ms` | Dual-mode: legacy list when unparameterized; windowed 25-row records when parameterized. |
-| `GET` | `/dataset/download` | `< 100 ms` | Direct streaming download of the verified 4.49 MB ground-truth CSV corpus. |
-| `GET` | `/health` | `< 1 ms` | Verifies FastAPI readiness and model memory residency. |
+| `GET` | `/dataset` | `< 5 ms` | Dual-mode: full list when unparameterized; 25-row paginated window when parameterized. |
+| `GET` | `/dataset/download` | `< 100 ms` | Streaming download of the 4.49 MB CSV corpus. |
+| `GET` | `/health` | `< 1 ms` | Health check for FastAPI service and in-memory models. |
 
 ---
 
-## Quickstart Guide
+## Quickstart
 
-### Option 1: Live Web Application & Documentation (Zero Local Setup)
+### 1. Live Deployment (Zero Local Setup)
+- Web Application: [https://rachit-mangawa.github.io/HEARTFLOW_OS/](https://rachit-mangawa.github.io/HEARTFLOW_OS/)
+- API Reference: [https://rachit-mangawa.github.io/HEARTFLOW_OS/docs](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)
+- Vitals Simulator: [https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)
+- C99 Code Exporter: [https://rachit-mangawa.github.io/HEARTFLOW_OS/edge](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
 
-HeartFlow OS is live and directly accessible via GitHub Pages:
-- 🌐 **Live Web Application**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/](https://rachit-mangawa.github.io/HEARTFLOW_OS/)
-- 📚 **Live API Specifications & Documentation**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/docs](https://rachit-mangawa.github.io/HEARTFLOW_OS/docs)
-- ⚡ **Interactive Physics Simulator**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)
-- 🔌 **Standalone C99 Firmware Transpiler**: [https://rachit-mangawa.github.io/HEARTFLOW_OS/edge](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
+### 2. Local Development
 
----
-
-### Option 2: Local Development Setup
-
-#### 1. Backend (Python 3.10+)
+#### Backend (Python 3.10+)
 ```bash
 cd backend
 python -m venv .venv
@@ -302,24 +293,21 @@ pip install -r requirements.txt
 python models.py                # Train initial baseline ensemble
 uvicorn main:app --reload --port 8000
 ```
-- **Local FastAPI Gateway**: [http://localhost:8000](http://localhost:8000)
-- **Local Swagger OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Local API Gateway: [http://localhost:8000](http://localhost:8000)
+- OpenAPI Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-#### 2. Frontend (Node.js 20+)
+#### Frontend (Node.js 20+)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser during local development.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
----
-
-### Option 3: Hardware Firmware Deployment (ESP32)
-
-1. Open [`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge) in the application or call `/export_tinyml?model_name=rf&quantize=true`.
-2. Save the emitted C header to `firmware/src/model.h`.
-3. Compile and upload via PlatformIO:
+### 3. ESP32 Firmware Upload
+1. Export the C header from [`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge) or query `GET /export_tinyml?model_name=rf&quantize=true`.
+2. Save the code to `firmware/include/model.h`.
+3. Build and flash with PlatformIO:
 
 ```bash
 cd firmware
@@ -329,40 +317,30 @@ pio device monitor -b 115200
 
 ---
 
-## Test Verification Suite
+## Test Verification
 
-The repository is validated against a 58-test automated verification suite (`58/58 passing in ~5.5s`) enforcing strict clinical, mathematical, and safety invariants across all layers.
+The test suite validates backend components, C99 export, dataset profiling, and simulation physics across 58 automated tests:
 
-### Backend Unit & Integration Tests (58/58 passing)
-
-| Test Module | Subsystem Tested | Tests | Key Edge Cases & Invariants Tested |
+| Module | Subsystem | Tests | Invariants Verified |
 | :--- | :--- | :---: | :--- |
-| **[`test_api.py`](tests/test_api.py)** | REST Gateways & Routes | **21** | • `GET /health` service readiness<br/>• Normal and acute vital sign evaluations (`POST /predict`)<br/>• Game-theoretic SHAP TreeExplainer attributions (`POST /explain`)<br/>• Parameterized C99 exporter queries across all models (`GET /export_tinyml`)<br/>• Dual-mode dataset list & 25-row windowed inspector (`GET /dataset`)<br/>• Statistical moments and CSV download streaming |
-| **[`test_export.py`](tests/test_export.py)** | C99 Transpiler & Zero-Malloc ABI | **7** | • Transpilation for all 5 models (`rf`, `svm`, `logreg`, `small_nn`, `knn`)<br/>• FP32 double and INT8 fixed-point quantization<br/>• Zero-Malloc guarantee: static verification that no dynamic allocation calls exist (`malloc`, `calloc`, `realloc`, `free`)<br/>• Balanced braces (`{` == `}`) and include guard integrity<br/>• INT8 saturation clipping $[-128, 127]$ and error handling for null/invalid models |
-| **[`test_dataset_analytics.py`](tests/test_dataset_analytics.py)** | Dataset Profiler & Explorer | **8** | • 9×9 Pearson correlation matrix calculation & 12-bin continuous histograms<br/>• In-memory caching by file modification time (`mtime`)<br/>• Boundary clamping (`page <= 0` clamped to 1, `limit > 100` clamped to 100)<br/>• Out-of-bounds page handling (`rows: []`) and case-insensitive cohort filtering |
-| **[`test_mlops.py`](tests/test_mlops.py)** | Schema Ingestion & Validation | **6** | • Case-insensitive alias mapping across 40+ header variations (`HR`, `hr`, `sys_bp`, `temp`)<br/>• Corrupt character encoding auto-repair (`\ufffd` $\to$ `°C`)<br/>• Missing mandatory signal detection (`ValueError`) and all-NaN row dropping<br/>• Auto-population of optional canonical metadata |
-| **[`test_simulator.py`](tests/test_simulator.py)** | Telemetry Physics Simulator | **5** | • Physiological clamping boundaries under extreme vitals (HR $\in [50, 180]$, $SpO_2 \in [80, 100]$, Temp $\in [36.0, 39.0]$)<br/>• State machine transitions across all 5 conditions (`asthma`, `hypertension`, `heart_disease`, `diabetes`, `normal`)<br/>• Physics drift convergence and 1-decimal place precision rounding |
-| **[`test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering & Scaler | **4** | • StandardScaler affine transform and artifact serialization<br/>• Target leakage prevention and Risk Severity synthesis heuristic |
-| **[`test_database.py`](tests/test_database.py)** | SQLite Audit Logger | **3** | • Asynchronous schema creation and chronological prediction history logging |
-| **[`test_backend.py`](tests/test_backend.py)** | Root & Schema Validation | **2** | • Docs redirect and HTTP 422 Unprocessable Entity type validation |
-| **[`test_ensemble.py`](tests/test_ensemble.py)** | 5-Model Soft-Voting Ensemble | **2** | • Model loading and probability arbitration variance reduction |
-| **TOTAL** | **Full Verification Suite** | **58** | **58/58 Passing (100% Green in ~5.5s)** |
+| **[`test_api.py`](tests/test_api.py)** | REST Endpoints & Gateways | **21** | Endpoint readiness, acute vitals handling, SHAP calculations, C99 export parameterized queries, and paginated dataset filtering. |
+| **[`test_export.py`](tests/test_export.py)** | C99 Transpiler & Zero-Malloc ABI | **7** | Transpilation for all 5 models, INT8 quantization, zero-malloc verification (no `malloc`, `free`, `realloc`), balanced syntax braces, and header guards. |
+| **[`test_dataset_analytics.py`](tests/test_dataset_analytics.py)** | Dataset Profiler | **8** | 9×9 Pearson matrix, continuous histograms, memory caching by `mtime`, boundary clamping (`limit <= 100`), and empty row handling on invalid pages. |
+| **[`test_mlops.py`](tests/test_mlops.py)** | Ingestion & Retraining | **6** | 40+ column alias mappings, encoding repair (`\ufffd` to `°C`), missing signal validation, and all-NaN row dropping. |
+| **[`test_simulator.py`](tests/test_simulator.py)** | Telemetry Simulator | **5** | Clamping extreme vitals to physiological survival limits (HR 50-180, SpO2 80-100), state machine transitions, and physics drift convergence. |
+| **[`test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering | **4** | StandardScaler affine transformations, leakage prevention, and synthetic Risk Severity scoring. |
+| **[`test_database.py`](tests/test_database.py)** | SQLite Persistence | **3** | Schema initialization, chronological record appending, and empty database handling. |
+| **[`test_backend.py`](tests/test_backend.py)** | Routing & Schemas | **2** | Documentation redirect and Pydantic validation error handling. |
+| **[`test_ensemble.py`](tests/test_ensemble.py)** | Soft-Voting Ensemble | **2** | Weight normalization, probability arbitration, and confidence calculation. |
+| **TOTAL** | **Full Suite** | **58** | **58/58 passing** |
 
 ```bash
-# Execute full backend test verification suite
-pytest tests -v
+# Run pytest test suite
+$env:PYTHONPATH="backend"; python -m pytest tests/ -v
 ```
-
-### Frontend Typechecking & Static Build
-```bash
-cd frontend
-npx tsc --noEmit
-npm run build
-```
-
 
 ---
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for full details.
+Distributed under the MIT License. See [LICENSE](LICENSE) for details.

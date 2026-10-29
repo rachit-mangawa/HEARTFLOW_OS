@@ -25,8 +25,8 @@ import MermaidChart from "@/components/MermaidChart";
 const MERMAID_PIPELINE_GRAPH_LR = `flowchart LR
     subgraph S1["1. RAW INGESTION"]
         direction TB
-        AFE["⚡ AD8232 ECG + MAX30102 PPG"]
-        CSV["📄 patient_data.csv (60,000 Records)"]
+        AFE["AD8232 ECG + MAX30102 PPG"]
+        CSV["patient_data.csv (60,000 Records)"]
         MCU["ESP32-S3 Firmware (C99)<br/>12-bit SAR ADC Sampling"]
         SERIAL["W3C navigator.serial (115.2k)<br/>Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
         INGEST["backend/main.py & mlops/page.tsx<br/>Schema Ingestion Engine"]
@@ -63,7 +63,7 @@ const MERMAID_PIPELINE_GRAPH_LR = `flowchart LR
         direction TB
         EXPORT["backend/export.py<br/>Scikit-Learn AST Transpiler"]
         QUANT["INT8 Symmetric Quantization<br/>-76.4% SRAM (34.8 KB → 8.2 KB)"]
-        HEADER["📁 firmware/include/model.h<br/>Zero-Malloc predict() C99 ABI"]
+        HEADER["firmware/include/model.h<br/>Zero-Malloc predict() C99 ABI"]
         
         EXPORT --> QUANT --> HEADER
     end
@@ -89,8 +89,8 @@ const MERMAID_PIPELINE_GRAPH_LR = `flowchart LR
 
 const MERMAID_PIPELINE_GRAPH_TD = `flowchart TD
     subgraph S1["1. RAW TELEMETRY & FILE INGESTION"]
-        CSV["📄 patient_data.csv / batch_upload.csv<br/>(Continuous Vitals Observations)"]
-        AFE["⚡ Physical Biosensors<br/>AD8232 Lead-II ECG (250 Hz) + MAX30102 PPG"]
+        CSV["patient_data.csv / batch_upload.csv<br/>(Continuous Vitals Observations)"]
+        AFE["Physical Biosensors<br/>AD8232 Lead-II ECG (250 Hz) + MAX30102 PPG"]
         MCU["ESP32-S3 Firmware (C99)<br/>12-bit SAR ADC Sampling & Packet Framing"]
         SERIAL["W3C navigator.serial Bus<br/>115,200 Baud ASCII Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
         
@@ -125,7 +125,7 @@ const MERMAID_PIPELINE_GRAPH_TD = `flowchart TD
     subgraph S4["4. C99 TRANSPILER & INT8 QUANTIZER"]
         SOFTVOTE --> EXPORT["backend/export.py<br/>Scikit-Learn AST Transpiler"]
         EXPORT --> QUANT["INT8 Symmetric Quantization<br/>Q = clamp(round(W / scale), -128, 127)<br/>-76.4% SRAM Reduction (34.8 KB → 8.2 KB)"]
-        QUANT --> HEADER["📁 firmware/include/model.h<br/>Zero-Malloc C99 ABI: int predict(const float *features)"]
+        QUANT --> HEADER["firmware/include/model.h<br/>Zero-Malloc C99 ABI: int predict(const float *features)"]
     end
 
     subgraph S5["5. DUAL-PLANE RUNTIME & VISUALIZATION"]
@@ -258,7 +258,7 @@ export default function Architecture() {
           <div className="flex flex-col items-start md:items-end gap-2 text-left md:text-right">
             <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white flex items-center gap-2">
               <ShieldCheck size={14} className="text-hazard" />
-              <span>REF: HFL-OS-ARCH-SPEC-01 · REV: 3.3.0</span>
+              <span>SPECIFICATION · REV: 3.4.0</span>
             </div>
             <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
               Zero-Cloud In-Browser TinyML · Bare-Metal C99 · Dual-Plane Ingestion
