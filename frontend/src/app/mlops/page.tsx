@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { IS_DEV } from "@/config";
 import {
@@ -508,12 +509,12 @@ export default function MLOps() {
               <span className="font-bold uppercase text-ink">Automatic Leakage Protection: </span>
               Metadata and alert columns (<code className="bg-white border border-ink/30 px-1 font-bold">Heart Rate Alert</code>, <code className="bg-white border border-ink/30 px-1 font-bold">Patient Number</code>, <code className="bg-white border border-ink/30 px-1 font-bold">Fall Detection</code>) are cleaned during ingestion and will not fail training if omitted.
             </div>
-            <a
+            <Link
               href="/docs"
               className="text-[11px] font-bold uppercase text-hazard hover:underline whitespace-nowrap flex items-center gap-1"
             >
               Full API Specs <ArrowRight size={12} />
-            </a>
+            </Link>
           </div>
         </section>
 
@@ -881,12 +882,12 @@ export default function MLOps() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                    <a
+                    <Link
                       href="/simulator"
                       className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-[#065f46] px-4 py-2.5 bg-white text-[#065f46] hover:bg-[#065f46] hover:text-white transition-colors flex items-center justify-center gap-1.5 w-full sm:w-auto"
                     >
                       Test in Simulator <ArrowRight size={13} />
-                    </a>
+                    </Link>
                     <button
                       onClick={() => setRetrainProgress(null)}
                       className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-[#065f46] px-3.5 py-2.5 bg-white text-[#065f46] hover:bg-[#065f46] hover:text-white transition-colors cursor-pointer w-full sm:w-auto"

@@ -458,7 +458,7 @@ int predict(const float *features);
 
 ## 7. MLOps Automated Retraining & Rollback Continuum
 
-HeartFlow OS includes an autonomous background retraining and model hot-swapping pipeline managed through the [`/mlops`](http://localhost:3000/mlops) interface:
+HeartFlow OS includes an autonomous background retraining and model hot-swapping pipeline managed through the [`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops) interface:
 
 ```mermaid
 flowchart TD
@@ -520,10 +520,10 @@ Active models are held in memory under an atomic lock (`self._lock`). When retra
 Ongoing inference requests (`POST /predict`), WebSocket streams (`/ws/feed`), and C99 export requests (`/export_tinyml`) continue serving without interruption.
 
 ### 7.5. Session-Scoped Client Telemetry UX
-In the web application ([`/mlops`](http://localhost:3000/mlops)):
+In the web application ([`/mlops`](https://rachit-mangawa.github.io/HEARTFLOW_OS/mlops)):
 - The real-time ingestion telemetry panel is displayed only when training is actively underway in the current session (`data.status === "training"`).
 - On new sessions or page refresh, the interface defaults to an idle upload dropzone, avoiding stale telemetry clutter.
-- When training completes, the panel provides explicit `Close [×]` and `Dismiss [×]` controls, alongside a direct `Test in Simulator →` shortcut to verify the new weights in [`/simulator`](http://localhost:3000/simulator).
+- When training completes, the panel provides explicit `Close [×]` and `Dismiss [×]` controls, alongside a direct `Test in Simulator →` shortcut to verify the new weights in [`/simulator`](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator).
 
 ---
 
