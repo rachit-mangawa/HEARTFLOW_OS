@@ -25,7 +25,6 @@ const isGhPages = process.env.GITHUB_PAGES === "true" || process.env.NEXT_PUBLIC
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (isGhPages ? "/HEARTFLOW_OS" : "");
 const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN || "https://rachit-mangawa.github.io";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (basePath ? `${siteOrigin}${basePath}` : `${siteOrigin}/HEARTFLOW_OS`);
-const iconUrl = basePath ? `${basePath}/icon.svg` : "/icon.svg";
 const ogImageUrl = `${siteUrl}/og-image.png`;
 
 export const metadata: Metadata = {
@@ -46,8 +45,8 @@ export const metadata: Metadata = {
     "C99 Firmware",
     "Clinical Monitoring",
   ],
-  authors: [{ name: "HEARTFLOW Systems" }],
-  creator: "HEARTFLOW Systems",
+  authors: [{ name: "Rachit Mangawa", url: "https://github.com/rachit-mangawa" }],
+  creator: "Rachit Mangawa",
   publisher: "HEARTFLOW Systems",
   formatDetection: {
     email: false,
@@ -70,17 +69,26 @@ export const metadata: Metadata = {
         url: ogImageUrl,
         width: 1200,
         height: 630,
-        alt: "HEARTFLOW_OS: Bare-metal microcontroller firmware for cardiac telemetry",
+        alt: "HEARTFLOW_OS: Continuous Vital Telemetry & Edge AI Microcontroller Transpiler",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
+    site: "@rachitmangawa",
+    creator: "@rachitmangawa",
     title: "HEARTFLOW_OS | Clinical Inference at the Edge",
     description:
       "Continuous vital signs monitoring and cardiac anomaly detection compiled to deterministic C99 headers for microcontrollers.",
-    images: [ogImageUrl],
+    images: [
+      {
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: "HEARTFLOW_OS: Continuous Vital Telemetry & Edge AI Microcontroller Transpiler",
+      },
+    ],
   },
   robots: {
     index: true,
@@ -95,12 +103,58 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: iconUrl, type: "image/svg+xml" },
+      { url: `${basePath}/favicon.ico`, sizes: "any" },
+      { url: `${basePath}/favicon-32x32.png`, type: "image/png", sizes: "32x32" },
+      { url: `${basePath}/favicon-16x16.png`, type: "image/png", sizes: "16x16" },
+      { url: `${basePath}/icon.svg`, type: "image/svg+xml" },
     ],
     apple: [
-      { url: iconUrl, type: "image/svg+xml" },
+      { url: `${basePath}/apple-touch-icon.png`, sizes: "180x180", type: "image/png" },
     ],
+    shortcut: `${basePath}/favicon.ico`,
   },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: "HEARTFLOW_OS",
+      description:
+        "Continuous vital signs monitoring and cardiac anomaly detection compiled to deterministic C99 headers for microcontrollers.",
+      inLanguage: "en-US",
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${siteUrl}/#software`,
+      name: "HEARTFLOW_OS",
+      url: siteUrl,
+      applicationCategory: "HealthApplication",
+      operatingSystem: "Bare-Metal Microcontrollers (ESP32, ARM Cortex-M), WebAssembly, Modern Browsers",
+      description:
+        "Continuous vital signs monitoring and cardiac anomaly detection compiled to deterministic C99 headers for microcontrollers.",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      author: {
+        "@type": "Person",
+        name: "Rachit Mangawa",
+        url: "https://github.com/rachit-mangawa",
+      },
+      featureList: [
+        "Zero-Cloud In-Browser TinyML Evaluation",
+        "Real-Time Serial Telemetry Stream Processing (115200 Baud)",
+        "Deterministic C99 Microcontroller Code Transpilation",
+        "Multi-Class Cardiac Anomaly Risk Detection",
+        "Local Session Audit Logging",
+      ],
+    },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -109,6 +163,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-mono selection:bg-hazard selection:text-white bg-canvas-cream">
         {/* Skip to Main Content Link for A11y */}
         <a

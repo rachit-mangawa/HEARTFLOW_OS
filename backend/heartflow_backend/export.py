@@ -186,8 +186,8 @@ def generate_c_code(eng, model_name: str, quantize: bool):
                 L.append(f"    {{{vals}}},")
             L.append("};")
             L.append("")
-            vals = ", ".join([str(int(round(v * scale_factor))) for v in intercepts])
-            L.append(f"static const int8_t SVM_INTERCEPT[N_HYPERPLANES] = {{{vals}}};")
+            vals = ", ".join([str(int(round(v * scale_factor * 16.0))) for v in intercepts])
+            L.append(f"static const int32_t SVM_INTERCEPT[N_HYPERPLANES] = {{{vals}}};")
             L.append("")
 
             L.append("int predict(const float *features) {")
@@ -264,8 +264,8 @@ def generate_c_code(eng, model_name: str, quantize: bool):
                 L.append(f"    {{{vals}}},")
             L.append("};")
             L.append("")
-            vals = ", ".join([str(int(round(v * scale_factor))) for v in intercepts])
-            L.append(f"static const int8_t LOGREG_INTERCEPT[N_COEF_CLASSES] = {{{vals}}};")
+            vals = ", ".join([str(int(round(v * scale_factor * 16.0))) for v in intercepts])
+            L.append(f"static const int32_t LOGREG_INTERCEPT[N_COEF_CLASSES] = {{{vals}}};")
             L.append("")
 
             L.append("int predict(const float *features) {")
@@ -273,7 +273,7 @@ def generate_c_code(eng, model_name: str, quantize: bool):
             L.append("    preprocess_vitals_int8(features, q_features);")
             L.append("    int32_t scores[N_COEF_CLASSES];")
             L.append("    for (int c = 0; c < N_COEF_CLASSES; c++) {")
-            L.append(f"        scores[c] = (int32_t)LOGREG_INTERCEPT[c] * {int(scale_factor)};")
+            L.append("        scores[c] = LOGREG_INTERCEPT[c];")
             L.append("        for (int f = 0; f < N_FEATURES; f++) {")
             L.append("            scores[c] += (int32_t)LOGREG_COEF[c][f] * q_features[f];")
             L.append("        }")
@@ -332,8 +332,8 @@ def generate_c_code(eng, model_name: str, quantize: bool):
                     vals = ", ".join([str(int(round(v * scale_factor))) for v in row])
                     L.append(f"    {{{vals}}},")
                 L.append("};")
-                bvals = ", ".join([str(int(round(v * scale_factor))) for v in b])
-                L.append(f"static const int8_t B{idx}[{n_out}] = {{{bvals}}};")
+                bvals = ", ".join([str(int(round(v * scale_factor * 16.0))) for v in b])
+                L.append(f"static const int32_t B{idx}[{n_out}] = {{{bvals}}};")
                 L.append("")
 
             L.append("static inline int32_t relu_int(int32_t x) { return x > 0 ? x : 0; }")
@@ -348,12 +348,12 @@ def generate_c_code(eng, model_name: str, quantize: bool):
                 src = "input" if idx == 0 else f"a{idx-1}"
                 L.append(f"    int32_t a{idx}[{n_out}];")
                 L.append(f"    for (int j = 0; j < {n_out}; j++) {{")
-                L.append(f"        a{idx}[j] = (int32_t)B{idx}[j] * {int(scale_factor)};")
+                L.append(f"        a{idx}[j] = B{idx}[j];")
                 L.append(f"        for (int i = 0; i < {n_in}; i++) {{")
                 L.append(f"            a{idx}[j] += (int32_t){src}[i] * W{idx}[i][j];")
                 L.append("        }")
                 if not is_last:
-                    L.append(f"        a{idx}[j] = relu_int(a{idx}[j]) / {int(scale_factor)};")
+                    L.append(f"        a{idx}[j] = (int8_t)(relu_int(a{idx}[j]) / {max(1, int(scale_factor))});")
                 L.append("    }")
             last_idx = len(layers) - 1
             last_out = layers[-1].shape[1]

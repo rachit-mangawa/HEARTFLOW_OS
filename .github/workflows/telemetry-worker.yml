@@ -1,0 +1,30 @@
+name: Telemetry Ingestion Worker
+
+on:
+  schedule:
+    # Run every 5 hours (00:00, 05:00, 10:00, 15:00, 20:00 UTC)
+    - cron: '0 */5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: "telemetry-worker"
+  cancel-in-progress: false
+
+jobs:
+  inject-telemetry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Transmit Randomized Clinical Telemetry Query
+        env:
+          HEARTFLOW_API_URL: "https://idkhowtocodefr-hf-backend.hf.space/heartflow/predict"
+        run: |
+          python backend/worker.py --once
+
