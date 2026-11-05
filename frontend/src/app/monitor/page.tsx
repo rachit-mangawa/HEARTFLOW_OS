@@ -15,6 +15,8 @@ import {
   Thermometer,
   Wind,
   FileText,
+  Pause,
+  Play,
 } from "lucide-react";
 import { evaluateEdge } from "@/lib/edge/inference";
 
@@ -30,6 +32,8 @@ export default function SystemMonitor() {
     engageSiliconLoopback,
     disconnectSerial,
     snapshotCurrentVitals,
+    isStreamPaused,
+    toggleStreamPause,
   } = useTelemetry();
 
   const [snapped, setSnapped] = useState(false);
@@ -51,6 +55,7 @@ export default function SystemMonitor() {
   };
 
   const getStatusLabel = () => {
+    if (isStreamPaused) return "STREAM_PAUSED (AWAITING_COMMAND)";
     if (runtimeMode === "SERIAL_ESP32_HARDWARE") return "ESP32_HARDWARE · UART_115200";
     if (runtimeMode === "SILICON_LOOPBACK") return "SILICON_LOOPBACK · VIRTUAL_COM";
     if (status === "connecting") return "CONNECTING...";
@@ -129,6 +134,23 @@ export default function SystemMonitor() {
                 >
                   <StopCircle size={12} />
                   Disconnect Serial
+                </button>
+              )}
+
+              {/* Simulator Stream Control */}
+              {serialStatus === "idle" && (
+                <button
+                  type="button"
+                  onClick={toggleStreamPause}
+                  className={`btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    isStreamPaused
+                      ? "bg-hazard text-white hover:bg-ink shadow-[2px_2px_0px_#141413]"
+                      : "bg-white text-ink hover:bg-canvas-cream"
+                  }`}
+                  title={isStreamPaused ? "Resume telemetry simulator stream" : "Pause telemetry simulator stream"}
+                >
+                  {isStreamPaused ? <Play size={11} className="fill-white" /> : <Pause size={11} />}
+                  <span>{isStreamPaused ? "Resume Stream" : "Pause Stream"}</span>
                 </button>
               )}
 

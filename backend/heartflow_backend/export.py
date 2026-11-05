@@ -353,7 +353,8 @@ def generate_c_code(eng, model_name: str, quantize: bool):
                 L.append(f"            a{idx}[j] += (int32_t){src}[i] * W{idx}[i][j];")
                 L.append("        }")
                 if not is_last:
-                    L.append(f"        a{idx}[j] = (int8_t)(relu_int(a{idx}[j]) / {max(1, int(scale_factor))});")
+                    L.append(f"        int32_t act_{idx} = relu_int(a{idx}[j]) / {max(1, int(scale_factor))};")
+                    L.append(f"        a{idx}[j] = (act_{idx} > 127) ? 127 : act_{idx};")
                 L.append("    }")
             last_idx = len(layers) - 1
             last_out = layers[-1].shape[1]

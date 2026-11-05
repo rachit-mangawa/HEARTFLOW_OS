@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sliders, Activity, Cpu, Shuffle, RefreshCw } from "lucide-react";
 import ShapChart from "@/components/ShapChart";
 import { PatientVitals } from "@/lib/edge/types";
@@ -16,6 +16,7 @@ interface PredictionResult {
   model_probs?: Record<string, number>;
   weights?: Record<string, number>;
   disease_probs?: Record<string, number>;
+  error?: string;
 }
 
 // Clinically bounded randomized vitals generator
@@ -36,6 +37,14 @@ function generateRandomVitals(): PatientVitals {
     Body_Temp: temp,
   };
 }
+
+const DEFAULT_VITALS: PatientVitals = {
+  Heart_Rate: 75,
+  SpO2_Level: 98,
+  Systolic_BP: 120,
+  Diastolic_BP: 80,
+  Body_Temp: 37.0,
+};
 
 const PRESET_VECTORS = [
   {
@@ -65,19 +74,9 @@ const PRESET_VECTORS = [
 ];
 
 export default function Simulator() {
-  const [formData, setFormData] = useState<PatientVitals>(generateRandomVitals);
-  const [submittedData, setSubmittedData] = useState<PatientVitals | null>(() => formData);
-  const [prediction, setPrediction] = useState<PredictionResult | null>(() => {
-    const edge = evaluateEdge(formData);
-    return {
-      prediction: Boolean(edge.is_at_risk),
-      prediction_label: edge.label,
-      probability: edge.confidence,
-      model_outputs: edge.model_outputs,
-      model_probs: edge.model_probs,
-      weights: edge.weights,
-    };
-  });
+  const [formData, setFormData] = useState<PatientVitals>(DEFAULT_VITALS);
+  const [submittedData, setSubmittedData] = useState<PatientVitals | null>(null);
+  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSlow, setIsSlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +98,7 @@ export default function Simulator() {
   };
 
   // Inference execution runs strictly when the user clicks the action button
-  const handlePredict = async () => {
+  const handlePredict = useCallback(async () => {
     setLoading(true);
     setError(null);
     const targetData = { ...formData };
@@ -112,12 +111,11 @@ export default function Simulator() {
         onSlow: (slow) => setIsSlow(slow),
       });
 
-      if (data) {
+      if (data && !data.error) {
         setPrediction(data);
         setSubmittedData(targetData);
         setError(null);
 
-        // Append execution record to session audit log
         appendSessionHistory({
           timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
           heart_rate: targetData.Heart_Rate,
@@ -125,7 +123,7 @@ export default function Simulator() {
           sys_bp: targetData.Systolic_BP,
           dia_bp: targetData.Diastolic_BP,
           body_temp: targetData.Body_Temp,
-          prediction_label: data.prediction_label || (data.prediction ? "Anomaly" : "Normal"),
+          prediction_label: data.prediction_label || (data.prediction ? "Anomaly" : "Healthy"),
           confidence: data.probability ?? 0.95,
           is_at_risk: Boolean(data.prediction),
         });
@@ -154,7 +152,6 @@ export default function Simulator() {
       });
       setSubmittedData(targetData);
 
-      // Append execution record to session audit log
       appendSessionHistory({
         timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
         heart_rate: targetData.Heart_Rate,
@@ -171,7 +168,22 @@ export default function Simulator() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData]);
+
+  // Press Enter to trigger inference
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        const activeTag = document.activeElement?.tagName.toLowerCase();
+        if (activeTag !== "input" && activeTag !== "textarea") {
+          e.preventDefault();
+          handlePredict();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handlePredict]);
 
   const isStagedDirty =
     submittedData !== null &&
@@ -196,17 +208,17 @@ export default function Simulator() {
             </h1>
           </div>
           <div className="text-left md:text-right max-w-md">
-            <div className="text-[13px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-3 bg-ink text-canvas-cream text-left">
+            <div className="text-[13px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-3 bg-ink text-canvas-cream text-left shadow-[3px_3px_0px_#141413]">
               Manual override. Input custom telemetry to test ensemble classifier and view Shapley feature importance vectors.
             </div>
           </div>
         </header>
 
         {/* Main Workbench Grid */}
-        <div className="crosshair-corner grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink items-stretch">
+        <div className="crosshair-corner grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink items-stretch shadow-[4px_4px_0px_0px_#141413]">
           {/* Input Panel - 5 Columns */}
           <div className="lg:col-span-5 bg-canvas-cream flex flex-col border-b-2 lg:border-b-0 border-ink">
-            <div className="h-14 px-4 sm:px-6 border-b-2 border-ink bg-white flex justify-between items-center">
+            <div className="h-14 px-4 sm:px-6 border-b-2 border-ink bg-white flex justify-between items-center shrink-0">
               <h2 className="text-[14px] font-bold tracking-wider uppercase flex items-center gap-2">
                 <Activity size={16} />
                 <span>MANUAL INPUT MATRIX</span>
@@ -214,7 +226,7 @@ export default function Simulator() {
               <span className="text-[10px] text-slate uppercase font-bold">5 Telemetry Inputs</span>
             </div>
 
-            {/* Clinical Profile Presets - Enlarged & Proportional Presence */}
+            {/* Clinical Profile Presets */}
             <div className="p-5 sm:p-6 bg-canvas-cream border-b-2 border-ink flex flex-col gap-3">
               <div className="text-[11px] font-bold tracking-widest text-slate uppercase flex justify-between items-center">
                 <span className="text-ink">CLINICAL TEST PROFILES</span>
@@ -271,7 +283,7 @@ export default function Simulator() {
               </div>
             </div>
 
-            {/* Slider Inputs - Dynamically Distributed to Match Right Panel Height */}
+            {/* Slider Inputs */}
             <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between gap-4">
               <InputControl
                 label="HEART RATE"
@@ -316,12 +328,12 @@ export default function Simulator() {
               />
             </div>
 
-            {/* Action Bar - Anchored to bottom with border */}
-            <div className="mt-auto border-t-2 border-ink bg-white p-4 sm:p-5 flex gap-3">
+            {/* Unified Action Bar: Side-by-side buttons without stacked clutter */}
+            <div className="mt-auto border-t-2 border-ink bg-white p-4 sm:p-5 flex gap-3 items-center">
               <button
                 type="button"
                 onClick={handleRandomize}
-                className="group btn-tactile py-3.5 px-5 border-2 border-ink bg-white hover:bg-canvas-cream text-ink font-bold text-[12px] tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer transition-[transform,background-color] duration-140 ease-out active:scale-[0.98]"
+                className="group btn-tactile py-3.5 px-5 border-2 border-ink bg-white hover:bg-canvas-cream text-ink font-bold text-[12px] tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer transition-[transform,background-color] duration-140 ease-out active:scale-[0.98] shadow-[2px_2px_0px_#141413]"
                 title="Generate random physiological vitals"
               >
                 <Shuffle size={14} className="text-hazard transition-transform duration-300 ease-out group-hover:rotate-45" />
@@ -332,7 +344,7 @@ export default function Simulator() {
                 type="button"
                 onClick={handlePredict}
                 disabled={loading}
-                className="btn-tactile-hazard py-3.5 font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 flex-1 cursor-pointer disabled:cursor-not-allowed transition-[transform,background-color] duration-140 ease-out active:scale-[0.98]"
+                className="btn-tactile-hazard py-3.5 px-5 font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 flex-1 cursor-pointer disabled:cursor-not-allowed transition-[transform,background-color] duration-140 ease-out active:scale-[0.98] shadow-[3px_3px_0px_#141413]"
               >
                 {loading ? (
                   <>
@@ -344,13 +356,14 @@ export default function Simulator() {
                 )}
               </button>
             </div>
+
             {isSlow && (
-              <div className="mt-3 p-2.5 border-2 border-hazard bg-hazard/10 text-hazard text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
+              <div className="m-3 p-2.5 border-2 border-hazard bg-hazard/10 text-hazard text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
                 Waking up the server, first request can take a minute
               </div>
             )}
             {error && (
-              <div className="mt-3 p-2.5 border-2 border-red-500 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
+              <div className="m-3 p-2.5 border-2 border-red-500 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
                 {error}
               </div>
             )}
@@ -358,7 +371,7 @@ export default function Simulator() {
 
           {/* Results Panel - 7 Columns */}
           <div className="lg:col-span-7 bg-canvas-cream flex flex-col overflow-hidden">
-            <div className="h-14 px-4 sm:px-6 border-b-2 border-ink bg-white flex justify-between items-center">
+            <div className="h-14 px-4 sm:px-6 border-b-2 border-ink bg-white flex justify-between items-center shrink-0">
               <h2 className="text-[14px] font-bold tracking-wider uppercase flex items-center gap-2">
                 <Cpu size={16} />
                 <span>INFERENCE RESULTS &amp; XAI</span>
@@ -464,30 +477,10 @@ export default function Simulator() {
                     </div>
 
                     {/* SHAP Feature Attributions Container */}
-                    <div className="border-2 border-ink bg-white p-4 sm:p-5 flex flex-col relative overflow-hidden">
-                      <div className="text-[12px] font-black uppercase text-ink tracking-wider mb-4 border-b-2 border-ink pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-2 h-2 inline-block transition-colors ${
-                              loading ? "bg-amber-600 animate-ping" : "bg-hazard"
-                            }`}
-                          />
-                          <span>SHAPLEY ADDITIVE EXPLANATIONS</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {loading ? (
-                            <span className="text-[10px] font-bold text-hazard font-mono flex items-center gap-1.5 bg-risk-bg border border-hazard/40 px-2 py-0.5 animate-pulse">
-                              <Cpu size={11} className="animate-spin text-hazard" />
-                              <span>CALIBRATING VECTORS...</span>
-                            </span>
-                          ) : (
-                            <span className="text-[10px] text-slate font-mono flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 bg-emerald-700 inline-block" />
-                              <span className="hidden sm:inline">DIRECTIONAL POLARITY [0.00 MIDLINE]</span>
-                              <span className="sm:hidden">0.00 MIDLINE</span>
-                            </span>
-                          )}
-                        </div>
+                    <div className="border-2 border-ink bg-white p-4 sm:p-5 flex flex-col">
+                      <div className="text-[12px] font-black uppercase text-ink tracking-wider mb-4 border-b-2 border-ink pb-2 flex justify-between items-center">
+                        <span>SHAPLEY ADDITIVE EXPLANATIONS</span>
+                        <span className="text-[10px] text-slate font-mono">DIRECTIONAL POLARITY</span>
                       </div>
                       <div className="w-full">
                         <ShapChart patientData={submittedData} isComputing={loading} />

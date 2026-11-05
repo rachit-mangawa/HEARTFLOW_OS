@@ -36,6 +36,8 @@ type TelemetryContextType = {
   engageSiliconLoopback: () => void;
   disconnectSerial: () => void;
   snapshotCurrentVitals: (customLabel?: string) => void;
+  isStreamPaused: boolean;
+  toggleStreamPause: () => void;
 };
 
 const TelemetryContext = createContext<TelemetryContextType | null>(null);
@@ -67,6 +69,8 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     temp: Array(50).fill(37.0),
   });
   const [runtimeMode, setRuntimeMode] = useState<RuntimeSourceMode>("BROWSER_LOCAL");
+  const [isStreamPaused, setIsStreamPaused] = useState(false);
+  const toggleStreamPause = useCallback(() => setIsStreamPaused((prev) => !prev), []);
 
   // Serial Bridge State
   const serialHandleRef = useRef<SerialBridgeHandle | null>(null);
@@ -102,9 +106,9 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Run in-browser Edge Simulator whenever not engaged on hardware serial or silicon loopback
+  // Run in-browser Edge Simulator whenever not engaged on hardware serial or silicon loopback, and not paused
   useEffect(() => {
-    if (serialStatus === "connected" || serialStatus === "loopback") return;
+    if (isStreamPaused || serialStatus === "connected" || serialStatus === "loopback") return;
 
     const unsubscribe = globalSimulator.subscribe((packet: TelemetryPacket) => {
       updatePacketStream(packet);
@@ -113,7 +117,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     return () => {
       unsubscribe();
     };
-  }, [serialStatus, updatePacketStream]);
+  }, [isStreamPaused, serialStatus, updatePacketStream]);
 
   // Ingest vitals from Serial hardware or Silicon loopback
   const handleSerialVitals = useCallback((vitals: PatientVitals) => {
@@ -213,6 +217,8 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
         engageSiliconLoopback,
         disconnectSerial,
         snapshotCurrentVitals,
+        isStreamPaused,
+        toggleStreamPause,
       }}
     >
       {children}

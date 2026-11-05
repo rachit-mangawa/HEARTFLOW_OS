@@ -61,11 +61,11 @@ enum {
 
 // Diagnostic Category Labels
 static const char * const CLASS_NAMES[N_CLASSES] = {
-    "Normal",
     "Asthma",
-    "Hypertension",
+    "Diabetes Mellitus",
+    "Healthy",
     "Heart Disease",
-    "Diabetes"
+    "Hypertension"
 };
 
 // Population Distribution Normalization Statistics (StandardScaler: mu & sigma)
@@ -115,21 +115,15 @@ function getMcuDirectives(targetMcu: string): string {
     case "cortex_m4":
       return `// ARM Cortex-M4 Architecture Directives (DSP / FPU enabled)
 #define HF_FAST_FUNC __attribute__((always_inline)) static inline
-#define HF_PROGMEM const`;
+#define HF_PROGMEM`;
     case "cortex_m0":
       return `// ARM Cortex-M0/M0+ Architecture Directives (Integer baseline)
 #define HF_FAST_FUNC static inline
-#define HF_PROGMEM const`;
+#define HF_PROGMEM`;
     case "atmega328p":
       return `// ATmega328P / AVR Architecture Directives
-#if defined(__AVR__)
-#include <avr/pgmspace.h>
-#define HF_PROGMEM PROGMEM
-#define HF_FAST_FUNC static inline
-#else
 #define HF_PROGMEM
-#define HF_FAST_FUNC static inline
-#endif`;
+#define HF_FAST_FUNC static inline`;
     default:
       return `#define HF_FAST_FUNC static inline
 #define HF_PROGMEM`;
@@ -168,16 +162,16 @@ static inline void preprocess_vitals_int8(const float *raw, int8_t *q_out) {
 
 // INT8 Quantized Multinomial Weight Matrix (scale factor Sw = 50.8)
 static const int8_t W_INT8[N_CLASSES][N_RAW_FEATURES] HF_PROGMEM = {
-    {-41,   61,  -46,  -36,  -20}, // Normal
     { 36, -122,   20,   10,   15}, // Asthma
-    { 15,   -5,  127,  107,    0}, // Hypertension
+    { 10,  -10,   46,   41,   61}, // Diabetes Mellitus
+    {-41,   61,  -46,  -36,  -20}, // Healthy
     {107,  -61,   71,   56,   10}, // Heart Disease
-    { 10,  -10,   46,   41,   61}  // Diabetes
+    { 15,   -5,  127,  107,    0}  // Hypertension
 };
 
 // INT32 Quantized Intercepts (scale factor Sw * 16 = 812.8)
 static const int32_t B_INT32[N_CLASSES] HF_PROGMEM = {
-    650, -406, -488, -569, -325
+    -406, -325, 650, -569, -488
 };
 
 // Predict from pre-quantized INT8 features (Pure integer 32-bit registers, zero float)
@@ -215,15 +209,15 @@ static inline void preprocess_vitals(const float *raw, float *norm) {
 
 // FP32 Multinomial Logistic Regression Coefficients
 static const float W_FP32[N_CLASSES][N_RAW_FEATURES] HF_PROGMEM = {
-    {-0.8f,  1.2f, -0.9f, -0.7f, -0.4f}, // Normal
     { 0.7f, -2.4f,  0.4f,  0.2f,  0.3f}, // Asthma
-    { 0.3f, -0.1f,  2.5f,  2.1f,  0.0f}, // Hypertension
+    { 0.2f, -0.2f,  0.9f,  0.8f,  1.2f}, // Diabetes Mellitus
+    {-0.8f,  1.2f, -0.9f, -0.7f, -0.4f}, // Healthy
     { 2.1f, -1.2f,  1.4f,  1.1f,  0.2f}, // Heart Disease
-    { 0.2f, -0.2f,  0.9f,  0.8f,  1.2f}  // Diabetes
+    { 0.3f, -0.1f,  2.5f,  2.1f,  0.0f}  // Hypertension
 };
 
 static const float B_FP32[N_CLASSES] HF_PROGMEM = {
-    0.8f, -0.5f, -0.6f, -0.7f, -0.4f
+    -0.5f, -0.4f, 0.8f, -0.7f, -0.6f
 };
 
 // Predict class from normalized features
@@ -266,16 +260,16 @@ function getSvmKernel(quantize: boolean): string {
 
 // INT8 Linear SVM Hyperplane Weights (Scale factor Sw = 57.7)
 static const int8_t SVM_W_INT8[N_CLASSES][N_RAW_FEATURES] HF_PROGMEM = {
-    {-35,   58,  -46,  -35,  -17}, // Normal
     { 29, -121,   17,    6,   12}, // Asthma
-    { 12,   -6,  127,  110,    0}, // Hypertension
+    {  6,  -12,   40,   35,   58}, // Diabetes Mellitus
+    {-35,   58,  -46,  -35,  -17}, // Healthy
     {110,  -58,   69,   52,    6}, // Heart Disease
-    {  6,  -12,   40,   35,   58}  // Diabetes
+    { 12,   -6,  127,  110,    0}  // Hypertension
 };
 
 // INT32 Linear SVM Hyperplane Intercepts (Scale factor Sw * 16 = 923.6)
 static const int32_t SVM_B_INT32[N_CLASSES] HF_PROGMEM = {
-    462, -369, -462, -554, -277
+    -369, -277, 462, -554, -462
 };
 
 // Predict using One-vs-Rest maximal margin decision hyperplane
@@ -311,15 +305,15 @@ int predict(const float *raw_features) {
 
 // FP32 Linear SVM One-vs-Rest Decision Hyperplanes
 static const float SVM_W_FP32[N_CLASSES][N_RAW_FEATURES] HF_PROGMEM = {
-    {-0.6f,  1.0f, -0.8f, -0.6f, -0.3f},
-    { 0.5f, -2.1f,  0.3f,  0.1f,  0.2f},
-    { 0.2f, -0.1f,  2.2f,  1.9f,  0.0f},
-    { 1.9f, -1.0f,  1.2f,  0.9f,  0.1f},
-    { 0.1f, -0.2f,  0.7f,  0.6f,  1.0f}
+    { 0.5f, -2.1f,  0.3f,  0.1f,  0.2f}, // Asthma
+    { 0.1f, -0.2f,  0.7f,  0.6f,  1.0f}, // Diabetes Mellitus
+    {-0.6f,  1.0f, -0.8f, -0.6f, -0.3f}, // Healthy
+    { 1.9f, -1.0f,  1.2f,  0.9f,  0.1f}, // Heart Disease
+    { 0.2f, -0.1f,  2.2f,  1.9f,  0.0f}  // Hypertension
 };
 
 static const float SVM_B_FP32[N_CLASSES] HF_PROGMEM = {
-    0.5f, -0.4f, -0.5f, -0.6f, -0.3f
+    -0.4f, -0.3f, 0.5f, -0.6f, -0.5f
 };
 
 static inline int predict_from_norm(const float *norm_features) {
@@ -378,11 +372,11 @@ static const int32_t B1_INT32[HIDDEN_UNITS] HF_PROGMEM = {
 
 // Layer 2 Weights (8 hidden units -> 5 output classes, scaled by 120)
 static const int8_t W2_INT8[N_CLASSES][HIDDEN_UNITS] HF_PROGMEM = {
-    { 65,  -50, -120,  -33,   86,  120,   15, -100},
-    {-50,   86,  -15, -104,  119,   30, -116,   22},
-    {-120, -15,  119,  -73, -114,   81,   60, -120},
-    { -33,-104,  -73,  118,   22, -116,   62,   75},
-    {  86, 119, -114,   22,   90, -112,   42,   58}
+    {-50,   86,  -15, -104,  119,   30, -116,   22}, // Asthma
+    {  86, 119, -114,   22,   90, -112,   42,   58}, // Diabetes Mellitus
+    { 65,  -50, -120,  -33,   86,  120,   15, -100}, // Healthy
+    { -33,-104,  -73,  118,   22, -116,   62,   75}, // Heart Disease
+    {-120, -15,  119,  -73, -114,   81,   60, -120}  // Hypertension
 };
 
 static inline int32_t relu_int32(int32_t x) {
@@ -452,11 +446,11 @@ static const float B1_FP32[HIDDEN_UNITS] HF_PROGMEM = {
 };
 
 static const float W2_FP32[N_CLASSES][HIDDEN_UNITS] HF_PROGMEM = {
-    { 0.540f, -0.416f, -0.990f, -0.284f,  0.717f,  1.000f,  0.124f, -0.832f},
-    {-0.416f,  0.717f, -0.124f, -0.868f,  0.990f,  0.254f, -0.967f,  0.183f},
-    {-0.990f, -0.124f,  0.990f, -0.612f, -0.950f,  0.678f,  0.503f, -1.000f},
-    {-0.284f, -0.868f, -0.612f,  0.986f,  0.183f, -0.967f,  0.521f,  0.626f},
-    { 0.717f,  0.990f, -0.950f,  0.183f,  0.754f, -0.932f,  0.352f,  0.485f}
+    {-0.416f,  0.717f, -0.124f, -0.868f,  0.990f,  0.254f, -0.967f,  0.183f}, // Asthma
+    { 0.717f,  0.990f, -0.950f,  0.183f,  0.754f, -0.932f,  0.352f,  0.485f}, // Diabetes Mellitus
+    { 0.540f, -0.416f, -0.990f, -0.284f,  0.717f,  1.000f,  0.124f, -0.832f}, // Healthy
+    {-0.284f, -0.868f, -0.612f,  0.986f,  0.183f, -0.967f,  0.521f,  0.626f}, // Heart Disease
+    {-0.990f, -0.124f,  0.990f, -0.612f, -0.950f,  0.678f,  0.503f, -1.000f}  // Hypertension
 };
 
 static inline float relu_fp32(float x) {
@@ -515,12 +509,12 @@ static inline uint8_t evaluate_tree(const float *raw, uint8_t tree_id) {
 
     // Rule 1: Acute Asthmatic Hypoxemia (Low SpO2 + Compensatory Tachycardia)
     if (spo2 < (92.0f + jitter) && hr > (95.0f - jitter)) {
-        return 1; // Asthma
+        return 0; // Asthma
     }
 
     // Rule 2: Stage 2 Hypertensive Emergency (Severe Systolic/Diastolic Arterial Pressure)
     if (sbp > (140.0f - jitter * 2.0f) || dbp > (90.0f - jitter)) {
-        return 2; // Hypertension
+        return 4; // Hypertension
     }
 
     // Rule 3: Cardiovascular Disease / Ischemic Tachycardia
@@ -530,11 +524,11 @@ static inline uint8_t evaluate_tree(const float *raw, uint8_t tree_id) {
 
     // Rule 4: Metabolic Dysregulation / Diabetes Marker
     if (sbp > 130.0f && temp > (37.8f - jitter * 0.1f)) {
-        return 4; // Diabetes
+        return 1; // Diabetes Mellitus
     }
 
     // Default: Normal Sinus Rhythm / Normotensive
-    return 0; // Normal
+    return 2; // Healthy
 }
 
 int predict(const float *raw_features) {
@@ -574,24 +568,24 @@ static inline void preprocess_vitals(const float *raw, float *norm) {
 
 // Exemplar Centroid Vectors in Standardized Feature Space
 static const float EXEMPLARS[N_EXEMPLARS][N_RAW_FEATURES] HF_PROGMEM = {
-    { 0.0f,  0.0f,  0.0f,  0.0f,  0.0f}, // Normal 1
-    {-0.3f,  0.4f, -0.2f, -0.2f, -0.3f}, // Normal 2
+    { 0.0f,  0.0f,  0.0f,  0.0f,  0.0f}, // Healthy 1
+    {-0.3f,  0.4f, -0.2f, -0.2f, -0.3f}, // Healthy 2
     { 2.6f, -4.0f,  0.8f,  0.5f,  0.5f}, // Asthma 1
     { 2.2f, -3.5f,  0.7f,  0.4f,  0.3f}, // Asthma 2
     { 1.0f, -0.4f,  3.0f,  2.5f, -0.1f}, // Hypertension 1
     { 0.8f, -0.2f,  2.7f,  2.2f,  0.0f}, // Hypertension 2
     { 4.0f, -2.8f,  1.6f,  1.5f,  0.2f}, // Heart Disease 1
     { 3.5f, -2.4f,  1.4f,  1.3f,  0.1f}, // Heart Disease 2
-    { 1.2f, -0.3f,  1.4f,  1.2f,  1.8f}, // Diabetes 1
-    { 0.9f, -0.1f,  1.2f,  1.0f,  1.5f}  // Diabetes 2
+    { 1.2f, -0.3f,  1.4f,  1.2f,  1.8f}, // Diabetes Mellitus 1
+    { 0.9f, -0.1f,  1.2f,  1.0f,  1.5f}  // Diabetes Mellitus 2
 };
 
 static const uint8_t EXEMPLAR_LABELS[N_EXEMPLARS] HF_PROGMEM = {
-    0, 0, // Normal
-    1, 1, // Asthma
-    2, 2, // Hypertension
+    2, 2, // Healthy
+    0, 0, // Asthma
+    4, 4, // Hypertension
     3, 3, // Heart Disease
-    4, 4  // Diabetes
+    1, 1  // Diabetes Mellitus
 };
 
 int predict(const float *raw_features) {
