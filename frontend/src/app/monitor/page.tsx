@@ -4,14 +4,12 @@ import Link from "next/link";
 import { useTelemetry } from "@/context/TelemetryContext";
 import { useState } from "react";
 import {
-  ShieldAlert,
   Usb,
   PlayCircle,
   StopCircle,
   Activity,
   CheckCircle2,
   Cpu,
-  Clock,
   Gauge,
   Heart,
   Thermometer,
@@ -19,34 +17,6 @@ import {
   FileText,
 } from "lucide-react";
 import { evaluateEdge } from "@/lib/edge/inference";
-
-interface TelemetryEvent {
-  id: string;
-  timestamp: string;
-  message: string;
-  type: "info" | "warn" | "crit" | "ok";
-}
-
-const STATIC_BASELINE_EVENTS: TelemetryEvent[] = [
-  {
-    id: "evt-base-1",
-    timestamp: "LIVE",
-    message: "UART serial bridge interface armed (115200 baud, 8-N-1)",
-    type: "ok",
-  },
-  {
-    id: "evt-base-2",
-    timestamp: "EDGE",
-    message: "Edge C inference engine active · 5-model heterogeneous ensemble (RF, SVM, LogReg, MLP, KNN)",
-    type: "info",
-  },
-  {
-    id: "evt-base-3",
-    timestamp: "STANDBY",
-    message: "Alarm logic thresholds aligned with IEC 60601-1-8 alarm priority bands",
-    type: "info",
-  },
-];
 
 export default function SystemMonitor() {
   const {
@@ -63,7 +33,6 @@ export default function SystemMonitor() {
   } = useTelemetry();
 
   const [snapped, setSnapped] = useState(false);
-  const [userEvents, setUserEvents] = useState<TelemetryEvent[]>([]);
 
   const effectivePrediction = data?.prediction ?? (data?.sensor_data ? evaluateEdge(data.sensor_data) : evaluateEdge({
     Heart_Rate: 75,
@@ -78,35 +47,8 @@ export default function SystemMonitor() {
   const handleSnapshot = () => {
     snapshotCurrentVitals();
     setSnapped(true);
-    const now = new Date();
-    const timeStr = now.toTimeString().split(" ")[0];
-    setUserEvents((prev) => [
-      {
-        id: `evt-snap-${Date.now()}`,
-        timestamp: timeStr,
-        message: "Telemetry snapshot captured into session DATA.LOG",
-        type: "ok",
-      },
-      ...prev.slice(0, 8),
-    ]);
     setTimeout(() => setSnapped(false), 2000);
   };
-
-  // Compile active events feed reactively
-  const activeEvents: TelemetryEvent[] = [
-    ...(isCriticalAnomaly && effectivePrediction?.label
-      ? [
-          {
-            id: `evt-crit-active`,
-            timestamp: "ALERT",
-            message: `CARDIAC EVENT DETECTED: ${effectivePrediction.label} (${((effectivePrediction.confidence ?? 0.85) * 100).toFixed(1)}%)`,
-            type: "crit" as const,
-          },
-        ]
-      : []),
-    ...userEvents,
-    ...STATIC_BASELINE_EVENTS,
-  ];
 
   const getStatusLabel = () => {
     if (runtimeMode === "SERIAL_ESP32_HARDWARE") return "ESP32_HARDWARE · UART_115200";
@@ -125,12 +67,6 @@ export default function SystemMonitor() {
   const sbp = data?.sensor_data?.Systolic_BP ? Math.round(data.sensor_data.Systolic_BP) : null;
   const dbp = data?.sensor_data?.Diastolic_BP ? Math.round(data.sensor_data.Diastolic_BP) : null;
   const temp = data?.sensor_data?.Body_Temp ?? null;
-
-  // Derived Hemodynamic Biomarkers
-  const mapValue = sbp !== null && dbp !== null ? Math.round((2 * dbp + sbp) / 3) : null;
-  const pulsePressure = sbp !== null && dbp !== null ? Math.round(sbp - dbp) : null;
-  const shockIndex = hr !== null && sbp !== null && sbp > 0 ? (hr / sbp).toFixed(2) : null;
-  const rpp = hr !== null && sbp !== null ? Math.round((hr * sbp) / 100) : null;
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
@@ -221,188 +157,220 @@ export default function SystemMonitor() {
         </header>
 
         {/* Modular Clinical Telemetry Dashboard Grid */}
-        <div className="crosshair-corner grid grid-cols-1 xl:grid-cols-12 gap-px bg-ink border-2 border-ink">
-          {/* Main Primary Telemetry Panel (8 cols on XL) */}
-          <div className="xl:col-span-8 bg-canvas-cream flex flex-col divide-y-2 divide-ink">
-            {/* Primary Vitals Header */}
-            <div className="p-4 px-6 flex justify-between items-center bg-white flex-wrap gap-2">
+        <div className="crosshair-corner flex flex-col divide-y-2 divide-ink border-2 border-ink shadow-[4px_4px_0px_0px_#141413]">
+          {/* Row 1: Primary Vitals (8 cols) + Link & Hardware Edge (4 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink">
+            {/* Left: Primary Vitals Section (8 cols on LG/XL) */}
+            <div className="lg:col-span-8 bg-canvas-cream flex flex-col justify-between">
+              {/* Primary Vitals Header - Matched exact height h-14 */}
+              <div className="h-14 px-4 sm:px-6 flex justify-between items-center bg-white border-b-2 border-ink shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Activity size={16} className="text-hazard shrink-0" />
+                  <h2 className="text-[13px] sm:text-[14px] font-bold tracking-wider uppercase truncate">Live Patient Vitals</h2>
+                </div>
+                {effectivePrediction ? (
+                  (() => {
+                    const getStatusStyles = (lbl: string) => {
+                      const norm = (lbl || "").toLowerCase();
+                      if (norm === "healthy" || norm === "normal") return "bg-[#d1fae5] text-[#065f46] border-[#065f46]";
+                      if (norm.includes("heart")) return "bg-[#fef08a] text-[#854d0e] border-[#854d0e]";
+                      if (norm.includes("asthma")) return "bg-[#e0f2fe] text-[#075985] border-[#075985]";
+                      if (norm.includes("hypertension")) return "bg-[#f3e8ff] text-[#6b21a8] border-[#6b21a8]";
+                      if (norm.includes("diabetes")) return "bg-[#ffedd5] text-[#9a3412] border-[#9a3412]";
+                      return "bg-hazard text-white border-hazard";
+                    };
+                    return (
+                      <div
+                        className={`px-2.5 py-0.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider border-2 shrink-0 ${getStatusStyles(
+                          effectivePrediction.label
+                        )}`}
+                      >
+                        {effectivePrediction.label} ({(effectivePrediction.confidence * 100).toFixed(1)}%)
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="px-2.5 py-0.5 text-[11px] font-bold tracking-wider border-2 border-ink text-slate shrink-0">
+                    ACQUIRING SIGNAL...
+                  </div>
+                )}
+              </div>
+
+              {/* 4-Cell Primary Vital Metrics Quad */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-ink grow">
+                <VitalCard
+                  label="HEART RATE"
+                  icon={<Heart size={13} className="text-hazard" />}
+                  value={hr ?? "---"}
+                  unit="BPM"
+                  normRange="60 - 100"
+                  secondaryText={hr ? `${(hr / 60).toFixed(1)} Hz Pulse` : undefined}
+                  status={
+                    !hr
+                      ? "idle"
+                      : hr < 50 || hr > 120
+                      ? "crit"
+                      : hr < 60 || hr > 100
+                      ? "warn"
+                      : "ok"
+                  }
+                />
+
+                <VitalCard
+                  label="BLOOD OXYGEN"
+                  icon={<Wind size={13} className="text-hazard" />}
+                  value={spo2 ?? "---"}
+                  unit="% SpO2"
+                  normRange="95 - 100%"
+                  secondaryText={spo2 ? (spo2 < 90 ? "Critical Hypoxemia" : "Normoxic") : undefined}
+                  status={
+                    !spo2
+                      ? "idle"
+                      : spo2 < 90
+                      ? "crit"
+                      : spo2 < 95
+                      ? "warn"
+                      : "ok"
+                  }
+                />
+
+                <VitalCard
+                  label="BLOOD PRESSURE"
+                  icon={<Gauge size={13} className="text-hazard" />}
+                  value={sbp && dbp ? `${sbp}/${dbp}` : "---"}
+                  unit="mmHg"
+                  normRange="120/80"
+                  secondaryText={sbp ? (sbp > 160 ? "Stage 2 Hypertensive" : "Hemodynamic Stable") : undefined}
+                  status={
+                    !sbp || !dbp
+                      ? "idle"
+                      : sbp >= 160 || dbp >= 100 || sbp < 90
+                      ? "crit"
+                      : sbp >= 130 || dbp >= 85
+                      ? "warn"
+                      : "ok"
+                  }
+                />
+
+                <VitalCard
+                  label="BODY TEMP"
+                  icon={<Thermometer size={13} className="text-hazard" />}
+                  value={temp ? temp.toFixed(1) : "---"}
+                  unit="°C"
+                  normRange="36.5 - 37.5"
+                  secondaryText={temp ? (temp > 38.5 ? "Febrile Anomaly" : "Normothermic") : undefined}
+                  status={
+                    !temp
+                      ? "idle"
+                      : temp > 38.5 || temp < 35.0
+                      ? "crit"
+                      : temp > 37.5
+                      ? "warn"
+                      : "ok"
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Right: Edge & Link Status Panel (4 cols on LG/XL) */}
+            <div className="lg:col-span-4 bg-canvas-cream flex flex-col justify-between">
+              {/* Header - EXACT SAME HEIGHT h-14 to match Left Header */}
+              <div className="h-14 px-4 sm:px-6 flex justify-between items-center bg-white border-b-2 border-ink shrink-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Cpu size={14} className="text-ink shrink-0" />
+                  <h3 className="text-[12px] font-bold tracking-widest uppercase truncate">Link & Hardware Edge</h3>
+                </div>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 border border-ink bg-canvas-cream shrink-0">
+                  Active Stream
+                </span>
+              </div>
+
+              <div className="p-4 sm:p-5 flex flex-col justify-between grow gap-1.5 text-[11px] bg-canvas-cream">
+                <div className="flex justify-between items-center py-1 border-b border-ink/10">
+                  <span className="text-slate font-bold uppercase">COMM INTERFACE</span>
+                  <span className="font-bold text-ink uppercase">{runtimeMode.replace(/_/g, " ")}</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-ink/10">
+                  <span className="text-slate font-bold uppercase">UART CONFIG</span>
+                  <span className="font-bold text-ink font-mono">115,200 BAUD (8-N-1)</span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-ink/10">
+                  <span className="text-slate font-bold uppercase">PACKET INTEGRITY</span>
+                  <span className="font-bold text-[#065f46] flex items-center gap-1 font-mono">
+                    <CheckCircle2 size={12} />
+                    FRAMING VALID
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-ink/10">
+                  <span className="text-slate font-bold uppercase">INFERENCE LATENCY</span>
+                  <span className="font-bold text-ink font-mono">
+                    {data?.prediction?.inference_latency_us
+                      ? `${(data.prediction.inference_latency_us / 1000).toFixed(2)} ms`
+                      : "< 3.2 ms (Local)"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1 border-b border-ink/10">
+                  <span className="text-slate font-bold uppercase">ENSEMBLE TOPOLOGY</span>
+                  <span className="font-bold text-hazard font-mono">5-MODEL VOTING</span>
+                </div>
+                <div className="pt-2 flex justify-between items-center">
+                  <Link
+                    href="/history"
+                    className="text-[10px] font-bold uppercase tracking-wider text-ink hover:text-hazard transition-colors flex items-center gap-1"
+                  >
+                    <FileText size={12} />
+                    Full DATA.LOG History →
+                  </Link>
+                  <span className="text-[9px] text-slate font-bold uppercase font-mono">Session Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Diagnostic Classification (Spider Web ~42% + Bars ~58%) */}
+          <div className="bg-white flex flex-col">
+            <div className="px-4 sm:px-6 py-2.5 bg-white border-b-2 border-ink flex justify-between items-center flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Activity size={16} className="text-hazard" />
-                <h2 className="text-[14px] font-bold tracking-wider uppercase">Live Patient Vitals</h2>
-              </div>
-              {effectivePrediction ? (
-                (() => {
-                  const getStatusStyles = (lbl: string) => {
-                    const norm = (lbl || "").toLowerCase();
-                    if (norm === "healthy" || norm === "normal") return "bg-[#d1fae5] text-[#065f46] border-[#065f46]";
-                    if (norm.includes("heart")) return "bg-[#fef08a] text-[#854d0e] border-[#854d0e]";
-                    if (norm.includes("asthma")) return "bg-[#e0f2fe] text-[#075985] border-[#075985]";
-                    if (norm.includes("hypertension")) return "bg-[#f3e8ff] text-[#6b21a8] border-[#6b21a8]";
-                    if (norm.includes("diabetes")) return "bg-[#ffedd5] text-[#9a3412] border-[#9a3412]";
-                    return "bg-hazard text-white border-hazard";
-                  };
-                  return (
-                    <div
-                      className={`px-3 py-1 text-[13px] font-bold uppercase tracking-wider border-2 ${getStatusStyles(
-                        effectivePrediction.label
-                      )}`}
-                    >
-                      {effectivePrediction.label} ({(effectivePrediction.confidence * 100).toFixed(1)}%)
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className="px-3 py-1 text-[12px] font-bold tracking-wider border-2 border-ink text-slate">
-                  ACQUIRING SIGNAL...
-                </div>
-              )}
-            </div>
-
-            {/* 4-Cell Primary Vital Metrics Quad */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-ink">
-              <VitalCard
-                label="HEART RATE"
-                icon={<Heart size={13} className="text-hazard" />}
-                value={hr ?? "---"}
-                unit="BPM"
-                normRange="60 - 100"
-                secondaryText={hr ? `${(hr / 60).toFixed(1)} Hz Pulse` : undefined}
-                status={
-                  !hr
-                    ? "idle"
-                    : hr < 50 || hr > 120
-                    ? "crit"
-                    : hr < 60 || hr > 100
-                    ? "warn"
-                    : "ok"
-                }
-              />
-
-              <VitalCard
-                label="BLOOD OXYGEN"
-                icon={<Wind size={13} className="text-hazard" />}
-                value={spo2 ?? "---"}
-                unit="% SpO2"
-                normRange="95 - 100%"
-                secondaryText={spo2 ? (spo2 < 90 ? "Critical Hypoxemia" : "Normoxic") : undefined}
-                status={
-                  !spo2
-                    ? "idle"
-                    : spo2 < 90
-                    ? "crit"
-                    : spo2 < 95
-                    ? "warn"
-                    : "ok"
-                }
-              />
-
-              <VitalCard
-                label="BLOOD PRESSURE"
-                icon={<Gauge size={13} className="text-hazard" />}
-                value={sbp && dbp ? `${sbp}/${dbp}` : "---"}
-                unit="mmHg"
-                normRange="120/80"
-                secondaryText={sbp ? (sbp > 160 ? "Stage 2 Hypertensive" : "Hemodynamic Stable") : undefined}
-                status={
-                  !sbp || !dbp
-                    ? "idle"
-                    : sbp >= 160 || dbp >= 100 || sbp < 90
-                    ? "crit"
-                    : sbp >= 130 || dbp >= 85
-                    ? "warn"
-                    : "ok"
-                }
-              />
-
-              <VitalCard
-                label="BODY TEMP"
-                icon={<Thermometer size={13} className="text-hazard" />}
-                value={temp ? temp.toFixed(1) : "---"}
-                unit="°C"
-                normRange="36.5 - 37.5"
-                secondaryText={temp ? (temp > 38.5 ? "Febrile Anomaly" : "Normothermic") : undefined}
-                status={
-                  !temp
-                    ? "idle"
-                    : temp > 38.5 || temp < 35.0
-                    ? "crit"
-                    : temp > 37.5
-                    ? "warn"
-                    : "ok"
-                }
-              />
-            </div>
-
-            {/* Derived Clinical Biomarkers Sub-Grid */}
-            <div className="p-6 bg-white flex flex-col gap-4">
-              <div className="flex justify-between items-center border-b border-ink/20 pb-2">
-                <span className="text-[11px] font-bold text-slate tracking-widest uppercase">
-                  Calculated Hemodynamic Biomarkers
-                </span>
-                <span className="text-[10px] text-hazard font-mono font-bold">
-                  Derived from SBP / DBP / HR Telemetry
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
-                  <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Mean Arterial (MAP)</div>
-                  <div className="flex items-baseline gap-1 my-1">
-                    <span className="text-[20px] font-black tabular-nums text-ink">{mapValue ?? "---"}</span>
-                    <span className="text-[10px] font-bold text-hazard">mmHg</span>
-                  </div>
-                  <div className="text-[9px] text-slate font-bold uppercase">
-                    {mapValue && mapValue >= 70 && mapValue <= 100 ? "Normal Perfusion" : "Perfusion At Risk"}
-                  </div>
-                </div>
-
-                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
-                  <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Pulse Pressure</div>
-                  <div className="flex items-baseline gap-1 my-1">
-                    <span className="text-[20px] font-black tabular-nums text-ink">{pulsePressure ?? "---"}</span>
-                    <span className="text-[10px] font-bold text-hazard">mmHg</span>
-                  </div>
-                  <div className="text-[9px] text-slate font-bold uppercase">
-                    {pulsePressure && pulsePressure <= 50 ? "Normal Elasticity" : "Vascular Stiffness"}
-                  </div>
-                </div>
-
-                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
-                  <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Shock Index (SI)</div>
-                  <div className="flex items-baseline gap-1 my-1">
-                    <span className="text-[20px] font-black tabular-nums text-ink">{shockIndex ?? "---"}</span>
-                    <span className="text-[10px] font-bold text-hazard">HR/SBP</span>
-                  </div>
-                  <div className="text-[9px] text-slate font-bold uppercase">
-                    {shockIndex && Number(shockIndex) < 0.9 ? "Stable State" : "Elevated Risk"}
-                  </div>
-                </div>
-
-                <div className="card-tactile border border-ink/20 bg-canvas-cream p-3 flex flex-col justify-between hover:bg-white">
-                  <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Rate-Pressure Prod.</div>
-                  <div className="flex items-baseline gap-1 my-1">
-                    <span className="text-[20px] font-black tabular-nums text-ink">{rpp ?? "---"}</span>
-                    <span className="text-[10px] font-bold text-hazard">BPM·mmHg/100</span>
-                  </div>
-                  <div className="text-[9px] text-slate font-bold uppercase">
-                    {rpp && rpp <= 120 ? "Normal Cardiac Workload" : "High Workload"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Diagnostic Classification & Ensemble Probabilities */}
-            <div className="bg-canvas-cream flex flex-col">
-              <div className="border-b-2 border-ink p-3 px-6 flex justify-between items-center bg-white">
+                <span className="w-1.5 h-1.5 bg-hazard inline-block" />
                 <h3 className="text-[12px] font-bold tracking-widest uppercase text-ink">
                   Diagnostic Probabilities · Multi-Class Ensemble
                 </h3>
-                <div className="text-[11px] font-bold tracking-wider text-hazard uppercase">
-                  Consensus: 5 Active Classifiers
+              </div>
+              <div className="text-[10px] font-bold tracking-wider text-hazard uppercase">
+                Consensus: 5 Active Classifiers
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink">
+              {/* Spider Web Radar Chart (approx 42% width on Desktop) */}
+              <div className="lg:col-span-5 bg-canvas-cream p-4 sm:p-6 flex flex-col items-center justify-between">
+                <div className="w-full flex justify-between items-center pb-2 border-b border-ink/15 mb-2">
+                  <span className="text-[10px] font-bold text-slate tracking-widest uppercase">
+                    Radar Biometric Signature
+                  </span>
+                  <span className="text-[9px] font-bold text-hazard uppercase px-1.5 py-0.5 border border-ink/30 bg-white">
+                    5-Axis Geometric
+                  </span>
+                </div>
+
+                <SpiderWebRadar probs={effectivePrediction?.disease_probs} />
+
+                <div className="w-full text-center text-[9px] text-slate font-mono uppercase tracking-wider pt-2 border-t border-ink/15">
+                  Multi-Axis Risk Envelope · Geometric Signature
                 </div>
               </div>
 
-              <div className="p-6 bg-white flex flex-col justify-center gap-5">
+              {/* Linear Bar Charts (approx 58% width on Desktop) */}
+              <div className="lg:col-span-7 bg-white p-4 sm:p-6 flex flex-col justify-between gap-3.5">
+                <div className="w-full flex justify-between items-center pb-2 border-b border-ink/15 mb-2">
+                  <span className="text-[10px] font-bold text-slate tracking-widest uppercase">
+                    Categorical Probability Distribution
+                  </span>
+                  <span className="text-[9px] font-mono font-bold text-slate uppercase">
+                    Soft-Voting Weights
+                  </span>
+                </div>
+
                 {effectivePrediction?.disease_probs && Object.keys(effectivePrediction.disease_probs).length > 0 ? (
                   Object.entries(effectivePrediction.disease_probs)
                     .sort((a, b) => (b[1] as number) - (a[1] as number))
@@ -413,17 +381,14 @@ export default function SystemMonitor() {
                         disease.toLowerCase() !== "normal" &&
                         disease.toLowerCase() !== "healthy";
                       return (
-                        <div
-                          key={disease}
-                          className="flex flex-col gap-1.5"
-                        >
+                        <div key={disease} className="flex flex-col gap-1">
                           <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
-                            <span className={isRisk ? "text-hazard" : "text-ink"}>
+                            <span className={isRisk ? "text-hazard font-black" : "text-ink"}>
                               {disease}
                             </span>
-                            <span className="tabular-nums font-mono">{pct}%</span>
+                            <span className="tabular-nums font-mono font-bold">{pct}%</span>
                           </div>
-                          <div className="h-5 bg-canvas-cream border-2 border-ink overflow-hidden relative">
+                          <div className="h-4 bg-canvas-cream border-2 border-ink overflow-hidden relative">
                             <div
                               className="absolute inset-0 z-0 opacity-15"
                               style={{
@@ -446,131 +411,6 @@ export default function SystemMonitor() {
                     AWAITING TELEMETRY CLASSIFICATION STREAM...
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Hardware Telemetry, Threshold Limits, and Event Stream (4 cols on XL) */}
-          <div className="xl:col-span-4 bg-white flex flex-col divide-y-2 divide-ink">
-            {/* Edge & Link Status Panel */}
-            <div className="p-5 flex flex-col gap-4 bg-canvas-cream">
-              <div className="flex items-center justify-between border-b border-ink/20 pb-2">
-                <div className="flex items-center gap-2">
-                  <Cpu size={14} className="text-ink" />
-                  <h3 className="text-[12px] font-bold tracking-widest uppercase">Link & Hardware Edge</h3>
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 border border-ink bg-white">
-                  250 Hz Continuous
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-2.5 text-[11px]">
-                <div className="flex justify-between items-center py-1 border-b border-ink/10">
-                  <span className="text-slate font-bold uppercase">COMM INTERFACE</span>
-                  <span className="font-bold text-ink uppercase">{runtimeMode.replace(/_/g, " ")}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-ink/10">
-                  <span className="text-slate font-bold uppercase">UART CONFIG</span>
-                  <span className="font-bold text-ink">115,200 BAUD (8-N-1)</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-ink/10">
-                  <span className="text-slate font-bold uppercase">CHECKSUM INTEGRITY</span>
-                  <span className="font-bold text-[#065f46] flex items-center gap-1">
-                    <CheckCircle2 size={12} />
-                    CRC32 VERIFIED
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-ink/10">
-                  <span className="text-slate font-bold uppercase">INFERENCE LATENCY</span>
-                  <span className="font-bold text-ink">
-                    {data?.prediction?.inference_latency_us
-                      ? `${(data.prediction.inference_latency_us / 1000).toFixed(2)} ms`
-                      : "< 3.2 ms (Edge)"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate font-bold uppercase">ENSEMBLE TOPOLOGY</span>
-                  <span className="font-bold text-hazard">5-MODEL VOTING</span>
-                </div>
-              </div>
-            </div>
-
-            {/* IEC 60601-1-8 Reference Threshold Limits */}
-            <div className="p-5 flex flex-col gap-3 bg-white">
-              <div className="flex items-center justify-between border-b border-ink/20 pb-2">
-                <div className="flex items-center gap-2">
-                  <ShieldAlert size={14} className="text-hazard" />
-                  <h3 className="text-[12px] font-bold tracking-widest uppercase">Alarm Priority Bands</h3>
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 border border-ink/30 bg-canvas-cream text-slate">
-                  REF: IEC 60601-1-8
-                </span>
-              </div>
-
-              <div className="divide-y divide-ink/10 text-[10px] font-mono">
-                <div className="py-2 flex justify-between items-center">
-                  <span className="text-slate font-bold uppercase">HR Low / High</span>
-                  <span className="text-ink font-bold tabular-nums">50 BPM / 120 BPM</span>
-                </div>
-                <div className="py-2 flex justify-between items-center">
-                  <span className="text-slate font-bold uppercase">SpO2 Critical Limit</span>
-                  <span className="text-ink font-bold tabular-nums">&lt; 90% (Hypoxemia)</span>
-                </div>
-                <div className="py-2 flex justify-between items-center">
-                  <span className="text-slate font-bold uppercase">Systolic BP Limit</span>
-                  <span className="text-ink font-bold tabular-nums">90 - 160 mmHg</span>
-                </div>
-                <div className="py-2 flex justify-between items-center">
-                  <span className="text-slate font-bold uppercase">Core Temp Limit</span>
-                  <span className="text-ink font-bold tabular-nums">35.5°C - 38.5°C</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Telemetry Event Stream */}
-            <div className="p-5 flex flex-col gap-3 bg-canvas-cream grow min-h-60">
-              <div className="flex items-center justify-between border-b border-ink/20 pb-2">
-                <div className="flex items-center gap-2">
-                  <Clock size={14} className="text-ink" />
-                  <h3 className="text-[12px] font-bold tracking-widest uppercase">Telemetry Event Log</h3>
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate">
-                  {activeEvents.length} Events
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-2 overflow-y-auto max-h-72 pr-1 font-mono text-[10px]">
-                {activeEvents.map((evt) => (
-                  <div
-                    key={evt.id}
-                    className={`border p-2 bg-white flex flex-col gap-0.5 ${
-                      evt.type === "crit"
-                        ? "border-hazard bg-[#fdebec] text-hazard"
-                        : evt.type === "warn"
-                        ? "border-amber-500 bg-[#fefce8] text-amber-900"
-                        : evt.type === "ok"
-                        ? "border-[#065f46]/40 text-[#065f46]"
-                        : "border-ink/20 text-slate"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center text-[9px] font-bold opacity-75">
-                      <span>[{evt.timestamp}]</span>
-                      <span className="uppercase">{evt.type}</span>
-                    </div>
-                    <div className="font-bold text-ink leading-tight">{evt.message}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-2 mt-auto border-t border-ink/10 flex justify-between items-center">
-                <Link
-                  href="/history"
-                  className="text-[10px] font-bold uppercase tracking-wider text-ink hover:text-hazard transition-colors flex items-center gap-1"
-                >
-                  <FileText size={12} />
-                  Full DATA.LOG History →
-                </Link>
-                <span className="text-[9px] text-slate font-bold uppercase">Session Active</span>
               </div>
             </div>
           </div>
@@ -612,23 +452,23 @@ function VitalCard({
   };
 
   return (
-    <div className="bg-canvas-cream p-5 sm:p-6 flex flex-col justify-between hover:bg-white transition-all duration-150 cursor-default overflow-hidden group relative">
+    <div className="bg-canvas-cream p-4 sm:p-5 flex flex-col justify-between hover:bg-white transition-all duration-150 cursor-default overflow-hidden group relative">
       <span className="absolute top-2 right-2 text-ink/20 group-hover:text-hazard transition-all duration-150 text-[10px] select-none group-hover:scale-125">
         +
       </span>
 
       <div>
-        <div className="flex items-center justify-between border-b border-ink/20 pb-2 mb-3">
-          <div className="text-[10px] sm:text-[11px] font-bold text-slate tracking-widest group-hover:text-hazard transition-colors flex items-center gap-1.5">
+        <div className="flex items-center justify-between border-b border-ink/20 pb-2 mb-3 gap-1">
+          <div className="text-[10px] sm:text-[11px] font-bold text-slate tracking-wider group-hover:text-hazard transition-colors flex items-center gap-1.5 min-w-0">
             {icon}
-            <span>{label}</span>
+            <span className="whitespace-nowrap uppercase truncate">{label}</span>
           </div>
-          <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 border ${getBadgeStyle()}`}>
+          <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 border shrink-0 ${getBadgeStyle()}`}>
             {getStatusLabel()}
           </span>
         </div>
 
-        <div className="font-sans text-[clamp(28px,2.6vw,46px)] font-black tracking-tighter tabular-nums leading-none mb-1.5 break-all text-ink transition-transform duration-150 group-hover:translate-x-0.5">
+        <div className="font-sans text-[clamp(26px,2.4vw,42px)] font-black tracking-tighter tabular-nums leading-none mb-1.5 break-all text-ink transition-transform duration-150 group-hover:translate-x-0.5">
           {value !== null && value !== undefined ? value : "---"}
         </div>
       </div>
@@ -644,6 +484,142 @@ function VitalCard({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+const RADAR_CLASSES = [
+  { key: "Normal", label: "NORMAL" },
+  { key: "Asthma", label: "ASTHMA" },
+  { key: "Hypertension", label: "HYPERTENSION" },
+  { key: "Heart Disease", label: "HEART DIS." },
+  { key: "Diabetes", label: "DIABETES" },
+];
+
+function SpiderWebRadar({ probs }: { probs?: Record<string, number> }) {
+  const cx = 160;
+  const cy = 130;
+  const R = 78;
+  const numAxes = RADAR_CLASSES.length; // 5
+
+  const getAngle = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / numAxes;
+
+  // Generate 4 concentric regular pentagon rings (25%, 50%, 75%, 100%)
+  const rings = [0.25, 0.5, 0.75, 1.0].map((scale) => {
+    return RADAR_CLASSES.map((_, i) => {
+      const angle = getAngle(i);
+      const r = R * scale;
+      return `${(cx + r * Math.cos(angle)).toFixed(1)},${(cy + r * Math.sin(angle)).toFixed(1)}`;
+    }).join(" ");
+  });
+
+  // Calculate vertices for data polygon
+  const dataPoints = RADAR_CLASSES.map((item, i) => {
+    const rawVal = probs?.[item.key] ?? probs?.[item.key.toLowerCase()] ?? 0.05;
+    const val = Math.max(0.06, Math.min(1.0, rawVal));
+    const angle = getAngle(i);
+    const r = R * val;
+    return {
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+      val: rawVal,
+      label: item.label,
+      angle,
+    };
+  });
+
+  const polygonPoints = dataPoints.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+
+  return (
+    <div className="w-full flex flex-col items-center justify-center">
+      <svg
+        viewBox="0 0 320 260"
+        className="w-full max-w-[320px] h-auto overflow-visible select-none"
+      >
+        {/* Concentric Web Rings */}
+        {rings.map((pts, idx) => (
+          <polygon
+            key={idx}
+            points={pts}
+            fill={idx === 3 ? "rgba(20, 20, 19, 0.02)" : "none"}
+            stroke="#141413"
+            strokeWidth={idx === 3 ? "1.5" : "1"}
+            strokeOpacity={idx === 3 ? "0.3" : "0.15"}
+            strokeDasharray={idx === 3 ? undefined : "3 3"}
+          />
+        ))}
+
+        {/* 5 Radial Spokes from Center */}
+        {RADAR_CLASSES.map((_, i) => {
+          const angle = getAngle(i);
+          const x2 = cx + R * Math.cos(angle);
+          const y2 = cy + R * Math.sin(angle);
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={x2}
+              y2={y2}
+              stroke="#141413"
+              strokeWidth="1"
+              strokeOpacity="0.2"
+            />
+          );
+        })}
+
+        {/* Percentage scale watermark along vertical axis */}
+        <text x={cx + 4} y={cy - R * 0.5 + 3} className="text-[8px] font-mono font-bold fill-slate select-none">
+          50%
+        </text>
+        <text x={cx + 4} y={cy - R + 3} className="text-[8px] font-mono font-bold fill-slate select-none">
+          100%
+        </text>
+
+        {/* Data Envelope Polygon */}
+        <polygon
+          points={polygonPoints}
+          fill="rgba(159, 47, 45, 0.28)"
+          stroke="#9F2F2D"
+          strokeWidth="2.5"
+          className="transition-all duration-300 ease-out"
+        />
+
+        {/* Axis Labels */}
+        {dataPoints.map((p, i) => {
+          const labelDist = R + 18;
+          const lx = cx + labelDist * Math.cos(p.angle);
+          const ly = cy + labelDist * Math.sin(p.angle);
+
+          const cos = Math.cos(p.angle);
+          const sin = Math.sin(p.angle);
+          const textAnchor = cos > 0.3 ? "start" : cos < -0.3 ? "end" : "middle";
+          const dominantBaseline = sin < -0.4 ? "auto" : sin > 0.4 ? "hanging" : "middle";
+
+          const pct = (p.val * 100).toFixed(1);
+          const isDominant = p.val > 0.35;
+
+          return (
+            <text
+              key={i}
+              x={lx}
+              y={ly}
+              textAnchor={textAnchor}
+              dominantBaseline={dominantBaseline}
+              className="text-[9.5px] font-mono font-bold uppercase tracking-wider select-none"
+            >
+              <tspan fill={isDominant ? "#9F2F2D" : "#141413"}>{p.label}</tspan>{" "}
+              <tspan fill={isDominant ? "#9F2F2D" : "#696969"} className="font-mono">
+                {pct}%
+              </tspan>
+            </text>
+          );
+        })}
+
+        {/* Center Origin Crosshair */}
+        <line x1={cx - 4} y1={cy} x2={cx + 4} y2={cy} stroke="#141413" strokeWidth="1.5" strokeOpacity="0.4" />
+        <line x1={cx} y1={cy - 4} x2={cx} y2={cy + 4} stroke="#141413" strokeWidth="1.5" strokeOpacity="0.4" />
+      </svg>
     </div>
   );
 }

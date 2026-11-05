@@ -6,8 +6,6 @@ pandas>=2.2.0
 numpy>=1.26.0
 joblib>=1.4.0
 shap
-websockets
-aiosqlite
 python-multipart
 httpx
 pytest

@@ -12,9 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/simulator",
     "/history",
     "/dataset",
-    "/analytics",
     "/mlops",
-    "/edge",
+    "/compiler",
     "/docs",
     "/architecture",
   ];

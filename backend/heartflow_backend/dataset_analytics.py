@@ -226,7 +226,7 @@ def get_dataset_profile(dataset_path: str):
                 'missing_values': int(df.isnull().sum().sum()),
                 'completeness_pct': 100.0 if df.isnull().sum().sum() == 0 else round((1 - df.isnull().sum().sum() / (total_records * len(columns_list))) * 100, 2),
                 'classes_count': len(target_distribution),
-                'sampling_fidelity': 'IEC-60601-1 Telemetry Validated'
+                'sampling_fidelity': 'High-Integrity Telemetry Validated'
             },
             'columns': columns_list,
             'target_distribution': target_distribution,

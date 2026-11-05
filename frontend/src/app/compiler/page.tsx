@@ -1,59 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Cpu, Zap, Terminal } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 import { generateCHeader } from "@/lib/edge/c_exporter";
 import GeneratedCHeader from "@/components/GeneratedCHeader";
-import { apiFetch } from "@/lib/api";
 
-export default function EdgeDeployment() {
+export default function CompilerPage() {
   const [model, setModel] = useState("rf");
   const [targetMcu, setTargetMcu] = useState("esp32");
   const [quantize, setQuantize] = useState(true);
   const [code, setCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isSlow, setIsSlow] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const handleExport = async (overrideModel?: string, overrideQuantize?: boolean, overrideMcu?: string) => {
-    const activeModel = overrideModel ?? model;
-    const activeQuantize = overrideQuantize !== undefined ? overrideQuantize : quantize;
-    const activeMcu = overrideMcu ?? targetMcu;
+  const handleExport = useCallback(
+    async (overrideModel?: string, overrideQuantize?: boolean, overrideMcu?: string) => {
+      const activeModel = overrideModel ?? model;
+      const activeQuantize = overrideQuantize !== undefined ? overrideQuantize : quantize;
+      const activeMcu = overrideMcu ?? targetMcu;
 
-    setLoading(true);
-    setError("");
+      setLoading(true);
+      setError("");
 
-    try {
-      const { data, error: fetchErr } = await apiFetch<{ code?: string; c_code?: string; error?: string }>(
-        `/heartflow/export_tinyml?model_name=${activeModel}&quantize=${activeQuantize}`,
-        {
-          onSlow: (slow) => setIsSlow(slow),
+      try {
+        // Query the backend /heartflow/export_tinyml endpoint in real time using active/newly generated .pkl files
+        const { data, error: apiErr } = await apiFetch<{ code?: string; error?: string }>(
+          `/heartflow/export_tinyml?model_name=${encodeURIComponent(activeModel)}&quantize=${activeQuantize}`
+        );
+
+        if (data && data.code && !data.error) {
+          setCode(data.code);
+        } else {
+          // Fall back gracefully to in-browser AST transpiler
+          const cCode = generateCHeader(activeModel, activeQuantize, activeMcu);
+          setCode(cCode);
+          if (apiErr) {
+            console.warn("Backend compiler fallback:", apiErr);
+          }
         }
-      );
-      if (data && !data.error && (data.code || data.c_code)) {
-        setCode((data.code || data.c_code) ?? null);
+      } catch {
+        try {
+          const cCode = generateCHeader(activeModel, activeQuantize, activeMcu);
+          setCode(cCode);
+        } catch (clientErr: unknown) {
+          const msg = clientErr instanceof Error ? clientErr.message : String(clientErr);
+          setError(msg || "Failed to generate C header");
+        }
+      } finally {
         setLoading(false);
-        return;
       }
-      if (fetchErr) {
-        setError(fetchErr);
-      }
-    } catch {
-      // Cloud API unreachable, seamlessly compile on the client
-    }
-
-    // Client-side Zero-Cloud TinyML Transpiler
-    try {
-      const cCode = generateCHeader(activeModel, activeQuantize, activeMcu);
-      setCode(cCode);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || "Failed to generate C header");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [model, quantize, targetMcu]
+  );
 
   const handleSelectModel = (val: string) => {
     setModel(val);
@@ -115,7 +115,7 @@ export default function EdgeDeployment() {
               C99 EMBEDDED TRANSPILER · ZERO-MALLOC ABI
             </div>
             <h1 className="text-[clamp(2.5rem,5vw,5rem)] leading-[0.9]">
-              EDGE<br />COMPILER
+              C99<br />COMPILER
             </h1>
           </div>
           <div className="flex flex-col items-start md:items-end gap-2 text-right">
@@ -123,14 +123,14 @@ export default function EdgeDeployment() {
               {`TARGET: ${targetMcu.toUpperCase()} · ${quantize ? "INT8 FIXED-POINT" : "FP32 SINGLE-PRECISION"}`}
             </div>
             <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
-              ABI: int predict(const float *features) · Zero-Malloc
+              ABI: int predict(const float *features) · Zero Dynamic Heap Memory
             </div>
           </div>
         </header>
 
         {/* 2-Column Responsive Workspace Grid (Fixed Size on Desktop: lg:h-145) */}
         <div className="crosshair-corner grid grid-cols-1 lg:grid-cols-12 gap-px bg-ink border-2 border-ink lg:h-145">
-          {/* Config Panel - 6 Columns (Fixed Size, Zero Scroll) */}
+          {/* Config Panel - 6 Columns */}
           <div className="lg:col-span-6 bg-canvas-cream flex flex-col h-full min-h-0 justify-between overflow-hidden">
             {/* Header */}
             <div className="h-13 px-4 sm:px-5 border-b-2 border-ink bg-white flex justify-between items-center shrink-0">
@@ -188,7 +188,7 @@ export default function EdgeDeployment() {
               </div>
             </div>
 
-            {/* Config Controls (Middle Section, Flex-1, Fits with zero scroll) */}
+            {/* Config Controls */}
             <div className="p-3 sm:p-3.5 flex flex-col gap-2.5 bg-white flex-1 min-h-0 justify-between">
               {/* Model Architecture Selector - 5 Ensemble Models */}
               <div className="flex flex-col gap-1">
@@ -265,7 +265,7 @@ export default function EdgeDeployment() {
               </div>
             </div>
 
-            {/* Compile CTA - Directly connected with no gap */}
+            {/* Compile CTA */}
             <div className="p-3.5 sm:p-4 bg-white border-t-2 border-ink shrink-0">
               <button
                 type="button"
@@ -278,7 +278,7 @@ export default function EdgeDeployment() {
             </div>
           </div>
 
-          {/* Reusable Generated C Header Section - 6 Columns */}
+          {/* Generated C Header Section - 6 Columns */}
           <GeneratedCHeader
             code={code}
             loading={loading}

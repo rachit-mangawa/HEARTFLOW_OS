@@ -17,6 +17,9 @@ app = FastAPI(
     title="TinyML Healthcare API",
     description="HeartFlow OS Clinical Telemetry and Edge Inference Gateway",
     version="2.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 cors_origins_raw = os.environ.get("ALLOWED_ORIGINS", "").strip()
@@ -29,7 +32,6 @@ else:
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://heartflow.vercel.app",
         "https://idkhowtocodefr-hf-backend.hf.space",
     ]
     is_wildcard = False
@@ -54,10 +56,14 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 @app.get("/")
 def read_root():
-    return RedirectResponse(url="/docs")
+    return {
+        "service": "HeartFlow OS Clinical Telemetry Gateway",
+        "status": "Online",
+        "version": "2.0.0",
+        "docs": "https://rachit-mangawa.github.io/HEARTFLOW_OS/docs",
+    }
 
-# Mount routes at both root and /heartflow prefix so all legacy and new clients work
-app.include_router(router)
+# Mount all API routes strictly under the /heartflow namespace
 app.include_router(router, prefix="/heartflow")
 
 if __name__ == "__main__":

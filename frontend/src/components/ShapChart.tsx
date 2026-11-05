@@ -9,6 +9,7 @@ import { apiFetch } from "@/lib/api";
 
 interface ShapChartProps {
   patientData: PatientVitals | null;
+  isComputing?: boolean;
 }
 
 interface ShapData {
@@ -17,10 +18,43 @@ interface ShapData {
   base_value?: number;
 }
 
-export default function ShapChart({ patientData }: ShapChartProps) {
+export default function ShapChart({ patientData, isComputing = false }: ShapChartProps) {
   const [cloudShap, setCloudShap] = useState<ShapData | null>(null);
-  const [isSlow, setIsSlow] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
+
+  // Derive stable key from patient vital values to trigger animation cycle on parameter updates
+  const dataSignature = patientData
+    ? `${patientData.Heart_Rate}-${patientData.SpO2_Level}-${patientData.Systolic_BP}-${patientData.Diastolic_BP}-${patientData.Body_Temp}`
+    : "";
+
+  // Emil Kowalski Animation Sequence: Subtle calibration scan followed by staggered value reveal
+  useEffect(() => {
+    if (!patientData) {
+      const resetTimer = setTimeout(() => {
+        setIsCalibrating(false);
+        setIsRevealed(false);
+      }, 0);
+      return () => clearTimeout(resetTimer);
+    }
+
+    // Enter calibration phase
+    const startCalTimer = setTimeout(() => {
+      setIsCalibrating(true);
+      setIsRevealed(false);
+    }, 0);
+
+    // End calibration and reveal bars with staggered timing
+    const revealTimer = setTimeout(() => {
+      setIsCalibrating(false);
+      setIsRevealed(true);
+    }, isComputing ? 260 : 160);
+
+    return () => {
+      clearTimeout(startCalTimer);
+      clearTimeout(revealTimer);
+    };
+  }, [dataSignature, isComputing, patientData]);
 
   // Compute zero-cloud edge attributions synchronously whenever patientData changes
   const localShap = useMemo(() => {
@@ -38,16 +72,9 @@ export default function ShapChart({ patientData }: ShapChartProps) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patientData),
-      onSlow: (slow) => {
-        if (!isCancelled) setIsSlow(slow);
-      },
-    }).then(({ data, error: err }) => {
-      if (isCancelled) return;
-      if (err) {
-        setError(err);
-      } else if (data?.shap_values) {
+    }).then(({ data }) => {
+      if (!isCancelled && data?.shap_values) {
         setCloudShap(data);
-        setError(null);
       }
     });
 
@@ -110,13 +137,18 @@ export default function ShapChart({ patientData }: ShapChartProps) {
       {/* SHAP Sign & Polarity Summary */}
       <div className="border-2 border-ink bg-canvas-cream p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div className="flex items-center gap-2">
-          {netShap > 0 ? (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase bg-hazard text-white border border-ink">
+          {isCalibrating ? (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase bg-white text-ink border border-ink/40 animate-pulse">
+              <span className="w-1.5 h-1.5 bg-hazard inline-block animate-ping" />
+              <span>CALIBRATING ATTRIBUTIONS...</span>
+            </span>
+          ) : netShap > 0 ? (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase bg-hazard text-white border border-ink animate-enter-subtle">
               <AlertTriangle size={13} />
               <span>NET RISK ATTRIBUTION: +{netShap.toFixed(3)}</span>
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase bg-emerald-800 text-white border border-ink">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-black uppercase bg-emerald-800 text-white border border-ink animate-enter-subtle">
               <ShieldCheck size={13} />
               <span>NET PROTECTIVE ATTRIBUTION: {netShap.toFixed(3)}</span>
             </span>
@@ -149,7 +181,7 @@ export default function ShapChart({ patientData }: ShapChartProps) {
 
       {/* Feature Attributions with Calibrated Midline Bars */}
       <div className="flex flex-col gap-4">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const widthPercent = Math.min((item.abs / maxAbs) * 50, 48);
 
           return (
@@ -158,18 +190,32 @@ export default function ShapChart({ patientData }: ShapChartProps) {
               <div className="flex justify-between items-baseline text-[11px] font-bold">
                 <div className="flex items-center gap-2">
                   <span className="text-ink font-black">{item.name}</span>
-                  <span className="text-slate text-[10px] bg-white border border-ink/30 px-1.5 py-0.2">
+                  <span
+                    className="text-slate text-[10px] bg-white border border-ink/30 px-1.5 py-0.2 transition-opacity duration-180"
+                    style={{
+                      opacity: isRevealed ? 1 : 0.4,
+                      transitionDelay: isRevealed ? `${index * 40}ms` : "0ms",
+                    }}
+                  >
                     {item.patientVal} {item.unit}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div
+                  className="flex items-center gap-1 transition-all"
+                  style={{
+                    opacity: isRevealed ? 1 : 0,
+                    transform: isRevealed ? "scale(1) translateY(0)" : "scale(0.96) translateY(2px)",
+                    transition: "opacity 220ms var(--ease-out), transform 220ms var(--ease-out)",
+                    transitionDelay: isRevealed ? `${index * 40 + 40}ms` : "0ms",
+                  }}
+                >
                   {item.isPositive ? (
-                    <span className="px-2 py-0.5 text-[10px] font-black bg-hazard text-white border border-ink">
+                    <span className="px-2 py-0.5 text-[10px] font-black bg-hazard text-white border border-ink shadow-[1px_1px_0px_#141413]">
                       +{item.value.toFixed(3)}
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-700">
+                    <span className="px-2 py-0.5 text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-700 shadow-[1px_1px_0px_#065f46]">
                       {item.value.toFixed(3)}
                     </span>
                   )}
@@ -192,18 +238,36 @@ export default function ShapChart({ patientData }: ShapChartProps) {
                 <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-hazard/5 pointer-events-none" />
 
                 {/* Midline (0.00 Zero-Axis) */}
-                <div className="absolute left-1/2 -top-1 -bottom-1 w-0.5 bg-ink z-20" />
+                <div
+                  className={`absolute left-1/2 -top-1 -bottom-1 w-0.5 z-20 transition-colors duration-150 ${isCalibrating ? "bg-hazard" : "bg-ink"
+                    }`}
+                />
 
-                {/* Responsive Dual-Polarity Bar */}
+                {/* Calibration Scan Beam during computing/pre-loading */}
+                {isCalibrating && (
+                  <div className="absolute top-0 bottom-0 w-8 bg-linear-to-r from-transparent via-hazard/20 to-transparent pointer-events-none z-25 animate-shap-scan" />
+                )}
+
+                {/* Responsive Dual-Polarity Bar - expands outward from center 0.00 midline */}
                 {item.isPositive ? (
                   <div
-                    className="absolute top-0 bottom-0 left-1/2 bg-hazard z-10 h-full transition-all duration-150 border-r border-ink"
-                    style={{ width: `${widthPercent}%` }}
+                    className="absolute top-0 bottom-0 left-1/2 bg-hazard z-10 h-full border-r border-ink"
+                    style={{
+                      width: isRevealed ? `${widthPercent}%` : "0%",
+                      transition: "width 340ms var(--ease-out), opacity 200ms ease-out",
+                      transitionDelay: isRevealed ? `${index * 40}ms` : "0ms",
+                      opacity: isRevealed ? 1 : 0,
+                    }}
                   />
                 ) : (
                   <div
-                    className="absolute top-0 bottom-0 right-1/2 bg-emerald-700 z-10 h-full transition-all duration-150 border-l border-ink"
-                    style={{ width: `${widthPercent}%` }}
+                    className="absolute top-0 bottom-0 right-1/2 bg-emerald-700 z-10 h-full border-l border-ink"
+                    style={{
+                      width: isRevealed ? `${widthPercent}%` : "0%",
+                      transition: "width 340ms var(--ease-out), opacity 200ms ease-out",
+                      transitionDelay: isRevealed ? `${index * 40}ms` : "0ms",
+                      opacity: isRevealed ? 1 : 0,
+                    }}
                   />
                 )}
               </div>

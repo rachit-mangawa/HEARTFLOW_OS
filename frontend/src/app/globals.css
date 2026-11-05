@@ -170,38 +170,72 @@ h2, h3, h4, h5, h6 {
   cursor: ew-resize;
 }
 
-/* Clinical Report Print Engine */
+/* Clinical Report Print Engine - High-Fidelity One-Page Output */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
+  }
+
+  html,
   body {
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #141413 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  body * {
-    visibility: hidden;
+  /* Suppress UI shell: navbars, footers, and all elements marked .no-print */
+  header:not(#clinical-report-printable header),
+  footer,
+  nav,
+  .no-print,
+  .no-print * {
+    display: none !important;
   }
 
-  #clinical-report-printable,
-  #clinical-report-printable * {
-    visibility: visible;
+  #clinical-report-modal {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    inset: auto !important;
+    display: block !important;
+    overflow: visible !important;
+    z-index: auto !important;
   }
 
   #clinical-report-printable {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 !important;
-    padding: 24px !important;
+    margin: 0 auto !important;
+    padding: 14px 16px !important;
     background: #ffffff !important;
-    color: #000000 !important;
-    border: 2px solid #000000 !important;
+    color: #141413 !important;
+    border: 2px solid #141413 !important;
     box-shadow: none !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  .no-print {
-    display: none !important;
+  #clinical-report-printable table {
+    border-collapse: collapse !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  #clinical-report-printable tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 
@@ -311,6 +345,41 @@ h2, h3, h4, h5, h6 {
   animation: loading-shimmer 1.4s var(--ease-in-out) infinite;
 }
 
+/* SHAP Telemetry Calibration Scan & Value Stagger (Emil Kowalski Design Engineering) */
+@keyframes shap-scan-beam {
+  0% {
+    left: 0%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+.animate-shap-scan {
+  animation: shap-scan-beam 650ms var(--ease-in-out) infinite;
+}
+
+@keyframes shap-number-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-shap-number {
+  animation: shap-number-reveal 220ms var(--ease-out) both;
+}
+
 /* Interactive Brutalist Card Lift - Zero idle noise, crisp hover feedback */
 .card-tactile {
   transition: transform 150ms var(--ease-out),
@@ -359,3 +428,21 @@ h2, h3, h4, h5, h6 {
   }
 }
 
+/* Mermaid Architecture Flowchart Vector Engine */
+.mermaid-svg-wrapper.readable-mode svg {
+  display: block;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+}
+
+.mermaid-svg-wrapper.fit-mode svg {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.mermaid-svg-wrapper svg text {
+  font-family: var(--font-mono), monospace !important;
+}

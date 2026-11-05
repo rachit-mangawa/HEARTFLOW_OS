@@ -11,7 +11,7 @@ const NAV_LINKS = [
   { href: "/history", label: "HISTORY" },
   { href: "/dataset", label: "DATASET" },
   { href: "/mlops", label: "MLOPS" },
-  { href: "/edge", label: "COMPILER" },
+  { href: "/compiler", label: "COMPILER" },
 ];
 
 export default function Navigation() {
@@ -37,8 +37,7 @@ export default function Navigation() {
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||
-              (link.href !== "/" && pathname.startsWith(link.href)) ||
-              (link.href === "/dataset" && pathname.startsWith("/analytics"));
+              (link.href !== "/" && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.href}
@@ -82,8 +81,7 @@ export default function Navigation() {
           {NAV_LINKS.map((link) => {
             const isActive =
               pathname === link.href ||
-              (link.href !== "/" && pathname.startsWith(link.href)) ||
-              (link.href === "/dataset" && pathname.startsWith("/analytics"));
+              (link.href !== "/" && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.href}

@@ -25,11 +25,11 @@ export default function GeneratedCHeader({
 }: GeneratedCHeaderProps) {
   const crc32Hex = code
     ? Array.from(code)
-        .reduce((h, c) => Math.imul(31, h) + c.charCodeAt(0) | 0, 0)
-        .toString(16)
-        .toUpperCase()
-        .padStart(8, "0")
-        .slice(-8)
+      .reduce((h, c) => Math.imul(31, h) + c.charCodeAt(0) | 0, 0)
+      .toString(16)
+      .toUpperCase()
+      .padStart(8, "0")
+      .slice(-8)
     : null;
 
   return (
@@ -84,8 +84,8 @@ export default function GeneratedCHeader({
             <div className="text-[10px] text-slate font-mono">Synthesizing zero-malloc ABI & memory buffers</div>
           </div>
         ) : code ? (
-          <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-5 select-text animate-enter-subtle">
-            <pre suppressHydrationWarning className="text-[12px] font-mono text-ink leading-[1.6] whitespace-pre" tabIndex={0}>
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-5 select-text animate-enter-subtle">
+            <pre suppressHydrationWarning className="text-[12px] font-mono text-ink leading-[1.6] whitespace-pre-wrap wrap-break-words max-w-full" tabIndex={0}>
               {code}
             </pre>
           </div>

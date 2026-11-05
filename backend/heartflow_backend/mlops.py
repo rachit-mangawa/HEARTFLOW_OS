@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 from .paths import get_p1_dir, resolve_dataset_path
+from .preprocessing import COLUMN_ALIASES
 
 logger = logging.getLogger("heartflow")
 
@@ -29,47 +30,6 @@ CANONICAL_COLUMNS = [
     'Temperature Alert'
 ]
 
-COLUMN_ALIASES = {
-    'heart rate (bpm)': 'Heart Rate (bpm)',
-    'heart rate': 'Heart Rate (bpm)',
-    'heart_rate': 'Heart Rate (bpm)',
-    'heartrate': 'Heart Rate (bpm)',
-    'hr': 'Heart Rate (bpm)',
-
-    'spo2 level (%)': 'SpO2 Level (%)',
-    'spo2 level': 'SpO2 Level (%)',
-    'spo2_level': 'SpO2 Level (%)',
-    'spo2': 'SpO2 Level (%)',
-    'oxygen': 'SpO2 Level (%)',
-    'o2_saturation': 'SpO2 Level (%)',
-
-    'systolic blood pressure (mmhg)': 'Systolic Blood Pressure (mmHg)',
-    'systolic blood pressure': 'Systolic Blood Pressure (mmHg)',
-    'systolic_bp': 'Systolic Blood Pressure (mmHg)',
-    'systolic bp': 'Systolic Blood Pressure (mmHg)',
-    'sys_bp': 'Systolic Blood Pressure (mmHg)',
-    'systolic': 'Systolic Blood Pressure (mmHg)',
-
-    'diastolic blood pressure (mmhg)': 'Diastolic Blood Pressure (mmHg)',
-    'diastolic blood pressure': 'Diastolic Blood Pressure (mmHg)',
-    'diastolic_bp': 'Diastolic Blood Pressure (mmHg)',
-    'diastolic bp': 'Diastolic Blood Pressure (mmHg)',
-    'dia_bp': 'Diastolic Blood Pressure (mmHg)',
-    'diastolic': 'Diastolic Blood Pressure (mmHg)',
-
-    'body temperature (°c)': 'Body Temperature (°C)',
-    'body temperature': 'Body Temperature (°C)',
-    'body_temp': 'Body Temperature (°C)',
-    'temperature': 'Body Temperature (°C)',
-    'temp': 'Body Temperature (°C)',
-
-    'predicted disease': 'Predicted Disease',
-    'predicted_disease': 'Predicted Disease',
-    'disease': 'Predicted Disease',
-    'condition': 'Predicted Disease',
-    'diagnosis': 'Predicted Disease',
-    'label': 'Predicted Disease',
-}
 
 class MLOpsEngine:
     def __init__(self, dataset_path: str):

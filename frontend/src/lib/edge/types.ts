@@ -26,7 +26,7 @@ export interface TelemetryPacket {
     disease_probs: Record<string, number>;
     inference_latency_us?: number;
   } | null;
-  runtime_mode: "EDGE_WASM_BROWSER" | "CLOUD_FASTAPI";
+  runtime_mode: "BROWSER_LOCAL" | "CLOUD_FASTAPI";
 }
 
 export interface HistoryRecord {

@@ -6,8 +6,14 @@
 [![Memory ABI](https://img.shields.io/badge/Memory_ABI-Static_Allocation_Zero_Malloc-6b21a8?style=flat&logo=c&logoColor=white)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
 [![Edge Latency](https://img.shields.io/badge/Inference_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)
 [![INT8 Quantization](https://img.shields.io/badge/SRAM_Reduction---76.4%25-c2410c?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
-[![CI Tests](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
+[![CI Tests](https://img.shields.io/badge/CI_Verification-23%2F23_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
 [![License](https://img.shields.io/badge/License-MIT-374151?style=flat)](LICENSE)
+
+<br/>
+
+<p align="center">
+  <img src="frontend/public/og-image.png" alt="HEARTFLOW_OS: Clinical Inference at the Edge" width="100%" />
+</p>
 
 ---
 
@@ -75,7 +81,7 @@ flowchart TB
 
     subgraph CLOUD["CLOUD BACKEND (FastAPI + Docker Container)"]
         direction LR
-        REST["FastAPI Gateway (/predict, /ws/feed)"] --> MLOPS["MLOps Automated Retrain Engine<br/>Batch CSV Ingest & Schema Normalization"]
+        REST["FastAPI Gateway (/predict, /explain, /health)"] --> MLOPS["MLOps Continuous Learning Pipeline<br/>POST /retrain & GET /retrain/status"]
         MLOPS --> REG["Model Registry (5 .pkl Estimators)"]
         REG --> C99["AST C99 Code Exporter (/export_tinyml)<br/>Zero-Malloc model.h for Embedded Silicon"]
     end
@@ -257,18 +263,11 @@ Endpoint reference and schema contracts are hosted live at [`https://rachit-mang
 
 | Method | Endpoint | Latency SLA | Description |
 | :---: | :--- | :---: | :--- |
-| `POST` | `/predict` | `< 20 µs` (Edge) / `< 35 ms` (Cloud) | Evaluates 5 vitals against calibrated 5-model ensemble. |
-| `WS` | `/ws/feed` | `< 5 ms` / frame | Bidirectional telemetry streaming with concurrent predictions. |
-| `GET` | `/export_tinyml` | `< 2 ms` | Transpiles models to standalone zero-malloc C99 header (`model.h`). |
-| `POST` | `/explain` | `< 15 ms` | TreeExplainer SHAP feature attribution. |
-| `POST` | `/retrain` | `< 3.5 s` | Batch CSV upload, alias resolution, refitting, and hot-swapping. |
-| `GET` | `/retrain/status` | `< 5 ms` | Real-time stage progress, active estimator, and F1 scores. |
-| `GET` | `/metrics` | `< 10 ms` | Accuracy, F1 macro, model weights, and edge latency numbers. |
-| `GET` | `/history` | `< 5 ms` | Chronological session telemetry audit records. |
-| `GET` | `/dataset/summary` | `< 5 ms` | Precomputed statistical profiling across 60,000 observations (99.8% bandwidth reduction). |
-| `GET` | `/dataset` | `< 5 ms` | Dual-mode: full list when unparameterized; 25-row paginated window when parameterized. |
-| `GET` | `/dataset/download` | `< 100 ms` | Streaming download of the 4.49 MB CSV corpus. |
-| `GET` | `/health` | `< 1 ms` | Health check for FastAPI service and in-memory models. |
+| `GET` | `/health` | `< 5 ms` | Gateway uptime probe, model readiness validation, and MLOps capability. |
+| `POST` | `/predict` | `< 20 µs` (Edge) / `< 35 ms` (Cloud) | Evaluates 5 vital signs against the calibrated 5-model soft-voting ensemble. |
+| `POST` | `/explain` | `< 45 ms` | Computes TreeExplainer SHAP feature attributions across clinical vital parameters. |
+| `POST` | `/retrain` | `Async (~30-45s)` | Batch CSV upload, schema normalization, 5-model re-fitting, and in-memory hot-swapping. |
+| `GET` | `/retrain/status` | `< 5 ms` | Real-time stage progress, active version, fitted models count, and validation F1 scores. |
 
 ---
 
@@ -294,7 +293,7 @@ python models.py                # Train initial baseline ensemble
 uvicorn main:app --reload --port 8000
 ```
 - Local API Gateway: [http://localhost:8000](http://localhost:8000)
-- OpenAPI Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Interactive API Documentation: [http://localhost:3000/docs](http://localhost:3000/docs)
 
 #### Frontend (Node.js 20+)
 ```bash
@@ -305,7 +304,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 3. ESP32 Firmware Upload
-1. Export the C header from [`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge) or query `GET /export_tinyml?model_name=rf&quantize=true`.
+1. Export the C header from [`/edge`](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge) (compiled client-side with zero network latency).
 2. Save the code to `firmware/include/model.h`.
 3. Build and flash with PlatformIO:
 
@@ -319,20 +318,16 @@ pio device monitor -b 115200
 
 ## Test Verification
 
-The test suite validates backend components, C99 export, dataset profiling, and simulation physics across 58 automated tests:
+The test suite validates the 5 REST endpoints, model inference, SHAP explanations, feature preprocessing, and MLOps batch ingestion across 23 automated tests:
 
 | Module | Subsystem | Tests | Invariants Verified |
 | :--- | :--- | :---: | :--- |
-| **[`test_api.py`](tests/test_api.py)** | REST Endpoints & Gateways | **21** | Endpoint readiness, acute vitals handling, SHAP calculations, C99 export parameterized queries, and paginated dataset filtering. |
-| **[`test_export.py`](tests/test_export.py)** | C99 Transpiler & Zero-Malloc ABI | **7** | Transpilation for all 5 models, INT8 quantization, zero-malloc verification (no `malloc`, `free`, `realloc`), balanced syntax braces, and header guards. |
-| **[`test_dataset_analytics.py`](tests/test_dataset_analytics.py)** | Dataset Profiler | **8** | 9×9 Pearson matrix, continuous histograms, memory caching by `mtime`, boundary clamping (`limit <= 100`), and empty row handling on invalid pages. |
-| **[`test_mlops.py`](tests/test_mlops.py)** | Ingestion & Retraining | **6** | 40+ column alias mappings, encoding repair (`\ufffd` to `°C`), missing signal validation, and all-NaN row dropping. |
-| **[`test_simulator.py`](tests/test_simulator.py)** | Telemetry Simulator | **5** | Clamping extreme vitals to physiological survival limits (HR 50-180, SpO2 80-100), state machine transitions, and physics drift convergence. |
-| **[`test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering | **4** | StandardScaler affine transformations, leakage prevention, and synthetic Risk Severity scoring. |
-| **[`test_database.py`](tests/test_database.py)** | SQLite Persistence | **3** | Schema initialization, chronological record appending, and empty database handling. |
-| **[`test_backend.py`](tests/test_backend.py)** | Routing & Schemas | **2** | Documentation redirect and Pydantic validation error handling. |
-| **[`test_ensemble.py`](tests/test_ensemble.py)** | Soft-Voting Ensemble | **2** | Weight normalization, probability arbitration, and confidence calculation. |
-| **TOTAL** | **Full Suite** | **58** | **58/58 passing** |
+| **[`test_api.py`](tests/test_api.py)** | REST Endpoints & Gateways | **9** | Gateway health probe, valid & acute vitals inference, TreeExplainer SHAP values, retrain enable/disable checks, retrain status polling, warmup, and sub-1s fast import. |
+| **[`test_mlops.py`](tests/test_mlops.py)** | Ingestion & Retraining | **6** | 40+ column alias mappings, encoding repair (`°C`), auto-population of canonical columns, missing signal validation, empty CSV handling, and all-NaN row dropping. |
+| **[`test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering | **4** | StandardScaler transformations, data leakage prevention, model dir resolution, and signal alias normalization. |
+| **[`test_backend.py`](tests/test_backend.py)** | Routing & Schemas | **2** | Gateway health check probe and Pydantic input telemetry boundary validation. |
+| **[`test_ensemble.py`](tests/test_ensemble.py)** | Soft-Voting Ensemble | **2** | 5-model ensemble initialization, weight normalization, and probability arbitration. |
+| **TOTAL** | **Full Suite** | **23** | **23/23 passing** |
 
 ```bash
 # Run pytest test suite

@@ -1,11 +1,10 @@
 import pytest
 import pytest_asyncio
 import os
-import aiosqlite
+import sqlite3
 from collections import namedtuple
 import heartflow_backend.database as database
 
-database.settings.hf_token = None
 ORIGINAL_DB_PATH = database.DB_PATH
 
 @pytest_asyncio.fixture(autouse=True)
@@ -26,9 +25,9 @@ async def setup_teardown(tmp_path):
 @pytest.mark.asyncio
 async def test_init_db():
     assert os.path.exists(database.DB_PATH)
-    async with aiosqlite.connect(database.DB_PATH) as db:
-        cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='predictions'")
-        table = await cursor.fetchone()
+    with sqlite3.connect(database.DB_PATH) as conn:
+        cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='predictions'")
+        table = cursor.fetchone()
         assert table is not None
 
 @pytest.mark.asyncio

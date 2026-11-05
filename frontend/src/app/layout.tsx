@@ -21,43 +21,85 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const isGhPages = process.env.GITHUB_PAGES === "true" || process.env.NEXT_PUBLIC_DEPLOY_TARGET === "gh-pages";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (isGhPages ? "/HEARTFLOW_OS" : "");
+const siteOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN || "https://rachit-mangawa.github.io";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (basePath ? `${siteOrigin}${basePath}` : `${siteOrigin}/HEARTFLOW_OS`);
+const iconUrl = basePath ? `${basePath}/icon.svg` : "/icon.svg";
+const ogImageUrl = `${siteUrl}/og-image.png`;
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://heartflow.vercel.app"),
+  metadataBase: new URL(siteOrigin),
   title: {
-    default: "HEARTFLOW_OS | Clinical Edge AI Telemetry",
+    default: "HEARTFLOW_OS | Clinical Inference at the Edge",
     template: "%s | HEARTFLOW_OS",
   },
   description:
-    "Real-time edge cardiovascular telemetry and TinyML anomaly classification transpiled for bare-metal microcontrollers (ESP32 / ARM Cortex-M).",
+    "Continuous vital signs monitoring and cardiac anomaly detection compiled to deterministic C99 headers for microcontrollers.",
   keywords: [
     "TinyML",
     "Edge AI",
     "Cardiovascular Telemetry",
     "ESP32",
-    "Inference",
-    "Microcontroller",
+    "ARM Cortex-M",
     "Healthcare AI",
-    "ECG",
-    "Biomedical Engineering",
+    "C99 Firmware",
+    "Clinical Monitoring",
   ],
   authors: [{ name: "HEARTFLOW Systems" }],
+  creator: "HEARTFLOW Systems",
+  publisher: "HEARTFLOW Systems",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://heartflow.vercel.app",
-    title: "HEARTFLOW_OS | Clinical Edge AI Telemetry",
-    description:
-      "Real-time edge cardiovascular telemetry and TinyML anomaly classification transpiled for bare-metal microcontrollers.",
+    url: siteUrl,
     siteName: "HEARTFLOW_OS",
+    title: "HEARTFLOW_OS | Clinical Inference at the Edge",
+    description:
+      "Continuous vital signs monitoring and cardiac anomaly detection compiled to deterministic C99 headers for microcontrollers.",
+    images: [
+      {
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: "HEARTFLOW_OS: Bare-metal microcontroller firmware for cardiac telemetry",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "HEARTFLOW_OS | Clinical Edge AI Telemetry",
+    title: "HEARTFLOW_OS | Clinical Inference at the Edge",
     description:
-      "Real-time edge cardiovascular telemetry and TinyML anomaly classification transpiled for bare-metal microcontrollers.",
+      "Continuous vital signs monitoring and cardiac anomaly detection compiled to deterministic C99 headers for microcontrollers.",
+    images: [ogImageUrl],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      { url: iconUrl, type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: iconUrl, type: "image/svg+xml" },
+    ],
   },
 };
 
@@ -86,7 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </TelemetryProvider>
 
         {/* Universal Footer */}
-        <footer className="w-full border-t-2 border-ink bg-white py-6 px-4 sm:px-8 mt-auto z-50">
+        <footer className="w-full border-t-2 border-ink bg-white py-6 px-4 sm:px-8 mt-auto relative z-10">
           <div className="max-w-350 mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-[12px] font-bold tracking-wider uppercase text-ink text-center md:text-left">
               © 2026 HEARTFLOW_OS. TELEMETRY_SYS.

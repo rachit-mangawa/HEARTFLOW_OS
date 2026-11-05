@@ -20,7 +20,9 @@ import {
   Check,
   Download,
   PlusCircle,
-  Activity
+  Activity,
+  User,
+  Settings2
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 
@@ -144,6 +146,13 @@ export default function PatientHistory() {
   const [cloudLoading, setCloudLoading] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportCopied, setReportCopied] = useState(false);
+  const [reportRowsCount, setReportRowsCount] = useState<number | "all">("all");
+  const [reportPatientName, setReportPatientName] = useState("ANONYMOUS / UNASSIGNED");
+  const [reportPatientId, setReportPatientId] = useState("PT-9428-A");
+  const [reportPhysician, setReportPhysician] = useState("");
+  const [reportWard, setReportWard] = useState("CARDIOLOGY / TELEMETRY WARD 4B");
+  const [reportNotes, setReportNotes] = useState("");
+  const [showMetadataEditor, setShowMetadataEditor] = useState(false);
 
   const tableSectionRef = useRef<HTMLDivElement>(null);
 
@@ -159,30 +168,31 @@ export default function PatientHistory() {
     setCloudLoading(true);
     setCloudError(null);
     try {
-      const { data: raw, error: fetchErr } = await apiFetch<RawCloudRecord[]>("/heartflow/history?limit=100", {
+      const { data, error } = await apiFetch<RawCloudRecord[]>("/heartflow/history", {
         onSlow: (slow) => setIsSlow(slow),
       });
-
-      if (raw && Array.isArray(raw)) {
-        const formatted: HistoryRecord[] = raw.map((r: RawCloudRecord) => ({
-          id: r.id,
-          timestamp: r.timestamp,
-          heart_rate: r.heart_rate,
-          spo2: r.spo2,
-          sys_bp: r.sys_bp,
-          dia_bp: r.dia_bp,
-          body_temp: r.temp ?? r.body_temp ?? 37.0,
-          prediction_label: r.prediction_label,
-          confidence: r.confidence,
-          is_at_risk: Boolean(r.prediction_label && r.prediction_label.toLowerCase() !== "normal" && r.prediction_label.toLowerCase() !== "healthy")
-        }));
-        setCloudRecords(formatted);
-        setCloudError(null);
-      } else if (fetchErr) {
-        setCloudError(fetchErr);
+      if (error) {
+        setCloudError(error);
+        setCloudRecords([]);
+      } else if (Array.isArray(data)) {
+        setCloudRecords(
+          data.map((r) => ({
+            id: r.id,
+            timestamp: r.timestamp,
+            heart_rate: r.heart_rate,
+            spo2: r.spo2,
+            sys_bp: r.sys_bp,
+            dia_bp: r.dia_bp,
+            body_temp: r.body_temp ?? r.temp ?? 37.0,
+            prediction_label: r.prediction_label,
+            confidence: r.confidence,
+            is_at_risk: r.prediction_label !== "Healthy" && r.prediction_label !== "Normal",
+          }))
+        );
       }
-    } catch {
-      // cloud unavailable
+    } catch (e) {
+      setCloudError(String(e));
+      setCloudRecords([]);
     } finally {
       setCloudLoading(false);
     }
@@ -231,10 +241,30 @@ export default function PatientHistory() {
         setCloudRecords(SAMPLE_CLINICAL_RECORDS);
       }
     }
+    setReportRowsCount("all");
     setShowReportModal(true);
   };
 
   const recordsToAnalyze = activeRecords.length > 0 ? activeRecords : SAMPLE_CLINICAL_RECORDS;
+  
+  // Sort chronologically latest first so we always display newest observations
+  const sortedRecords = useMemo(() => {
+    return [...recordsToAnalyze].sort((a, b) => {
+      const tA = new Date(a.timestamp).getTime();
+      const tB = new Date(b.timestamp).getTime();
+      if (isNaN(tA) || isNaN(tB)) return (b.id ?? 0) - (a.id ?? 0);
+      return tB - tA;
+    });
+  }, [recordsToAnalyze]);
+
+  const totalAvailableRows = sortedRecords.length;
+  const effectiveReportRows = reportRowsCount === "all"
+    ? totalAvailableRows
+    : Math.min(
+        Math.max(1, typeof reportRowsCount === "number" ? reportRowsCount : parseInt(String(reportRowsCount), 10) || totalAvailableRows),
+        totalAvailableRows
+      );
+  const displayedReportRecords = sortedRecords.slice(0, effectiveReportRows);
 
   // Summary Metrics for Clinical Report
   const metrics = useMemo(() => {
@@ -273,7 +303,7 @@ export default function PatientHistory() {
       .toUpperCase()
       .padStart(8, "0");
 
-    const narrative = `During this monitoring evaluation across ${list.length} recorded telemetry intervals, ${anomalies.length} observations triggered cardiovascular risk indicators (${riskRate}% risk burden). Primary consensus classification aligns with ${topDiagnosis} with ${(meanConfidence * 100).toFixed(1)}% ensemble model agreement. Mean arterial pressure is maintained at ${mapValue} mmHg with clinical shock index ${shockIndex}. Lead-II electrophysiological tracing conforms to active TinyML inference boundaries.`;
+    const narrative = `During this monitoring evaluation across ${list.length} recorded telemetry intervals, ${anomalies.length} observations triggered cardiovascular risk indicators (${riskRate}% risk burden). Primary consensus classification aligns with ${topDiagnosis} with ${(meanConfidence * 100).toFixed(1)}% ensemble model agreement. Mean arterial pressure is maintained at ${mapValue} mmHg with clinical shock index ${shockIndex}. Multi-channel physiological vitals conform to active TinyML inference boundaries.`;
 
     return { 
       meanHr, maxHr, minHr, meanSpo2, nadirSpo2, meanSbp, meanDbp, mapValue, shockIndex,
@@ -287,9 +317,13 @@ export default function PatientHistory() {
 HEARTFLOW_OS CLINICAL TELEMETRY & DISCHARGE SUMMARY REPORT
 Document Reference: HFL-REP-${metrics.hash}
 Generated: ${new Date().toISOString().replace("T", " ").substring(0, 19)} UTC
-Patient Reference: PT-9428-A
-Telemetry Source: ${sourceTab === "session" ? "Active Browser Session" : "Persistent Database Archive"}
+Patient Name: ${reportPatientName || "ANONYMOUS"}
+Patient MRN / ID: ${reportPatientId || "PT-9428-A"}
+Attending Physician: ${reportPhysician || "Unassigned"}
+Facility / Ward: ${reportWard || "Telemetry Ward"}
+${reportNotes ? `Clinical Notes: ${reportNotes}\n` : ""}Telemetry Source: ${sourceTab === "session" ? "Active Browser Session" : "Persistent Database Archive"}
 Total Intervals Evaluated: ${metrics.total}
+Observations Displayed: Latest ${displayedReportRecords.length} of ${metrics.total}
 ================================================================================
 
 1. PATIENT PHYSIOLOGICAL BIOMARKERS SUMMARY:
@@ -312,12 +346,16 @@ Total Intervals Evaluated: ${metrics.total}
 --------------------------------------------------------------------------------
 ${metrics.narrative}
 
-4. AUDIT & VERIFICATION:
+4. TELEMETRY OBSERVATIONS AUDIT LOG (Showing ${displayedReportRecords.length} of ${metrics.total} Intervals):
+--------------------------------------------------------------------------------
+${displayedReportRecords.map((r, i) => `  [${String(i + 1).padStart(2, '0')}] ${r.timestamp} | HR: ${String(r.heart_rate).padStart(3)} BPM | SpO2: ${String(r.spo2).padStart(2)}% | BP: ${r.sys_bp}/${r.dia_bp} mmHg | Temp: ${r.body_temp}°C | Status: ${(r.prediction_label || 'Normal').padEnd(14)} | Conf: ${(r.confidence * 100).toFixed(1)}%`).join('\n')}
+
+5. AUDIT & VERIFICATION:
 --------------------------------------------------------------------------------
 - Verification Audit Hash:  0x${metrics.hash}
-- Alarm Logic Reference:    IEC 60601-1-8 Alarm Priority Categories (Non-diagnostic Protocol)
+- Alarm Logic Reference:    Clinical Reference Thresholds (Non-diagnostic Research Protocol)
 - Transpiler Firmware:      ISO/IEC 9899:1999 (C99)
-- Attending Physician:      ________________________________________
+- Attending Physician:      ${reportPhysician || "________________________________________"}
 ================================================================================`;
   };
 
@@ -327,7 +365,7 @@ ${metrics.narrative}
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Clinical_Report_PT-9428-A_${new Date().toISOString().substring(0, 10)}.txt`;
+    a.download = `Clinical_Report_${(reportPatientId || "PT-9428-A").replace(/[^a-zA-Z0-9_-]/g, "_")}_${new Date().toISOString().substring(0, 10)}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -347,7 +385,7 @@ ${metrics.narrative}
 
   return (
     <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col animate-enter-subtle">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col animate-enter-subtle no-print">
         {/* Header */}
         <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
@@ -452,6 +490,17 @@ ${metrics.narrative}
           )}
         </div>
 
+        {isSlow && sourceTab === "cloud" && (
+          <div className="mb-4 p-2.5 border-2 border-hazard bg-hazard/10 text-hazard text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
+            Waking up the cloud server, first request can take a minute
+          </div>
+        )}
+        {cloudError && sourceTab === "cloud" && (
+          <div className="mb-4 p-2.5 border-2 border-red-500 bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-wider animate-enter-subtle">
+            {cloudError}
+          </div>
+        )}
+
         {/* Telemetry Log Table */}
         <div ref={tableSectionRef} className="crosshair-corner border-2 border-ink bg-ink scroll-mt-24">
           <div className="overflow-x-auto bg-canvas-cream">
@@ -555,120 +604,298 @@ ${metrics.narrative}
 
       {/* Clinical Discharge / Summary Report Modal (Printable) */}
       {showReportModal && metrics && (
-        <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div
+          id="clinical-report-modal"
+          className="fixed inset-0 z-100 bg-black/75 flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:static print:p-0 print:bg-transparent print:overflow-visible"
+        >
           <div
             id="clinical-report-printable"
-            className="bg-white border-4 border-ink max-w-3xl w-full p-6 sm:p-8 flex flex-col gap-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative my-auto"
+            className="bg-white border-4 border-ink max-w-3xl w-full p-5 sm:p-7 flex flex-col gap-3.5 sm:gap-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative my-auto print:border-2 print:shadow-none print:p-3.5 print:gap-2.5 print:max-w-none print:w-full"
           >
             {/* Modal Header */}
-            <div className="flex justify-between items-start border-b-2 border-ink pb-4">
+            <div className="flex justify-between items-start border-b-2 border-ink pb-2.5 print:pb-1.5">
               <div>
-                <div className="text-[11px] font-bold text-hazard tracking-widest uppercase flex items-center gap-2">
-                  <Activity size={13} />
+                <div className="text-[11px] print:text-[8.5px] font-bold text-hazard tracking-widest uppercase flex items-center gap-1.5">
+                  <Activity size={12} />
                   HEARTFLOW_OS · Clinical Telemetry Summary Report
                 </div>
-                <h2 className="text-[22px] sm:text-[28px] font-black uppercase tracking-tight text-ink mt-1">
-                  PATIENT PHYSIOLOGICAL AUDIT
+                <h2 className="text-[20px] sm:text-[23px] print:text-[16px] font-black uppercase tracking-tight text-ink mt-0.5 leading-tight">
+                  PATIENT PHYSIOLOGICAL AUDIT & DISCHARGE SUMMARY
                 </h2>
-                <div className="text-[11px] text-slate font-bold tracking-wider uppercase mt-1">
-                  Patient ID: <span className="text-ink">PT-9428-A</span> · Date: {new Date().toISOString().replace("T", " ").substring(0, 19)} UTC · Audit Hash: 0x{metrics.hash}
+                <div className="text-[10px] sm:text-[11px] print:text-[8px] text-slate font-bold tracking-wider uppercase mt-0.5">
+                  Generated: {new Date().toISOString().replace("T", " ").substring(0, 19)} UTC · Hash: <span className="font-mono text-ink">0x{metrics.hash}</span> · Source: {sourceTab === "session" ? "Active Browser Session" : "Cloud Archive"}
                 </div>
               </div>
-              <button
-                onClick={() => setShowReportModal(false)}
-                className="border-2 border-ink p-1.5 hover:bg-hazard hover:text-white transition-colors no-print"
-                title="Close Report"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2 no-print">
+                <button
+                  type="button"
+                  onClick={() => setShowMetadataEditor(!showMetadataEditor)}
+                  className={`border-2 border-ink px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors cursor-pointer ${
+                    showMetadataEditor ? "bg-ink text-white" : "bg-canvas-cream text-ink hover:bg-ink hover:text-white"
+                  }`}
+                  title="Configure patient name, physician, and ward details"
+                >
+                  <Settings2 size={12} />
+                  {showMetadataEditor ? "Done Editing" : "Edit Details"}
+                </button>
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="border-2 border-ink p-1.5 hover:bg-hazard hover:text-white transition-colors cursor-pointer"
+                  title="Close Report"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Optional Metadata Editor Drawer (Hidden in Print) */}
+            {showMetadataEditor && (
+              <div className="bg-canvas-cream border-2 border-ink p-3 text-[11px] font-mono no-print space-y-2.5 animate-enter-subtle">
+                <div className="font-bold uppercase tracking-wider text-ink text-[10px] flex items-center gap-1.5">
+                  <User size={12} className="text-hazard" />
+                  Edit Patient & Clinician Metadata (Optional Fields)
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate uppercase mb-0.5">Patient Full Name</label>
+                    <input
+                      type="text"
+                      value={reportPatientName}
+                      onChange={(e) => setReportPatientName(e.target.value)}
+                      placeholder="e.g. Jane Doe"
+                      className="w-full bg-white border border-ink px-2 py-1 text-[11px] font-mono font-bold outline-none focus:border-hazard"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate uppercase mb-0.5">Patient ID / MRN</label>
+                    <input
+                      type="text"
+                      value={reportPatientId}
+                      onChange={(e) => setReportPatientId(e.target.value)}
+                      placeholder="e.g. PT-9428-A"
+                      className="w-full bg-white border border-ink px-2 py-1 text-[11px] font-mono font-bold outline-none focus:border-hazard"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate uppercase mb-0.5">Attending Clinician</label>
+                    <input
+                      type="text"
+                      value={reportPhysician}
+                      onChange={(e) => setReportPhysician(e.target.value)}
+                      placeholder="e.g. Dr. Jane Smith, MD"
+                      className="w-full bg-white border border-ink px-2 py-1 text-[11px] font-mono font-bold outline-none focus:border-hazard"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold text-slate uppercase mb-0.5">Facility / Ward / Bed</label>
+                    <input
+                      type="text"
+                      value={reportWard}
+                      onChange={(e) => setReportWard(e.target.value)}
+                      placeholder="e.g. Telemetry Ward 4B"
+                      className="w-full bg-white border border-ink px-2 py-1 text-[11px] font-mono font-bold outline-none focus:border-hazard"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate uppercase mb-0.5">Clinical Notes / Indications (Optional)</label>
+                  <input
+                    type="text"
+                    value={reportNotes}
+                    onChange={(e) => setReportNotes(e.target.value)}
+                    placeholder="e.g. Routine continuous ambulatory telemetry check; no acute symptomatic complaints"
+                    className="w-full bg-white border border-ink px-2 py-1 text-[11px] font-mono outline-none focus:border-hazard"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Patient Demographic & Clinical Header Strip (Always visible, clean in print) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 print:grid-cols-4 gap-2 bg-canvas-cream border-2 border-ink print:border p-2 sm:p-2.5 print:p-1.5 text-[10px] print:text-[8px]">
+              <div>
+                <div className="text-[8px] print:text-[7px] font-bold text-slate uppercase tracking-wider">Patient Name</div>
+                <div className="font-black text-ink truncate text-[11px] sm:text-[12px] print:text-[9px]">{reportPatientName || "ANONYMOUS"}</div>
+              </div>
+              <div>
+                <div className="text-[8px] print:text-[7px] font-bold text-slate uppercase tracking-wider">MRN / Record #</div>
+                <div className="font-black font-mono text-ink truncate text-[11px] sm:text-[12px] print:text-[9px]">{reportPatientId || "PT-9428-A"}</div>
+              </div>
+              <div>
+                <div className="text-[8px] print:text-[7px] font-bold text-slate uppercase tracking-wider">Attending Clinician</div>
+                <div className="font-bold text-ink truncate text-[10px] sm:text-[11px] print:text-[8.5px]">{reportPhysician || "Unassigned"}</div>
+              </div>
+              <div>
+                <div className="text-[8px] print:text-[7px] font-bold text-slate uppercase tracking-wider">Facility / Ward</div>
+                <div className="font-bold text-ink truncate text-[10px] sm:text-[11px] print:text-[8.5px]">{reportWard || "Telemetry Dept"}</div>
+              </div>
             </div>
 
             {/* Vitals Summary Grid (6-Cell Clinical Grid) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-px bg-ink border-2 border-ink">
-              <div className="bg-canvas-cream p-3 text-center">
-                <div className="text-[9px] font-bold text-slate tracking-widest uppercase">Mean HR</div>
-                <div className="text-[20px] font-black tabular-nums">{metrics.meanHr} <span className="text-[10px] text-hazard">BPM</span></div>
-                <div className="text-[9px] text-slate tabular-nums">{metrics.minHr}-{metrics.maxHr}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 print:grid-cols-6 gap-px bg-ink border-2 border-ink print:border">
+              <div className="bg-canvas-cream p-2 sm:p-2.5 print:p-1.5 text-center">
+                <div className="text-[9px] print:text-[8px] font-bold text-slate tracking-widest uppercase">Mean HR</div>
+                <div className="text-[18px] sm:text-[20px] print:text-[15px] font-black tabular-nums">{metrics.meanHr} <span className="text-[9px] text-hazard">BPM</span></div>
+                <div className="text-[9px] print:text-[8px] text-slate tabular-nums">{metrics.minHr}-{metrics.maxHr}</div>
               </div>
-              <div className="bg-canvas-cream p-3 text-center">
-                <div className="text-[9px] font-bold text-slate tracking-widest uppercase">Nadir SpO2</div>
-                <div className="text-[20px] font-black tabular-nums">{metrics.nadirSpo2} <span className="text-[10px] text-hazard">%</span></div>
-                <div className="text-[9px] text-slate tabular-nums">Mean {metrics.meanSpo2}%</div>
+              <div className="bg-canvas-cream p-2 sm:p-2.5 print:p-1.5 text-center">
+                <div className="text-[9px] print:text-[8px] font-bold text-slate tracking-widest uppercase">Nadir SpO2</div>
+                <div className="text-[18px] sm:text-[20px] print:text-[15px] font-black tabular-nums">{metrics.nadirSpo2} <span className="text-[9px] text-hazard">%</span></div>
+                <div className="text-[9px] print:text-[8px] text-slate tabular-nums">Mean {metrics.meanSpo2}%</div>
               </div>
-              <div className="bg-canvas-cream p-3 text-center">
-                <div className="text-[9px] font-bold text-slate tracking-widest uppercase">Mean BP</div>
-                <div className="text-[20px] font-black tabular-nums">{metrics.meanSbp}/{metrics.meanDbp}</div>
-                <div className="text-[9px] text-slate">mmHg</div>
+              <div className="bg-canvas-cream p-2 sm:p-2.5 print:p-1.5 text-center">
+                <div className="text-[9px] print:text-[8px] font-bold text-slate tracking-widest uppercase">Mean BP</div>
+                <div className="text-[18px] sm:text-[20px] print:text-[15px] font-black tabular-nums">{metrics.meanSbp}/{metrics.meanDbp}</div>
+                <div className="text-[9px] print:text-[8px] text-slate">mmHg</div>
               </div>
-              <div className="bg-canvas-cream p-3 text-center">
-                <div className="text-[9px] font-bold text-slate tracking-widest uppercase">Mean MAP</div>
-                <div className="text-[20px] font-black tabular-nums">{metrics.mapValue}</div>
-                <div className="text-[9px] text-slate">mmHg</div>
+              <div className="bg-canvas-cream p-2 sm:p-2.5 print:p-1.5 text-center">
+                <div className="text-[9px] print:text-[8px] font-bold text-slate tracking-widest uppercase">Mean MAP</div>
+                <div className="text-[18px] sm:text-[20px] print:text-[15px] font-black tabular-nums">{metrics.mapValue}</div>
+                <div className="text-[9px] print:text-[8px] text-slate">mmHg</div>
               </div>
-              <div className="bg-canvas-cream p-3 text-center">
-                <div className="text-[9px] font-bold text-slate tracking-widest uppercase">Shock Index</div>
-                <div className="text-[20px] font-black tabular-nums">{metrics.shockIndex}</div>
-                <div className="text-[9px] text-slate">HR / SBP</div>
+              <div className="bg-canvas-cream p-2 sm:p-2.5 print:p-1.5 text-center">
+                <div className="text-[9px] print:text-[8px] font-bold text-slate tracking-widest uppercase">Shock Index</div>
+                <div className="text-[18px] sm:text-[20px] print:text-[15px] font-black tabular-nums">{metrics.shockIndex}</div>
+                <div className="text-[9px] print:text-[8px] text-slate">HR / SBP</div>
               </div>
-              <div className="bg-canvas-cream p-3 text-center">
-                <div className="text-[9px] font-bold text-slate tracking-widest uppercase">Risk Burden</div>
-                <div className="text-[20px] font-black tabular-nums text-hazard">{metrics.riskRate}%</div>
-                <div className="text-[9px] text-slate tabular-nums">{metrics.anomalyCount}/{metrics.total}</div>
+              <div className="bg-canvas-cream p-2 sm:p-2.5 print:p-1.5 text-center">
+                <div className="text-[9px] print:text-[8px] font-bold text-slate tracking-widest uppercase">Risk Burden</div>
+                <div className="text-[18px] sm:text-[20px] print:text-[15px] font-black tabular-nums text-hazard">{metrics.riskRate}%</div>
+                <div className="text-[9px] print:text-[8px] text-slate tabular-nums">{metrics.anomalyCount}/{metrics.total}</div>
               </div>
             </div>
 
             {/* Diagnostic Consensus Box */}
-            <div className="border-2 border-ink p-4 bg-canvas-cream flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="border-2 border-ink print:border p-2.5 sm:p-3 print:p-2 bg-canvas-cream flex flex-col sm:flex-row print:flex-row justify-between items-start sm:items-center print:items-center gap-2">
               <div>
-                <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Primary Diagnostic Consensus</div>
-                <div className="text-[16px] font-black uppercase text-ink flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-hazard inline-block" />
-                  {metrics.topDiagnosis}
+                <div className="text-[9px] print:text-[8px] font-bold text-slate uppercase tracking-wider">Primary Diagnostic Consensus</div>
+                <div className="text-[14px] sm:text-[16px] print:text-[13px] font-black uppercase text-ink flex items-center gap-1.5 mt-0.5">
+                  <span className="w-2.5 h-2.5 bg-hazard inline-block shrink-0" />
+                  <span>{metrics.topDiagnosis}</span>
                 </div>
               </div>
-              <div className="text-left sm:text-right">
-                <div className="text-[10px] font-bold text-slate uppercase tracking-wider">Ensemble Confidence</div>
-                <div className="text-[16px] font-black text-ink tabular-nums">
-                  {(metrics.meanConfidence * 100).toFixed(1)}% <span className="text-[11px] font-normal text-slate">(5-Model Soft Vote)</span>
+              <div className="text-left sm:text-right print:text-right">
+                <div className="text-[9px] print:text-[8px] font-bold text-slate uppercase tracking-wider">TinyML Ensemble Confidence</div>
+                <div className="text-[14px] sm:text-[16px] print:text-[13px] font-black text-ink tabular-nums mt-0.5">
+                  {(metrics.meanConfidence * 100).toFixed(1)}% <span className="text-[10px] print:text-[9px] font-normal text-slate">(5-Model Soft Vote)</span>
                 </div>
               </div>
             </div>
 
-            {/* Diagnostic Narrative */}
-            <div className="border-2 border-ink p-4 bg-white text-[12px] leading-relaxed">
-              <div className="font-bold uppercase tracking-wider text-ink mb-2">Clinical Assessment Narrative:</div>
-              <p className="text-slate">
-                {metrics.narrative}
-              </p>
+            {/* Diagnostic Narrative & Optional Notes */}
+            <div className="border-2 border-ink print:border p-2 sm:p-2.5 print:p-1.5 bg-white text-[11px] sm:text-[12px] print:text-[8.5px] leading-relaxed print:leading-tight space-y-1">
+              <div>
+                <span className="font-bold uppercase tracking-wider text-ink text-[10px] print:text-[7.5px] mr-1.5">Clinical Assessment:</span>
+                <span className="text-slate font-sans print:font-mono">{metrics.narrative}</span>
+              </div>
+              {reportNotes && (
+                <div className="pt-1 border-t border-ink/20 text-[10px] print:text-[8px]">
+                  <span className="font-bold uppercase text-hazard mr-1">Physician Indications:</span>
+                  <span className="text-ink font-sans print:font-mono">{reportNotes}</span>
+                </div>
+              )}
             </div>
 
-            {/* Recent Telemetry Intervals Table */}
-            <div className="border-2 border-ink overflow-hidden">
-              <div className="bg-ink text-white px-4 py-2 text-[11px] font-bold tracking-widest uppercase flex justify-between items-center">
-                <span>Recent Telemetry Intervals Sample ({Math.min(5, recordsToAnalyze.length)} of {metrics.total})</span>
-                <span className="text-[10px] text-hazard">INT8 TinyML</span>
-              </div>
-              <div className="divide-y divide-ink text-[11px] max-h-36 overflow-y-auto">
-                {recordsToAnalyze.slice(0, 5).map((r) => (
-                  <div key={r.id} className="p-2.5 flex justify-between items-center bg-white tabular-nums flex-wrap gap-2">
-                    <span className="text-slate">{r.timestamp}</span>
-                    <span>HR: <strong className="text-ink">{r.heart_rate}</strong> BPM</span>
-                    <span>SpO2: <strong className="text-ink">{r.spo2}</strong>%</span>
-                    <span>BP: <strong className="text-ink">{r.sys_bp}/{r.dia_bp}</strong></span>
-                    <span className={`px-2 py-0.5 border text-[10px] font-bold uppercase ${
-                      r.is_at_risk ? "bg-hazard text-white border-hazard" : "bg-[#d1fae5] text-[#065f46] border-[#065f46]"
-                    }`}>
-                      {r.prediction_label} ({(r.confidence * 100).toFixed(1)}%)
-                    </span>
+            {/* Telemetry Observations Table */}
+            <div className="border-2 border-ink print:border overflow-hidden">
+              <div className="bg-ink text-white px-3 py-1 print:py-0.5 text-[10px] print:text-[8px] font-bold tracking-widest uppercase flex flex-wrap justify-between items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span>Telemetry Observations (Latest {displayedReportRecords.length} of {metrics.total})</span>
+                  <span className="text-[9px] print:text-[7.5px] text-hazard">INT8 Quantized</span>
+                </div>
+
+                {/* User-Controlled Observations to Print Selector (Hidden in Print) */}
+                <div className="flex items-center gap-1.5 no-print">
+                  <span className="text-[9px] text-white/80">OBSERVATIONS TO PRINT:</span>
+                  <div className="flex items-center bg-white border border-ink text-ink">
+                    <input
+                      type="number"
+                      min={1}
+                      max={totalAvailableRows}
+                      value={effectiveReportRows}
+                      onChange={(e) => {
+                        const parsed = parseInt(e.target.value, 10);
+                        if (isNaN(parsed) || parsed <= 0) {
+                          setReportRowsCount(1);
+                        } else {
+                          setReportRowsCount(Math.min(parsed, totalAvailableRows));
+                        }
+                      }}
+                      className="w-12 px-1 py-0.5 text-[10px] font-mono font-bold text-center outline-none bg-transparent"
+                      title="Number of vitals observations to include in report"
+                    />
+                    <span className="px-1 text-[9px] font-mono text-slate border-l border-ink/30">/ {totalAvailableRows}</span>
                   </div>
-                ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setReportRowsCount("all")}
+                    className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border cursor-pointer transition-colors ${
+                      effectiveReportRows === totalAvailableRows
+                        ? "bg-hazard text-white border-hazard"
+                        : "bg-white/10 text-white border-white/30 hover:bg-white hover:text-ink"
+                    }`}
+                    title="Display all available records"
+                  >
+                    ALL
+                  </button>
+                </div>
+              </div>
+
+              {/* Table Body - Scrollable on screen, compact single-page layout in print */}
+              <div className="overflow-x-auto max-h-64 print:max-h-none print:overflow-visible">
+                <table className="w-full text-left border-collapse text-[11px] print:text-[8px] tabular-nums font-mono">
+                  <thead>
+                    <tr className="bg-canvas-cream border-b border-ink/40 text-slate text-[9px] print:text-[7px] uppercase tracking-wider font-bold">
+                      <th className="px-2 py-1 print:py-0.5 print:px-1 border-r border-ink/20">Timestamp</th>
+                      <th className="px-2 py-1 print:py-0.5 print:px-1 border-r border-ink/20">HR</th>
+                      <th className="px-2 py-1 print:py-0.5 print:px-1 border-r border-ink/20">SpO2</th>
+                      <th className="px-2 py-1 print:py-0.5 print:px-1 border-r border-ink/20">BP (Sys/Dia)</th>
+                      <th className="px-2 py-1 print:py-0.5 print:px-1 border-r border-ink/20">Temp</th>
+                      <th className="px-2 py-1 print:py-0.5 print:px-1 border-r border-ink/20">Inference Status</th>
+                      <th className="px-2 py-1 print:py-0.5 print:px-1">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ink/20">
+                    {displayedReportRecords.map((r) => (
+                      <tr key={r.id} className="bg-white hover:bg-canvas-cream/50 transition-colors">
+                        <td className="px-2 py-0.8 print:py-0.5 print:px-1 border-r border-ink/20 text-slate whitespace-nowrap">{r.timestamp}</td>
+                        <td className="px-2 py-0.8 print:py-0.5 print:px-1 border-r border-ink/20 font-bold">{r.heart_rate} <span className="text-[8px] print:text-[6.5px] text-slate">BPM</span></td>
+                        <td className="px-2 py-0.8 print:py-0.5 print:px-1 border-r border-ink/20 font-bold">{r.spo2}%</td>
+                        <td className="px-2 py-0.8 print:py-0.5 print:px-1 border-r border-ink/20 font-bold">{r.sys_bp}/{r.dia_bp}</td>
+                        <td className="px-2 py-0.8 print:py-0.5 print:px-1 border-r border-ink/20">{r.body_temp}°C</td>
+                        <td className="px-2 py-0.8 print:py-0.5 print:px-1 border-r border-ink/20">
+                          <span className={`px-1 py-0.2 print:px-1 print:py-0 border text-[9px] print:text-[7px] font-bold uppercase inline-block leading-tight ${
+                            r.is_at_risk ? "bg-hazard text-white border-hazard" : "bg-[#d1fae5] text-[#065f46] border-[#065f46]"
+                          }`}>
+                            {r.prediction_label}
+                          </span>
+                        </td>
+                        <td className="px-2 py-0.8 print:py-0.5 print:px-1 font-bold">
+                          {(r.confidence * 100).toFixed(1)}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
             {/* Physician Sign-off (Clean for Print) */}
-            <div className="pt-2 border-t border-ink/20 flex justify-between items-end text-[10px] font-bold text-slate uppercase">
-              <div>Verification Hash: 0x{metrics.hash}</div>
-              <div className="text-right">Physician Signature: _______________________________</div>
+            <div className="pt-2 border-t-2 border-ink print:border-t flex justify-between items-end text-[10px] print:text-[9px] font-bold text-slate uppercase">
+              <div className="space-y-0.5">
+                <div>Audit Hash: <span className="font-mono text-ink">0x{metrics.hash}</span></div>
+                <div className="text-[9px] print:text-[8px] text-slate">HEARTFLOW_OS Edge Telemetry Supervisor</div>
+              </div>
+              <div className="flex items-end gap-6 text-right">
+                <div>
+                  <div className="border-b border-ink w-44 sm:w-52 mb-1"></div>
+                  <div className="text-ink">{reportPhysician ? reportPhysician : "Attending Physician"}</div>
+                </div>
+                <div>
+                  <div className="border-b border-ink w-20 sm:w-24 mb-1"></div>
+                  <div>Date</div>
+                </div>
+              </div>
             </div>
 
             {/* Modal Actions (Hidden in Print) */}

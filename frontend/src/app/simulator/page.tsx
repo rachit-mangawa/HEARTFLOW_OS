@@ -37,14 +37,6 @@ function generateRandomVitals(): PatientVitals {
   };
 }
 
-const DEFAULT_VITALS: PatientVitals = {
-  Heart_Rate: 75,
-  SpO2_Level: 98,
-  Systolic_BP: 120,
-  Diastolic_BP: 80,
-  Body_Temp: 37.0,
-};
-
 const PRESET_VECTORS = [
   {
     name: "BASELINE NORMAL",
@@ -73,9 +65,19 @@ const PRESET_VECTORS = [
 ];
 
 export default function Simulator() {
-  const [formData, setFormData] = useState<PatientVitals>(DEFAULT_VITALS);
-  const [submittedData, setSubmittedData] = useState<PatientVitals | null>(null);
-  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [formData, setFormData] = useState<PatientVitals>(generateRandomVitals);
+  const [submittedData, setSubmittedData] = useState<PatientVitals | null>(() => formData);
+  const [prediction, setPrediction] = useState<PredictionResult | null>(() => {
+    const edge = evaluateEdge(formData);
+    return {
+      prediction: Boolean(edge.is_at_risk),
+      prediction_label: edge.label,
+      probability: edge.confidence,
+      model_outputs: edge.model_outputs,
+      model_probs: edge.model_probs,
+      weights: edge.weights,
+    };
+  });
   const [loading, setLoading] = useState(false);
   const [isSlow, setIsSlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -409,14 +411,18 @@ export default function Simulator() {
 
                         return (
                           <div
+                            suppressHydrationWarning
                             className={`border-2 p-4 sm:p-5 flex flex-col mb-4 ${getStatusStyles(
                               prediction.prediction ? prediction.prediction_label : "Healthy"
                             )}`}
                           >
-                            <div className="font-sans text-[clamp(26px,2.5vw,48px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-word">
+                            <div
+                              suppressHydrationWarning
+                              className="font-sans text-[clamp(26px,2.5vw,48px)] font-black tracking-tighter leading-none mb-2 uppercase wrap-break-word"
+                            >
                               {diagnosisText}
                             </div>
-                            <div className="text-[12px] font-bold tracking-widest uppercase">
+                            <div suppressHydrationWarning className="text-[12px] font-bold tracking-widest uppercase">
                               CONFIDENCE: {(prediction.probability * 100).toFixed(1)}%
                             </div>
                           </div>
@@ -458,13 +464,33 @@ export default function Simulator() {
                     </div>
 
                     {/* SHAP Feature Attributions Container */}
-                    <div className="border-2 border-ink bg-white p-4 sm:p-5 flex flex-col">
-                      <div className="text-[12px] font-black uppercase text-ink tracking-wider mb-4 border-b-2 border-ink pb-2 flex justify-between items-center">
-                        <span>SHAPLEY ADDITIVE EXPLANATIONS</span>
-                        <span className="text-[10px] text-slate font-mono">DIRECTIONAL POLARITY</span>
+                    <div className="border-2 border-ink bg-white p-4 sm:p-5 flex flex-col relative overflow-hidden">
+                      <div className="text-[12px] font-black uppercase text-ink tracking-wider mb-4 border-b-2 border-ink pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 inline-block transition-colors ${
+                              loading ? "bg-amber-600 animate-ping" : "bg-hazard"
+                            }`}
+                          />
+                          <span>SHAPLEY ADDITIVE EXPLANATIONS</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {loading ? (
+                            <span className="text-[10px] font-bold text-hazard font-mono flex items-center gap-1.5 bg-risk-bg border border-hazard/40 px-2 py-0.5 animate-pulse">
+                              <Cpu size={11} className="animate-spin text-hazard" />
+                              <span>CALIBRATING VECTORS...</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate font-mono flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 bg-emerald-700 inline-block" />
+                              <span className="hidden sm:inline">DIRECTIONAL POLARITY [0.00 MIDLINE]</span>
+                              <span className="sm:hidden">0.00 MIDLINE</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="w-full">
-                        <ShapChart patientData={submittedData} />
+                        <ShapChart patientData={submittedData} isComputing={loading} />
                       </div>
                     </div>
                   </div>
@@ -508,8 +534,8 @@ function InputControl({ label, value, min, max, step = 1, unit, onChange }: Inpu
         <label className="text-[13px] sm:text-[14px] font-black text-slate tracking-wider group-hover:text-ink transition-colors uppercase">
           {label}
         </label>
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-sans text-[26px] sm:text-[30px] font-black leading-none tabular-nums tracking-tighter">
+        <div className="flex items-baseline gap-1.5" suppressHydrationWarning>
+          <span className="font-sans text-[26px] sm:text-[30px] font-black leading-none tabular-nums tracking-tighter" suppressHydrationWarning>
             {value}
           </span>
           {unit && <span className="text-[12px] font-bold text-hazard">{unit}</span>}
@@ -525,6 +551,7 @@ function InputControl({ label, value, min, max, step = 1, unit, onChange }: Inpu
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
           className="fader-slider"
+          suppressHydrationWarning
         />
         <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-mono font-bold text-slate tracking-widest mt-1">
           <span>{min}</span>

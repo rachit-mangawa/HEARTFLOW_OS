@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { AlertOctagon, RotateCcw, Home } from "lucide-react";
+import { RotateCcw, Home } from "lucide-react";
 
 export default function ErrorBoundary({
   error,
@@ -62,4 +62,3 @@ export default function ErrorBoundary({
     </main>
   );
 }
-

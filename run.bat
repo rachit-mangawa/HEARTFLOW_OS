@@ -15,8 +15,8 @@ netstat -ano | findstr ":8000.*LISTENING" >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     echo Port 8000 is already in use. Assuming backend is running.
 ) else (
-    echo Starting backend/dev.py on 127.0.0.1:8000...
-    start "HeartFlow Backend" cmd /c "call backend\.venv\Scripts\activate.bat && python backend\dev.py"
+    echo Starting backend/main.py on 127.0.0.1:8000...
+    start "HeartFlow Backend" cmd /c "call backend\.venv\Scripts\activate.bat && python backend\main.py"
 )
 
 echo [3/3] Checking Frontend Dependencies and Launching...

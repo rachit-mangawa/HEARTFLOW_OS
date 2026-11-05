@@ -81,7 +81,7 @@ export class BrowserTelemetrySimulator {
         disease_probs: prediction.disease_probs,
         inference_latency_us: prediction.latency_us
       },
-      runtime_mode: "EDGE_WASM_BROWSER"
+      runtime_mode: "BROWSER_LOCAL"
     };
 
     return packet;

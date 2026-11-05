@@ -105,7 +105,7 @@ export default function CohortBreakdownChart({
             </h3>
           </div>
           <div className="text-[11px] font-mono text-slate font-bold uppercase tracking-wider">
-            IEC 60601-1-8 Alarm Priority Compliance
+            Clinical Alarm Threshold Ranges
           </div>
         </div>
 
@@ -187,7 +187,7 @@ export default function CohortBreakdownChart({
         </div>
 
         <div className="text-[11px] font-mono font-bold text-[#346538] border border-[#346538] px-3 py-1 bg-white whitespace-nowrap">
-          ISO 13485 / IEC 62304 COMPLIANT
+          OPEN CLINICAL BENCHMARK
         </div>
       </div>
     </div>

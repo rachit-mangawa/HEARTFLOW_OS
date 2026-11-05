@@ -19,6 +19,8 @@ test_*.db
 # Distribution / packaging
 .Python
 build/
+backend/build/
+scratch/
 develop-eggs/
 dist/
 downloads/

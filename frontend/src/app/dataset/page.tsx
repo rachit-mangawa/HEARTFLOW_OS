@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Database,
-  Layers,
   Download,
   Flame,
   BarChart3,
@@ -11,7 +10,6 @@ import {
   TableProperties,
   ListFilter,
   CheckCircle2,
-  Cpu,
 } from "lucide-react";
 
 import { DATASET_PROFILE, DatasetProfile } from "@/lib/edge/dataset-profile";
@@ -20,49 +18,15 @@ import FeatureDistributionChart from "@/components/FeatureDistributionChart";
 import CohortBreakdownChart from "@/components/CohortBreakdownChart";
 import FeatureStatsTable from "@/components/FeatureStatsTable";
 import PaginatedRecordInspector from "@/components/PaginatedRecordInspector";
-import { apiFetch } from "@/lib/api";
-import { API_BASE } from "@/config";
 
 export default function DatasetPage() {
-  const [profile, setProfile] = useState<DatasetProfile>(DATASET_PROFILE);
+  const [profile] = useState<DatasetProfile>(DATASET_PROFILE);
   const [activeTab, setActiveTab] = useState<
     "heatmap" | "distributions" | "cohorts" | "dictionary" | "records"
   >("heatmap");
-  const [isLiveApi, setIsLiveApi] = useState(false);
-  const [showArchNote, setShowArchNote] = useState(false);
-
-  useEffect(() => {
-    const fetchLiveProfile = async () => {
-      try {
-        const { data } = await apiFetch<DatasetProfile>("/heartflow/dataset/summary");
-        if (data && data.summary && data.feature_stats) {
-          setProfile((prev) => ({
-            ...prev,
-            ...data,
-            sample_rows: data.sample_rows || prev.sample_rows,
-          }));
-          setIsLiveApi(true);
-        }
-      } catch {
-        // Fall through to precomputed edge profile
-      }
-    };
-
-    fetchLiveProfile();
-  }, []);
 
   const handleDownloadCSV = () => {
-    if (isLiveApi) {
-      const a = document.createElement("a");
-      a.href = `${API_BASE}/heartflow/dataset/download`;
-      a.download = "heartflow_ground_truth_60k.csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      return;
-    }
-
-    // Client-side fallback download
+    // Client-side instant sample download
     const rows = profile.sample_rows;
     if (!rows.length) return;
     const columns = Object.keys(rows[0]);
@@ -75,106 +39,47 @@ export default function DatasetPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "heartflow_ground_truth_60k_sample.csv";
+    a.download = "heartflow_ground_truth_sample.csv";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const { summary, target_distribution, alert_prevalence, feature_stats, correlation_matrix, feature_dependencies, sample_rows } = profile;
+  const { summary, target_distribution, alert_prevalence, feature_stats, correlation_matrix, feature_dependencies } = profile;
 
   return (
-    <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-20">
-      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-12 flex-1 flex flex-col animate-enter-subtle">
-        {/* Top Medical Provenance Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate border-b border-ink/20 pb-3 mb-6 gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-hazard" />
-            <span>IEC-60601-1 TELEMETRY CORPUS · N=60,000 OBSERVATIONS</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isLiveApi ? "bg-emerald-600" : "bg-hazard"
-                }`}
-              />
-              <span className="font-mono text-ink">
-                {isLiveApi ? "LIVE BACKEND STREAM" : "ZERO-CLOUD EDGE CALIBRATED"}
-              </span>
-            </div>
-
-            <button
-              onClick={() => setShowArchNote(!showArchNote)}
-              className="text-[10px] text-hazard hover:underline font-bold"
-            >
-              [ARCHITECTURE SPEC]
-            </button>
-          </div>
-        </div>
-
-        {/* Architecture Note Drawer */}
-        {showArchNote && (
-          <div className="mb-8 p-4 bg-white border-2 border-ink shadow-[4px_4px_0px_0px_#141413]">
-            <div className="flex items-center justify-between border-b border-ink/20 pb-2 mb-3">
-              <div className="text-[12px] font-black uppercase text-hazard flex items-center gap-2">
-                <Cpu size={14} />
-                ENGINEERING NOTE: WHY AGGREGATIONS & PROFILING REPLACE 60K RECORD DUMPS
-              </div>
-              <button
-                onClick={() => setShowArchNote(false)}
-                className="text-[11px] text-slate font-bold hover:text-ink uppercase"
-              >
-                CLOSE [×]
-              </button>
-            </div>
-            <div className="text-[12px] font-sans text-ink leading-relaxed space-y-2">
-              <p>
-                <strong>The Bottleneck:</strong> Fetching 60,000 raw rows on the fly generates an ~18 MB JSON payload, blocks Python serialization for multiple seconds, floods frontend memory, and degrades browser UI frame rates.
-              </p>
-              <p>
-                <strong>Industry Standard Solution (Databricks / Snowflake / Kaggle EDA):</strong> HeartFlow OS implements server-side pre-computed statistical profiling (Pearson correlation matrix, 12-bin continuous vital histograms, disease class parity, and parametric summaries) combined with a 25-row paginated inspector. Bandwidth is reduced by <strong>99.8%</strong>, time-to-first-render is <strong>&lt; 50ms</strong>, and memory pressure is eliminated.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Header Hero */}
-        <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col lg:flex-row justify-between lg:items-end gap-6">
+    <main className="min-h-dvh bg-canvas-cream flex flex-col font-mono selection:bg-hazard selection:text-white pb-16">
+      <div className="max-w-350 mx-auto w-full px-4 sm:px-8 py-10 md:py-14 flex-1 flex flex-col animate-enter-subtle">
+        {/* Header */}
+        <header className="mb-8 border-b-4 border-ink pb-8 flex flex-col md:flex-row justify-between md:items-end gap-6">
           <div>
-            <div className="text-[11px] sm:text-[12px] text-hazard font-bold tracking-widest mb-3 flex items-center gap-2 uppercase">
-              <Database size={15} />
-              CLINICAL TELEMETRY GROUND TRUTH
+            <div className="text-[12px] text-hazard font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
+              <Database size={14} />
+              <span>CLINICAL TELEMETRY GROUND TRUTH</span>
             </div>
-            <h1 className="text-[clamp(2.2rem,5vw,5.5rem)] leading-[0.9]">
+            <h1 className="text-[clamp(2.75rem,5.5vw,5.5rem)] leading-[0.9]">
               DATASET<br />EXPLORER
             </h1>
-            <p className="text-[12px] sm:text-[13px] text-slate font-sans mt-3 max-w-2xl leading-relaxed">
-              High-volume cardiovascular & multi-parameter telemetry ground truth engine. Explore multivariate feature dependencies, continuous histograms, disease prevalence, and parametric vital metrics across 60,000 clinical patient records.
-            </p>
           </div>
 
-          <div className="flex flex-col sm:items-end gap-3 w-full lg:w-auto shrink-0">
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
-              <div className="px-3 py-2 sm:py-1.5 bg-white border-2 border-ink flex items-center justify-center sm:justify-start text-[11px] sm:text-[12px] font-bold uppercase tracking-wider text-ink shadow-[2px_2px_0px_#141413]">
-                <Layers className="w-3.5 h-3.5 mr-1.5 sm:mr-2 text-hazard shrink-0" />
-                <span>{summary.total_features} Features</span>
-              </div>
-              <div className="px-3 py-2 sm:py-1.5 bg-ink border-2 border-ink text-white flex items-center justify-center sm:justify-start text-[11px] sm:text-[12px] font-bold uppercase tracking-wider shadow-[2px_2px_0px_#9F2F2D]">
-                <Database className="w-3.5 h-3.5 mr-1.5 sm:mr-2 text-white shrink-0" />
-                <span className="truncate">{summary.total_records.toLocaleString()} Obs</span>
-              </div>
+          <div className="flex flex-col items-start md:items-end gap-3">
+            <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white">
+              CORPUS: 60,000 OBSERVATIONS · 13 FEATURES
             </div>
-
-            <button
-              onClick={handleDownloadCSV}
-              className="btn-tactile min-h-11 text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2.5 bg-white hover:bg-hazard hover:text-white transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
-            >
-              <Download size={15} />
-              <span>Download Ground-Truth CSV (4.49 MB)</span>
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleDownloadCSV}
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-white hover:bg-hazard hover:text-white transition-all duration-150 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                title="Download verified telemetry ground-truth CSV sample"
+              >
+                <Download size={13} />
+                Download CSV Sample
+              </button>
+            </div>
+            <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
+              Scope: Multi-Cohort Ground Truth Archive · 6 Vitals · 5 Risk Classes
+            </div>
           </div>
         </header>
 
@@ -268,7 +173,7 @@ export default function DatasetPage() {
             }`}
           >
             <PieChart size={14} className={activeTab === "cohorts" ? "text-hazard" : "text-slate"} />
-            <span>Cohorts & Alarms</span>
+            <span>Target Class Cohorts</span>
           </button>
 
           <button
@@ -280,7 +185,7 @@ export default function DatasetPage() {
             }`}
           >
             <TableProperties size={14} className={activeTab === "dictionary" ? "text-hazard" : "text-slate"} />
-            <span>Data Dictionary</span>
+            <span>Feature Dictionary</span>
           </button>
 
           <button
@@ -297,7 +202,7 @@ export default function DatasetPage() {
         </div>
 
         {/* Tab Content Display */}
-        <div key={activeTab} className="flex-1 animate-enter-subtle">
+        <div className="flex-1">
           {activeTab === "heatmap" && (
             <CorrelationHeatmap
               correlationData={correlation_matrix}
@@ -322,7 +227,7 @@ export default function DatasetPage() {
 
           {activeTab === "records" && (
             <PaginatedRecordInspector
-              initialRows={sample_rows}
+              initialRows={profile.sample_rows}
               totalRecordsCount={summary.total_records}
             />
           )}

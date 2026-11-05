@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import { IS_DEV } from "@/config";
 import {
   Download,
   FileSpreadsheet,
@@ -373,7 +372,7 @@ export default function MLOps() {
     formData.append("file", file);
 
     try {
-      const { data, error: fetchErr, status: httpStatus } = await apiFetch<{ status?: string; message?: string; error?: string }>(
+      const { error: fetchErr, status: httpStatus } = await apiFetch<{ status?: string; message?: string; error?: string }>(
         "/heartflow/retrain",
         {
           method: "POST",
@@ -579,6 +578,11 @@ export default function MLOps() {
                 {isSlow && (
                   <div className="p-3 border-2 border-hazard bg-hazard/10 text-hazard text-[12px] font-bold uppercase tracking-wider">
                     Waking up the server, first request can take a minute
+                  </div>
+                )}
+                {status === "error" && message && !retrainProgress && (
+                  <div className="p-3 border-2 border-hazard bg-rose-50 text-hazard text-[12px] font-bold uppercase tracking-wider">
+                    {message}
                   </div>
                 )}
                 <button

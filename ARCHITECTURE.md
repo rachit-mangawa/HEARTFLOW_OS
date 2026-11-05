@@ -9,6 +9,12 @@
 [![Quantization](https://img.shields.io/badge/Quantization-INT8_--76.4%25_SRAM-c2410c?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
 [![CI Verification](https://img.shields.io/badge/CI_Verification-58%2F58_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
 
+<br/>
+
+<p align="center">
+  <img src="frontend/public/og-image.png" alt="HEARTFLOW_OS Architecture Specification" width="100%" />
+</p>
+
 ---
 
 ### Specification Metadata & Approval Records
@@ -187,7 +193,7 @@ flowchart TD
     end
 
     subgraph S4["4. C99 TRANSPILER & INT8 QUANTIZER"]
-        SOFTVOTE --> EXPORT["backend/export.py<br/>Scikit-Learn AST Transpiler"]
+        SOFTVOTE --> EXPORT["frontend/src/lib/edge/c_exporter.ts<br/>Client-Side TinyML Transpiler"]
         EXPORT --> QUANT["INT8 Symmetric Quantization<br/>Q = clamp(round(W / scale), -128, 127)<br/>-76.4% SRAM Footprint (34.8 KB → 8.2 KB)"]
         QUANT --> HEADER["firmware/include/model.h<br/>Zero-Malloc C99 ABI: int predict(const float *features)"]
     end
@@ -484,7 +490,7 @@ The ingestion engine processes incoming CSV files (up to 50 MB) through a multi-
 - **Header Alias Resolution**: Maps more than 40 common column name variants to canonical features (`Heart_Rate`, `SpO2_Level`, `Systolic_BP`, `Diastolic_BP`, `Body_Temp`, `Predicted_Disease`).
 - **Encoding Repair**: Automatically fixes corrupted degree symbols (`\ufffd` to `°C`) and strips trailing whitespace.
 - **Data Validation**: Checks that all 5 required physiological channels are present and non-empty. Batches with zero valid rows are rejected before model training begins.
-- **Dataset Re-indexing**: Appends validated observations to the canonical corpus (`data/patient_dataset.csv`), maintaining monotonic `Patient Number` sequences.
+- **Dataset Re-indexing**: Appends validated observations to the canonical corpus (`backend/heartflow_backend/assets/patient_dataset.csv`), maintaining monotonic `Patient Number` sequences.
 
 ### 7.2. Asynchronous Background Task Architecture & Polling Protocol
 To avoid HTTP request timeouts during compute-intensive training, retraining runs asynchronously:
@@ -553,7 +559,7 @@ Measured across 10,000 synthetic clinical telemetry vectors:
 
 ## 10. 60,000 Observation Telemetry Corpus & Cloud Infrastructure
 
-### 10.1. Ground-Truth Telemetry Corpus (`backend/model/patient_data.csv`)
+### 10.1. Ground-Truth Telemetry Corpus (`backend/heartflow_backend/assets/patient_dataset.csv`)
 - **60,000 Continuous Telemetry Observations** (4.49 MB CSV): High-fidelity clinical vital signs dataset validated against IEC-60601-1 medical device standards.
 - **Server-Side Statistical Profiler (`backend/dataset_analytics.py`)**:
   - Precomputes moments ($\mu$, $\sigma$, median, $IQR$, skewness) across continuous channels.
@@ -566,28 +572,23 @@ Measured across 10,000 synthetic clinical telemetry vectors:
 
 ### 10.2. Remote Cloud Service Gateway
 - **Production REST Gateway**: `https://idkhowtocodefr-hf-backend.hf.space`
-- **Real-Time WebSocket Feed**: `wss://idkhowtocodefr-hf-backend.hf.space/ws/feed`
 
 ---
 
 ## 11. Automated Test Verification & Edge Case Matrix
 
-The HeartFlow OS backend and embedded toolchain are validated against a 58-test automated verification suite (`58/58 passing in ~5.5s`). The suite enforces strict clinical, mathematical, and safety invariants across all layers.
+The HeartFlow OS backend and embedded toolchain are validated against a 23-test automated verification suite (`23/23 passing`). The suite enforces strict clinical, mathematical, and safety invariants across all layers.
 
 ### 11.1. Test Suite Distribution by Subsystem
 
 | Test Suite File | Subsystem Under Test | Tests | Key Invariants & Edge Cases Enforced |
 | :--- | :--- | :---: | :--- |
-| **[`tests/test_api.py`](tests/test_api.py)** | REST API Endpoints & Gateways | **21** | • `POST /predict`: Normal vitals and acute vitals (severe tachycardia + hypoxemia)<br/>• `POST /explain`: Game-theoretic SHAP TreeExplainer feature attributions<br/>• `GET /export_tinyml`: Parameterized matrix across all models with `quantize=true/false` and invalid model error response<br/>• `GET /dataset`: Dual-mode legacy list and 25-row paginated inspector<br/>• `GET /dataset/summary` & `GET /dataset/download`: Telemetry moments and CSV stream<br/>• `GET /health` & `GET /metrics`: Readiness probe and accuracy/F1 diagnostics |
-| **[`tests/test_export.py`](tests/test_export.py)** | C99 AST Transpiler & Zero-Malloc ABI | **7** | • Transpiles all 5 architectures: `rf`, `svm`, `logreg`, `small_nn`, `knn`<br/>• **Zero-Malloc ABI**: Static verification that emitted C99 code contains zero dynamic heap allocations (`malloc(`, `calloc(`, `realloc(`, `free(` prohibited)<br/>• **Syntax Integrity**: Balanced braces (`{` == `}`), include guards, and `<stdint.h>` compliance<br/>• **INT8 Fixed-Point Saturation**: Verifies clamping to $[-128, 127]$ and scale factor precision<br/>• **Defensive Handling**: Graceful error dictionaries for null engines, missing models, and unexportable architectures |
-| **[`tests/test_dataset_analytics.py`](tests/test_dataset_analytics.py)** | Dataset Profiler & Explorer Engine | **8** | • **Statistical Moments & Matrices**: 9x9 Pearson correlation matrix ($r \in [-1.0, 1.0]$) and 12-bin continuous histograms<br/>• **In-Memory Caching**: Identical file `mtime` hits memory cache instantly without disk re-reads<br/>• **Boundary Clamping**: `page <= 0` clamped to `1`, `limit > 100` clamped to `100`<br/>• **Out-of-Bounds Handling**: Requesting non-existent pages (e.g. `page=9999`) yields clean empty `rows: []`<br/>• **Filtering**: Case-insensitive cohort filtering (`"heart disease"` == `"Heart Disease"`) and patient ID substring matching |
-| **[`tests/test_mlops.py`](tests/test_mlops.py)** | Schema Ingestion & Validation Pipeline | **6** | • **Schema Alias Resolution**: Automatically maps 40+ header variations (`HR`, `hr`, `heartrate`, `o2_saturation`, `sys_bp`, `systolic bp`, `temp`) to canonical clinical features<br/>• **Encoding Auto-Repair**: Cleans corrupt ISO-8859 symbols (`\ufffd` $\to$ `°C`)<br/>• **Data Hygiene**: Drops rows where all continuous signals are NaN; auto-populates optional fields (`Patient Number`, alerts)<br/>• **Defensive Ingestion**: Missing mandatory physiological vitals raises clear `ValueError`; empty CSV uploads fail safely |
-| **[`tests/test_simulator.py`](tests/test_simulator.py)** | Physiological Telemetry Simulator | **5** | • **Physiological Clamping**: Extreme out-of-bounds vitals are clamped strictly to clinical survival limits (HR $\in [50, 180]$, $SpO_2 \in [80, 100]$, Temp $\in [36.0, 39.0]$)<br/>• **State Transitions**: Validates target assignments across all 5 conditions (`asthma`, `hypertension`, `heart_disease`, `diabetes`, `normal`)<br/>• **Physics Drift**: Numerical integration converges stably towards targets without unbounded oscillations<br/>• **Numerical Precision**: Generator yields floats rounded to 1 decimal place |
-| **[`tests/test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering & Preprocessing | **4** | • Affine StandardScaler fitting and inference transform<br/>• Target leakage prevention (drops alarms, IDs, fall flags)<br/>• Risk Severity synthesis interaction feature: $\mathbb{I}(\text{HR} > 105) + \mathbb{I}(\text{SpO2} < 94)$<br/>• Model directory resolution and encoder artifact serialization |
-| **[`tests/test_database.py`](tests/test_database.py)** | Local SQLite Telemetry Persistence | **3** | • Asynchronous table creation (`predictions` schema)<br/>• Chronological audit logging of inference vitals, diagnosis label, and confidence score<br/>• Empty history state handling |
-| **[`tests/test_backend.py`](tests/test_backend.py)** | Core Validation & Routing | **2** | • Root endpoint redirect / docs readiness<br/>• Pydantic schema validation: rejects malformed data types with HTTP 422 Unprocessable Entity |
+| **[`tests/test_api.py`](tests/test_api.py)** | REST API Endpoints & Gateways | **9** | • `GET /health`: Readiness probe, model loading, and retrain capability flag<br/>• `POST /predict`: Normal vitals and acute vitals (severe tachycardia + hypoxemia)<br/>• `POST /explain`: Game-theoretic SHAP TreeExplainer feature attributions<br/>• `POST /retrain` & `GET /retrain/status`: Feature enable/disable gates, 50MB payload limits, and live stage polling<br/>• Cold boot import speed (< 1s) and zero side-effect file creation verification |
+| **[`tests/test_mlops.py`](tests/test_mlops.py)** | Schema Ingestion & Validation Pipeline | **6** | • **Schema Alias Resolution**: Automatically maps 40+ header variations (`HR`, `hr`, `heartrate`, `o2_saturation`, `sys_bp`, `systolic bp`, `temp`) to canonical clinical features<br/>• **Encoding Auto-Repair**: Cleans corrupt ISO-8859 symbols (`\ufffd` $\to$ `°C`)<br/>• **Data Hygiene**: Drops rows where all continuous signals are NaN; auto-populates optional fields<br/>• **Defensive Ingestion**: Missing mandatory physiological vitals raises clear `ValueError`; empty CSV uploads fail safely |
+| **[`tests/test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering & Preprocessing | **4** | • Affine StandardScaler fitting and inference transform<br/>• Target leakage prevention (drops alarms, IDs, fall flags)<br/>• Model directory resolution and encoder artifact serialization |
+| **[`tests/test_backend.py`](tests/test_backend.py)** | Core Validation & Routing | **2** | • Gateway health check probe<br/>• Pydantic schema validation: rejects malformed data types with HTTP 422 Unprocessable Entity |
 | **[`tests/test_ensemble.py`](tests/test_ensemble.py)** | 5-Model Soft-Voting Ensemble | **2** | • Ensemble initialization and model loading<br/>• Soft-voting probability arbitration, confidence calculation, and individual model score aggregation |
-| **TOTAL** | **Full Verification Suite** | **58** | **100% Passing (58/58 passed in ~5.5s)** |
+| **TOTAL** | **Full Verification Suite** | **23** | **100% Passing (23/23 passing)** |
 
 ---
 

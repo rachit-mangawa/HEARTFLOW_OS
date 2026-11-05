@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
-import { useResilientSocket, ConnectionStatus } from "@/hooks/useResilientSocket";
-import { WS_BASE } from "@/config";
+export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
 import { globalSimulator } from "@/lib/edge/simulator";
 import { appendSessionHistory } from "@/lib/edge/history";
 import { evaluateEdge } from "@/lib/edge/inference";
@@ -23,7 +22,7 @@ type StreamState = {
   temp: number[];
 };
 
-export type RuntimeSourceMode = "EDGE_WASM_BROWSER" | "CLOUD_FASTAPI" | "SERIAL_ESP32_HARDWARE" | "SILICON_LOOPBACK";
+export type RuntimeSourceMode = "BROWSER_LOCAL" | "CLOUD_FASTAPI" | "SERIAL_ESP32_HARDWARE" | "SILICON_LOOPBACK";
 
 type TelemetryContextType = {
   data: TelemetryPacket | null;
@@ -60,15 +59,14 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
         disease_probs: pred.disease_probs,
         inference_latency_us: pred.latency_us,
       },
-      runtime_mode: "EDGE_WASM_BROWSER",
+      runtime_mode: "BROWSER_LOCAL",
     };
   });
   const [stream, setStream] = useState<StreamState>({
     hr: Array(50).fill(75),
     temp: Array(50).fill(37.0),
   });
-  const [runtimeMode, setRuntimeMode] = useState<RuntimeSourceMode>("EDGE_WASM_BROWSER");
-  const [isEdgeFallback, setIsEdgeFallback] = useState(true);
+  const [runtimeMode, setRuntimeMode] = useState<RuntimeSourceMode>("BROWSER_LOCAL");
 
   // Serial Bridge State
   const serialHandleRef = useRef<SerialBridgeHandle | null>(null);
@@ -104,46 +102,18 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const handleMessage = useCallback((msg: TelemetryPacket) => {
-    setRuntimeMode("CLOUD_FASTAPI");
-    updatePacketStream(msg);
-  }, [updatePacketStream]);
-
-  const wsUrl = `${WS_BASE}/heartflow/ws/feed`;
-  const cloudStatus = useResilientSocket(wsUrl, handleMessage);
-
-  // Monitor cloud connection status
+  // Run in-browser Edge Simulator whenever not engaged on hardware serial or silicon loopback
   useEffect(() => {
-    if (!wsUrl || cloudStatus !== "connected") {
-      const timer = setTimeout(() => {
-        setIsEdgeFallback(true);
-      }, 1200);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => {
-        setIsEdgeFallback(false);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [wsUrl, cloudStatus]);
-
-  // Run in-browser Edge Simulator when in fallback mode and not on serial
-  useEffect(() => {
-    if (!isEdgeFallback || serialStatus === "connected" || serialStatus === "loopback") return;
-
-    const timer = setTimeout(() => {
-      setRuntimeMode("EDGE_WASM_BROWSER");
-    }, 0);
+    if (serialStatus === "connected" || serialStatus === "loopback") return;
 
     const unsubscribe = globalSimulator.subscribe((packet: TelemetryPacket) => {
       updatePacketStream(packet);
     });
 
     return () => {
-      clearTimeout(timer);
       unsubscribe();
     };
-  }, [isEdgeFallback, serialStatus, updatePacketStream]);
+  }, [serialStatus, updatePacketStream]);
 
   // Ingest vitals from Serial hardware or Silicon loopback
   const handleSerialVitals = useCallback((vitals: PatientVitals) => {
@@ -157,7 +127,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
         disease_probs: edgeRes.disease_probs,
         inference_latency_us: edgeRes.latency_us,
       },
-      runtime_mode: "EDGE_WASM_BROWSER",
+      runtime_mode: "BROWSER_LOCAL",
     };
     updatePacketStream(packet);
   }, [updatePacketStream]);
@@ -207,8 +177,8 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     }
     setSerialStatus("idle");
     setSerialMessage("SERIAL_DISCONNECTED");
-    setRuntimeMode(isEdgeFallback ? "EDGE_WASM_BROWSER" : "CLOUD_FASTAPI");
-  }, [isEdgeFallback]);
+    setRuntimeMode("BROWSER_LOCAL");
+  }, []);
 
   const snapshotCurrentVitals = useCallback((customLabel?: string) => {
     if (!data?.sensor_data) return;
@@ -227,9 +197,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
 
   const effectiveStatus = serialStatus === "connected"
     ? "serial_connected"
-    : isEdgeFallback
-    ? "edge_active"
-    : cloudStatus;
+    : "edge_active";
 
   return (
     <TelemetryContext.Provider

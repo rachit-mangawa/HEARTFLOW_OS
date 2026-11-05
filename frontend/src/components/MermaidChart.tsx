@@ -6,9 +6,14 @@ import { ZoomIn, ZoomOut, RotateCcw, Copy, CheckCircle2, Maximize2, Minimize2, T
 interface MermaidChartProps {
   chart: string;
   title?: string;
+  layout?: "LR" | "TD";
+  onToggleLayout?: () => void;
 }
 
-export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPELINE FLOW" }: MermaidChartProps) {
+export default function MermaidChart({
+  chart,
+  title = "SYSTEM ARCHITECTURE PIPELINE FLOW"
+}: MermaidChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +22,7 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [viewCode, setViewCode] = useState<boolean>(false);
-  
+
   const rawId = useId();
   const chartId = `mermaid_${rawId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
 
@@ -52,14 +57,12 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
           }
         });
 
-        // Ensure clean syntax
         const { svg } = await mermaid.render(chartId, chart);
         if (isMounted) {
           setSvgContent(svg);
           setIsLoading(false);
         }
       } catch (err: unknown) {
-        console.error("Mermaid rendering error:", err);
         if (isMounted) {
           setError(err instanceof Error ? err.message : "Failed to render Mermaid diagram visually.");
           setIsLoading(false);
@@ -81,15 +84,18 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
   };
 
   const resetZoom = () => setZoom(1);
-  const zoomIn = () => setZoom((z) => Math.min(z + 0.15, 2.0));
-  const zoomOut = () => setZoom((z) => Math.max(z - 0.15, 0.5));
+  const zoomIn = () => setZoom((z) => Math.min(Number((z + 0.15).toFixed(2)), 2.0));
+  const zoomOut = () => setZoom((z) => Math.max(Number((z - 0.15).toFixed(2)), 0.5));
 
   return (
-    <div className={`border-2 border-ink bg-white flex flex-col ${isFullscreen ? "fixed inset-4 z-50 shadow-2xl overflow-hidden" : ""}`}>
-      {/* Visual Header Toolbar */}
+    <div
+      className={`border-2 border-ink bg-white flex flex-col ${
+        isFullscreen ? "fixed inset-4 z-50 shadow-2xl overflow-hidden" : ""
+      }`}
+    >
+      {/* Header Toolbar */}
       <div className="border-b-2 border-ink p-3 md:p-4 bg-canvas-cream flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-hazard" />
           <span className="text-[12px] font-black uppercase tracking-wider text-ink">
             {title}
           </span>
@@ -167,8 +173,12 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
         </div>
       </div>
 
-      {/* Main View Area */}
-      <div className={`relative overflow-auto p-4 md:p-6 bg-canvas-cream flex items-center justify-center min-h-75 max-h-145 ${isFullscreen ? "flex-1 max-h-none!" : ""}`}>
+      {/* Main View Area - Fitted in place without artificial expansion */}
+      <div
+        className={`relative overflow-auto p-4 md:p-6 bg-canvas-cream flex items-center justify-center min-h-75 max-h-145 ${
+          isFullscreen ? "flex-1 max-h-none!" : ""
+        }`}
+      >
         {isLoading && (
           <div className="flex flex-col items-center justify-center gap-3 text-slate py-12">
             <div className="w-6 h-6 border-2 border-hazard border-t-transparent animate-spin rounded-full" />
@@ -207,7 +217,7 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
                 <Terminal size={13} />
                 RAW MERMAID SOURCE (.MMD)
               </span>
-              <span className="text-white/60">Flowchart TD</span>
+              <span className="text-white/60">Flowchart LR</span>
             </div>
             <pre className="overflow-x-auto text-emerald-400 p-2">
               {chart}
@@ -216,9 +226,9 @@ export default function MermaidChart({ chart, title = "SYSTEM ARCHITECTURE PIPEL
         )}
       </div>
 
-      {/* Visual Subtitle / Metadata Footer */}
+      {/* Footer */}
       <div className="border-t-2 border-ink px-4 py-2 bg-white flex flex-wrap justify-between items-center text-[10px] font-bold uppercase text-slate">
-        <span>Nodes: 19 Elements · Subgraphs: 5 Lifecycle Stages</span>
+        <span>Nodes: 11 Elements · Subgraphs: 3 Architecture Planes</span>
         <span>Rendered via Mermaid SVG Engine · Standard Vector Protocol</span>
       </div>
     </div>

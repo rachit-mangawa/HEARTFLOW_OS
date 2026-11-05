@@ -31,8 +31,10 @@ export default function Home() {
           <div className="crosshair-corner grid grid-cols-2 sm:grid-cols-4 gap-px bg-ink border-2 border-ink mb-8 max-w-xl shadow-[3px_3px_0px_0px_#141413]">
             <div className="bg-white p-3 text-center hover:bg-[#FAF8F5] transition-colors duration-150">
               <div className="text-[9px] text-slate font-bold uppercase tracking-wider mb-0.5">INFERENCE LATENCY</div>
-              <div className="text-[15px] font-black text-ink tabular-nums">18.4 μs</div>
-              <div className="text-[9px] text-slate tracking-tight mt-0.5">ESP32-S3 @ 240MHz</div>
+              <div className="text-[15px] font-black text-ink tabular-nums">
+                ~18 <span className="text-[11px] font-bold text-slate">µs</span>
+              </div>
+              <div className="text-[9px] text-slate tracking-tight mt-0.5">Estimated (ESP32-S3)</div>
             </div>
             <div className="bg-white p-3 text-center hover:bg-[#FAF8F5] transition-colors duration-150">
               <div className="text-[9px] text-slate font-bold uppercase tracking-wider mb-0.5">STATIC RAM</div>
@@ -45,12 +47,12 @@ export default function Home() {
               <div className="text-[9px] text-slate tracking-tight mt-0.5">Web Serial API</div>
             </div>
             <div className="bg-white p-3 text-center hover:bg-[#FAF8F5] transition-colors duration-150">
-              <div className="text-[9px] text-slate font-bold uppercase tracking-wider mb-0.5">ECG SAMPLING</div>
+              <div className="text-[9px] text-slate font-bold uppercase tracking-wider mb-0.5">TELEMETRY VITALS</div>
               <div className="text-[15px] font-black text-hazard tabular-nums flex items-center justify-center gap-1">
                 <span className="w-1.5 h-1.5 bg-hazard inline-block" />
-                250 Hz
+                5 Channels
               </div>
-              <div className="text-[9px] text-slate tracking-tight mt-0.5">Lead-II Waveform</div>
+              <div className="text-[9px] text-slate tracking-tight mt-0.5">HR, SpO2, BP, Temp</div>
             </div>
           </div>
 
@@ -58,34 +60,34 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
             <Link
               href="/monitor"
-              className="btn-tactile-hazard h-12 px-6 text-[13px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer group"
+              className="btn-tactile-hazard h-12 px-6 text-[13px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413] transition-all duration-140"
             >
-              <Activity size={16} className="group-hover:scale-110 transition-transform duration-150" />
+              <Activity size={16} className="group-hover:scale-115 transition-transform duration-150" />
               Launch Monitor
             </Link>
 
             <Link
               href="/simulator"
-              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-colors flex items-center justify-center gap-1.5 cursor-pointer group"
+              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-all duration-140 flex items-center justify-center gap-1.5 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413]"
             >
-              <Sliders size={14} className="group-hover:rotate-12 transition-transform duration-150" />
+              <Sliders size={14} className="group-hover:scale-115 transition-transform duration-150" />
               Simulator
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-150" />
+              <ArrowRight size={14} className="group-hover:translate-x-1 group-hover:scale-115 transition-transform duration-150" />
             </Link>
 
             <Link
-              href="/edge"
-              className="btn-tactile bg-canvas-cream text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer group"
+              href="/compiler"
+              className="btn-tactile bg-canvas-cream text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-all duration-140 flex items-center justify-center gap-2 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413]"
             >
-              <Terminal size={14} className="group-hover:scale-110 transition-transform duration-150" />
+              <Terminal size={14} className="group-hover:scale-115 transition-transform duration-150" />
               C99 Compiler
             </Link>
 
             <Link
               href="/mlops"
-              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-6 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-colors flex items-center justify-center gap-2 cursor-pointer group"
+              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-6 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-all duration-140 flex items-center justify-center gap-2 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413]"
             >
-              <GitBranch size={14} className="group-hover:rotate-12 transition-transform duration-150" />
+              <GitBranch size={14} className="group-hover:scale-115 transition-transform duration-150" />
               MLOps Registry
             </Link>
           </div>
@@ -95,7 +97,7 @@ export default function Home() {
         <div className="lg:col-span-5 grid grid-cols-1 gap-px bg-ink border-2 border-ink shadow-[6px_6px_0px_0px_#141413] self-center animate-enter-subtle delay-1">
           {/* Card 01 */}
           <Link
-            href="/edge"
+            href="/compiler"
             className="card-tactile bg-white p-6 sm:p-7 flex flex-col justify-between group cursor-pointer hover:bg-[#FAF8F5] relative"
           >
             <div className="flex justify-between items-center mb-3">
@@ -151,7 +153,7 @@ export default function Home() {
 
           {/* Card 03 */}
           <Link
-            href="/edge"
+            href="/compiler"
             className="card-tactile bg-white p-6 sm:p-7 flex flex-col justify-between group cursor-pointer hover:bg-[#FAF8F5] relative"
           >
             <div className="flex justify-between items-center mb-3">
@@ -176,21 +178,6 @@ export default function Home() {
               </span>
             </div>
           </Link>
-        </div>
-      </section>
-
-      {/* Understated Architecture Strip */}
-      <section className="border-t-2 border-ink bg-white py-3.5 px-4 sm:px-8">
-        <div className="max-w-350 mx-auto flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate flex-wrap gap-4">
-          <div className="flex items-center gap-2 text-ink">
-            <span className="w-2 h-2 bg-hazard inline-block" />
-            <span className="font-black">CORE ARCHITECTURE:</span>
-          </div>
-          <span>UART 115,200 (8-N-1)</span>
-          <span>LEAD-II SAMPLING (250 HZ)</span>
-          <span>5-CHANNEL VITAL SIGN VECTOR</span>
-          <span>ZERO-MALLOC C99 ABI</span>
-          <span>SHAP TREE ATTRIBUTION</span>
         </div>
       </section>
     </main>

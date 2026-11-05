@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Table2, RefreshCw } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { useState, useMemo } from "react";
+import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Table2 } from "lucide-react";
 
 interface PaginatedRecordInspectorProps {
   initialRows: Record<string, unknown>[];
@@ -16,12 +15,8 @@ export default function PaginatedRecordInspector({
   const [pageSize] = useState(25);
   const [diseaseFilter, setDiseaseFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isBackendConnected, setIsBackendConnected] = useState(false);
-  const [isSlow, setIsSlow] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Client-side fallback computations
+  // Client-side computations
   const clientFiltered = useMemo(() => {
     let filtered = [...initialRows];
     if (diseaseFilter !== "all") {
@@ -46,63 +41,8 @@ export default function PaginatedRecordInspector({
     return clientFiltered.slice(startIdx, startIdx + pageSize);
   }, [clientFiltered, page, pageSize]);
 
-  const [backendData, setBackendData] = useState<{
-    rows: Record<string, unknown>[];
-    total: number;
-  } | null>(null);
-
-  useEffect(() => {
-    let isSubscribed = true;
-    const controller = new AbortController();
-
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: String(page),
-          limit: String(pageSize),
-          ...(diseaseFilter !== "all" && { disease: diseaseFilter }),
-          ...(searchTerm.trim() && { search: searchTerm.trim() }),
-        });
-
-        const { data, error: fetchErr } = await apiFetch<{ rows: Record<string, unknown>[]; total: number }>(
-          `/heartflow/dataset?${params.toString()}`,
-          {
-            signal: controller.signal,
-            onSlow: (slow) => {
-              if (isSubscribed) setIsSlow(slow);
-            },
-          }
-        );
-
-        if (isSubscribed) {
-          if (fetchErr) {
-            setError(fetchErr);
-          } else if (data && Array.isArray(data.rows)) {
-            setBackendData({
-              rows: data.rows,
-              total: data.total || 60000,
-            });
-            setIsBackendConnected(true);
-            setError(null);
-          }
-          setLoading(false);
-        }
-      } catch {
-        if (isSubscribed) setLoading(false);
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isSubscribed = false;
-      controller.abort();
-    };
-  }, [page, diseaseFilter, searchTerm, pageSize]);
-
-  const rows = backendData ? backendData.rows : clientPageRows;
-  const total = backendData ? backendData.total : clientFiltered.length;
+  const rows = clientPageRows;
+  const total = clientFiltered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const columns =
@@ -182,14 +122,6 @@ export default function PaginatedRecordInspector({
 
       {/* Table Window */}
       <div className="overflow-x-auto no-scrollbar relative min-h-96">
-        {loading && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-20">
-            <div className="p-3 bg-ink text-white font-mono text-[12px] font-bold flex items-center gap-2 border-2 border-hazard shadow-[2px_2px_0px_#000]">
-              <RefreshCw size={14} className="animate-spin text-hazard" />
-              QUERYING 60,000 TELEMETRY RECORDS...
-            </div>
-          </div>
-        )}
 
         <table className="w-full text-left text-[12px] tabular-nums font-mono border-collapse">
           <thead>
@@ -289,18 +221,14 @@ export default function PaginatedRecordInspector({
         <div className="text-[11px] font-mono text-slate font-bold uppercase tracking-wider">
           Page {page.toLocaleString()} of {totalPages.toLocaleString()} · Showing{" "}
           {Math.min(pageSize, rows.length)} of {total.toLocaleString()} Records
-          {isBackendConnected ? (
-            <span className="text-green-700 ml-2 font-bold">● FAST SERVER STREAM</span>
-          ) : (
-            <span className="text-hazard ml-2 font-bold">● EDGE HIGH-SPEED CALIBRATION</span>
-          )}
+          <span className="text-emerald-700 ml-2 font-bold">● EMBEDDED GROUND-TRUTH CORPUS</span>
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
           <button
             onClick={() => setPage(1)}
-            disabled={page <= 1 || loading}
+            disabled={page <= 1}
             className="btn-tactile min-h-11 min-w-10 flex items-center justify-center p-2 bg-white border-2 border-ink disabled:opacity-40"
             title="First Page"
           >
@@ -308,7 +236,7 @@ export default function PaginatedRecordInspector({
           </button>
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1 || loading}
+            disabled={page <= 1}
             className="btn-tactile min-h-11 px-3 py-2 bg-white border-2 border-ink text-[11px] font-bold uppercase flex items-center justify-center gap-1 disabled:opacity-40"
           >
             <ChevronLeft size={14} />
@@ -321,7 +249,7 @@ export default function PaginatedRecordInspector({
 
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages || loading}
+            disabled={page >= totalPages}
             className="btn-tactile min-h-11 px-3 py-2 bg-white border-2 border-ink text-[11px] font-bold uppercase flex items-center justify-center gap-1 disabled:opacity-40"
           >
             NEXT
@@ -329,7 +257,7 @@ export default function PaginatedRecordInspector({
           </button>
           <button
             onClick={() => setPage(totalPages)}
-            disabled={page >= totalPages || loading}
+            disabled={page >= totalPages}
             className="btn-tactile min-h-11 min-w-10 flex items-center justify-center p-2 bg-white border-2 border-ink disabled:opacity-40"
             title="Last Page"
           >

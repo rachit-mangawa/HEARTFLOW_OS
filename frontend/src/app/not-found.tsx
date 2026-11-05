@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -46,4 +46,3 @@ export default function NotFound() {
     </main>
   );
 }
-

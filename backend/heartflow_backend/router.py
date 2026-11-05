@@ -27,11 +27,14 @@ def get_engine():
                 _ml_engine = MLOpsEngine(resolve_dataset_path())
     return _ml_engine
 
+_last_rf_model = None
+
 def _get_or_create_shap_explainer(rf_model):
-    global _shap_explainer
-    if _shap_explainer is None:
+    global _shap_explainer, _last_rf_model
+    if _shap_explainer is None or _last_rf_model is not rf_model:
         import shap
         _shap_explainer = shap.TreeExplainer(rf_model)
+        _last_rf_model = rf_model
     return _shap_explainer
 
 def log_prediction_background(data, final_pred, conf):
@@ -72,9 +75,6 @@ def predict(data: PatientData, background_tasks: BackgroundTasks):
         final_pred = result["prediction_label"]
         conf = result["probability"]
         
-        if is_at_risk == 1 and float(conf) > 0.80:
-            logger.warning(f"Patient at risk! HR: {data.Heart_Rate}, SpO2: {data.SpO2_Level}, Confidence: {conf:.2f}")
-            
         background_tasks.add_task(log_prediction_background, data, final_pred, float(conf))
         
         return result
@@ -124,6 +124,7 @@ def get_metrics():
     
     accuracy = 0.962
     f1 = 0.948
+    reg_f1s = {}
     if eng and hasattr(eng, 'model_dir'):
         reg_file = os.path.join(eng.model_dir, 'registry.json')
         if os.path.exists(reg_file):
@@ -133,10 +134,12 @@ def get_metrics():
                     reg = json.load(f)
                 active_v = reg.get("active_version")
                 if active_v and active_v in reg.get("versions", {}):
-                    v_score = reg["versions"][active_v].get("score")
+                    v_data = reg["versions"][active_v]
+                    v_score = v_data.get("score")
                     if v_score:
                         f1 = round(float(v_score), 4)
                         accuracy = round(min(0.99, f1 + 0.014), 4)
+                    reg_f1s = v_data.get("f1_scores", {})
             except Exception:
                 pass
 
@@ -144,12 +147,13 @@ def get_metrics():
         "ensemble_accuracy": accuracy,
         "ensemble_f1_macro": f1,
         "latency_microsec_edge": 18.4,
+        "latency_is_estimated": True,
         "models": {
-            "rf": {"accuracy": round(accuracy - 0.008, 3), "f1": round(f1 - 0.01, 3), "weight": weights.get("rf", 0.25)},
-            "small_nn": {"accuracy": round(accuracy - 0.013, 3), "f1": round(f1 - 0.017, 3), "weight": weights.get("small_nn", 0.25)},
-            "logreg": {"accuracy": round(accuracy - 0.040, 3), "f1": round(f1 - 0.044, 3), "weight": weights.get("logreg", 0.20)},
-            "knn": {"accuracy": round(accuracy - 0.044, 3), "f1": round(f1 - 0.051, 3), "weight": weights.get("knn", 0.15)},
-            "svm": {"accuracy": round(accuracy - 0.027, 3), "f1": round(f1 - 0.036, 3), "weight": weights.get("svm", 0.15)},
+            "rf": {"accuracy": round(accuracy - 0.008, 3), "f1": reg_f1s.get("rf", round(f1 - 0.01, 3)), "weight": weights.get("rf", 0.25)},
+            "small_nn": {"accuracy": round(accuracy - 0.013, 3), "f1": reg_f1s.get("small_nn", round(f1 - 0.017, 3)), "weight": weights.get("small_nn", 0.25)},
+            "logreg": {"accuracy": round(accuracy - 0.040, 3), "f1": reg_f1s.get("logreg", round(f1 - 0.044, 3)), "weight": weights.get("logreg", 0.20)},
+            "knn": {"accuracy": round(accuracy - 0.044, 3), "f1": reg_f1s.get("knn", round(f1 - 0.051, 3)), "weight": weights.get("knn", 0.15)},
+            "svm": {"accuracy": round(accuracy - 0.027, 3), "f1": reg_f1s.get("svm", round(f1 - 0.036, 3)), "weight": weights.get("svm", 0.15)},
         }
     }
 

@@ -1,5 +1,5 @@
 import os
-from .paths import resolve_model_dir as _default_model_dir, resolve_dataset_path as _default_data_path
+from .paths import resolve_model_dir
 
 COLUMN_ALIASES = {
     'heart rate (bpm)': 'Heart Rate (bpm)',
@@ -13,6 +13,7 @@ COLUMN_ALIASES = {
     'spo2_level': 'SpO2 Level (%)',
     'spo2': 'SpO2 Level (%)',
     'oxygen': 'SpO2 Level (%)',
+    'o2_saturation': 'SpO2 Level (%)',
 
     'systolic blood pressure (mmhg)': 'Systolic Blood Pressure (mmHg)',
     'systolic blood pressure': 'Systolic Blood Pressure (mmHg)',
@@ -42,11 +43,6 @@ COLUMN_ALIASES = {
     'label': 'Predicted Disease',
 }
 
-def resolve_model_dir():
-    return _default_model_dir()
-
-def resolve_data_path():
-    return _default_data_path()
 
 def preprocess_data(df, is_training=False, model_dir=None):
     import joblib

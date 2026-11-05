@@ -1,4 +1,5 @@
 import { PatientVitals } from "./types";
+import { globalSimulator } from "./simulator";
 
 export type SerialConnectionStatus = "idle" | "connected" | "loopback" | "error" | "unsupported";
 
@@ -146,41 +147,15 @@ export function startSiliconLoopback(
 ): SerialBridgeHandle {
   onStatusChange("loopback", "SILICON_LOOPBACK_BRIDGE_ACTIVE // ESP32_VIRTUAL_COM1 // 115,200 BAUD");
 
-  let hr = 76.0;
-  let spo2 = 98.2;
-  let sys = 122.0;
-  let dia = 81.0;
-  let temp = 37.1;
-
   const timer = setInterval(() => {
-    // Generate realistic sensor telemetry with sensor noise
-    hr += (Math.random() - 0.48) * 3;
-    spo2 += (Math.random() - 0.49) * 0.6;
-    sys += (Math.random() - 0.48) * 2;
-    dia += (Math.random() - 0.48) * 1.5;
-    temp += (Math.random() - 0.5) * 0.1;
-
-    hr = Math.max(55, Math.min(160, hr));
-    spo2 = Math.max(82, Math.min(100, spo2));
-    sys = Math.max(90, Math.min(190, sys));
-    dia = Math.max(60, Math.min(115, dia));
-    temp = Math.max(36.1, Math.min(39.0, temp));
-
-    const vitals: PatientVitals = {
-      Heart_Rate: Number(hr.toFixed(1)),
-      SpO2_Level: Number(spo2.toFixed(1)),
-      Systolic_BP: Number(sys.toFixed(1)),
-      Diastolic_BP: Number(dia.toFixed(1)),
-      Body_Temp: Number(temp.toFixed(1)),
-    };
-
-    onPacket(vitals);
+    onPacket(globalSimulator.getSnapshot());
   }, 1000);
 
-  const disconnect = () => {
-    clearInterval(timer);
-    onStatusChange("idle", "DISCONNECTED");
+  return {
+    disconnect: () => {
+      clearInterval(timer);
+      onStatusChange("idle", "DISCONNECTED");
+    },
+    mode: "loopback",
   };
-
-  return { disconnect, mode: "loopback" };
 }

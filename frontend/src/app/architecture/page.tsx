@@ -25,7 +25,7 @@ import MermaidChart from "@/components/MermaidChart";
 const MERMAID_PIPELINE_GRAPH_LR = `flowchart LR
     subgraph S1["1. RAW INGESTION"]
         direction TB
-        AFE["AD8232 ECG + MAX30102 PPG"]
+        AFE["MAX30102 PPG + Vital Sensors"]
         CSV["patient_data.csv (60,000 Records)"]
         MCU["ESP32-S3 Firmware (C99)<br/>12-bit SAR ADC Sampling"]
         SERIAL["W3C navigator.serial (115.2k)<br/>Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
@@ -61,7 +61,7 @@ const MERMAID_PIPELINE_GRAPH_LR = `flowchart LR
 
     subgraph S4["4. C99 & INT8 QUANT"]
         direction TB
-        EXPORT["backend/export.py<br/>Scikit-Learn AST Transpiler"]
+        EXPORT["Client TinyML Transpiler<br/>Zero-Malloc C99 Compiler"]
         QUANT["INT8 Symmetric Quantization<br/>-76.4% SRAM (34.8 KB → 8.2 KB)"]
         HEADER["firmware/include/model.h<br/>Zero-Malloc predict() C99 ABI"]
         
@@ -90,7 +90,7 @@ const MERMAID_PIPELINE_GRAPH_LR = `flowchart LR
 const MERMAID_PIPELINE_GRAPH_TD = `flowchart TD
     subgraph S1["1. RAW TELEMETRY & FILE INGESTION"]
         CSV["patient_data.csv / batch_upload.csv<br/>(Continuous Vitals Observations)"]
-        AFE["Physical Biosensors<br/>AD8232 Lead-II ECG (250 Hz) + MAX30102 PPG"]
+        AFE["Physical Biosensors<br/>MAX30102 PPG + Digital Vitals"]
         MCU["ESP32-S3 Firmware (C99)<br/>12-bit SAR ADC Sampling & Packet Framing"]
         SERIAL["W3C navigator.serial Bus<br/>115,200 Baud ASCII Frame: $HR,SPO2,SYS,DIA,TEMP*CRC"]
         
@@ -123,7 +123,7 @@ const MERMAID_PIPELINE_GRAPH_TD = `flowchart TD
     end
 
     subgraph S4["4. C99 TRANSPILER & INT8 QUANTIZER"]
-        SOFTVOTE --> EXPORT["backend/export.py<br/>Scikit-Learn AST Transpiler"]
+        SOFTVOTE --> EXPORT["Client TinyML Transpiler<br/>Zero-Malloc C99 Compiler"]
         EXPORT --> QUANT["INT8 Symmetric Quantization<br/>Q = clamp(round(W / scale), -128, 127)<br/>-76.4% SRAM Reduction (34.8 KB → 8.2 KB)"]
         QUANT --> HEADER["firmware/include/model.h<br/>Zero-Malloc C99 ABI: int predict(const float *features)"]
     end
@@ -131,7 +131,7 @@ const MERMAID_PIPELINE_GRAPH_TD = `flowchart TD
     subgraph S5["5. DUAL-PLANE RUNTIME & VISUALIZATION"]
         HEADER --> BAREMETAL["Plane A: Bare-Metal Embedded<br/>ESP32-S3 Flash ROM / SRAM (< 20 µs)"]
         HEADER --> TINYML["Plane B: In-Browser TinyML Client<br/>frontend/src/lib/edge/inference.ts (< 20 µs)"]
-        EXPORT --> CLOUD["Plane C: Secondary Cloud REST API<br/>FastAPI POST /predict (< 35 ms)"]
+        EXPORT --> CLOUD["Cloud REST Gateway (/heartflow)<br/>FastAPI /predict, /explain, /retrain"]
         
         BAREMETAL --> MONITOR["Real-Time Oscillograph & Audit Log<br/>60 FPS GPU Canvas + Medical Diagnostic Matrix"]
         TINYML --> MONITOR
@@ -172,7 +172,7 @@ export default function Architecture() {
       badge: "SOURCE",
       icon: FileSpreadsheet,
       subtitle: "patient_data.csv / Serial",
-      summary: "Ingests raw continuous physiological vitals from batch CSV records or 250 Hz physical serial streams ($HR,SPO2...*CRC).",
+      summary: "Ingests continuous physiological vitals from batch CSV records or physical serial streams ($HR,SPO2...).",
       details: {
         input: "Raw CSV upload or 115,200 baud ASCII frame over W3C navigator.serial",
         processing: "Hardware packet framing with XOR checksum validation and FIFO circular buffering",
@@ -258,7 +258,7 @@ export default function Architecture() {
           <div className="flex flex-col items-start md:items-end gap-2 text-left md:text-right">
             <div className="text-[12px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-ink text-white flex items-center gap-2">
               <ShieldCheck size={14} className="text-hazard" />
-              <span>SPECIFICATION · REV: 3.4.0</span>
+              <span>SYSTEM SPECIFICATION</span>
             </div>
             <div className="text-[11px] text-slate font-bold uppercase tracking-wider">
               Zero-Cloud In-Browser TinyML · Bare-Metal C99 · Dual-Plane Ingestion
@@ -316,7 +316,7 @@ export default function Architecture() {
               115.2 <span className="text-[14px] font-bold text-hazard">KBAUD</span>
             </div>
             <div className="text-[11px] text-slate font-bold uppercase mt-2">
-              250 Hz Lead-II ECG differential stream
+              Continuous physiological telemetry stream
             </div>
           </div>
         </div>
@@ -345,7 +345,7 @@ export default function Architecture() {
                 title="Toggle diagram layout between compact horizontal pipeline and expanded vertical view"
               >
                 <SlidersHorizontal size={13} className="text-hazard" />
-                <span>{diagramLayout === "LR" ? "Compact Horizontal (Default)" : "Expanded Vertical"}</span>
+                <span>{diagramLayout === "LR" ? "Horizontal Pipeline (Default)" : "Expanded Vertical"}</span>
               </button>
 
               <button
@@ -371,7 +371,9 @@ export default function Architecture() {
           <div className="mb-8">
             <MermaidChart
               chart={diagramLayout === "LR" ? MERMAID_PIPELINE_GRAPH_LR : MERMAID_PIPELINE_GRAPH_TD}
-              title={`TELEMETRY INGESTION TO DUAL-PLANE INFERENCE PIPELINE (${diagramLayout === "LR" ? "COMPACT HORIZONTAL" : "VERTICAL STACK"})`}
+              title={`TELEMETRY INGESTION TO DUAL-PLANE INFERENCE PIPELINE (${diagramLayout === "LR" ? "HORIZONTAL PIPELINE" : "VERTICAL STACK"})`}
+              layout={diagramLayout}
+              onToggleLayout={() => setDiagramLayout(diagramLayout === "LR" ? "TD" : "LR")}
             />
           </div>
 
@@ -457,8 +459,8 @@ export default function Architecture() {
                   {activeStageData.title} · {activeStageData.subtitle}
                 </span>
               </div>
-              <span className="text-[11px] font-mono font-bold text-slate uppercase">
-                Latency SLA: <strong className="text-hazard">{activeStageData.details.sla}</strong>
+              <span className="text-[11px] font-mono font-bold text-slate">
+                <span className="uppercase tracking-wider">LATENCY SLA:</span> <strong className="text-hazard normal-case">{activeStageData.details.sla}</strong>
               </span>
             </div>
 
@@ -787,9 +789,9 @@ export default function Architecture() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div className="border border-ink bg-white p-3">
-                <div className="text-[10px] text-slate font-bold uppercase">AD8232 ANALOG IN</div>
+                <div className="text-[10px] text-slate font-bold uppercase">TEMPERATURE SENSOR</div>
                 <div className="text-[14px] font-black text-ink mt-1">GPIO 4 (ADC1_CH3)</div>
-                <div className="text-[10px] text-slate mt-1">Lead-II Differential Output</div>
+                <div className="text-[10px] text-slate mt-1">NTC Thermistor / Analog Input</div>
               </div>
               <div className="border border-ink bg-white p-3">
                 <div className="text-[10px] text-slate font-bold uppercase">MAX30102 I2C BUS</div>

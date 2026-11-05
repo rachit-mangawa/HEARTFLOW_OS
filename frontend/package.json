@@ -1,10 +1,10 @@
 {
   "name": "web",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node -e \"const fs=require('fs'); if(fs.existsSync('out')){if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true});fs.cpSync('out','dist',{recursive:true});}\"",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
