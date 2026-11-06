@@ -60,34 +60,34 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
             <Link
               href="/monitor"
-              className="btn-tactile-hazard h-12 px-6 text-[13px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413] transition-all duration-140"
+              className="btn-tactile-hazard h-12 px-6 text-[13px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer group"
             >
-              <Activity size={16} className="group-hover:scale-115 transition-transform duration-150" />
+              <Activity size={16} className="btn-icon-scale" />
               Launch Monitor
             </Link>
 
             <Link
               href="/simulator"
-              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-all duration-140 flex items-center justify-center gap-1.5 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413]"
+              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white flex items-center justify-center gap-1.5 cursor-pointer group"
             >
-              <Sliders size={14} className="group-hover:scale-115 transition-transform duration-150" />
+              <Sliders size={14} className="btn-icon-scale" />
               Simulator
-              <ArrowRight size={14} className="group-hover:translate-x-1 group-hover:scale-115 transition-transform duration-150" />
+              <ArrowRight size={14} className="btn-icon-nudge" />
             </Link>
 
             <Link
               href="/compiler"
-              className="btn-tactile bg-canvas-cream text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-all duration-140 flex items-center justify-center gap-2 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413]"
+              className="btn-tactile bg-canvas-cream text-ink border-2 border-ink h-12 px-5 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white flex items-center justify-center gap-2 cursor-pointer group"
             >
-              <Terminal size={14} className="group-hover:scale-115 transition-transform duration-150" />
+              <Terminal size={14} className="btn-icon-scale" />
               C99 Compiler
             </Link>
 
             <Link
               href="/mlops"
-              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-6 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white transition-all duration-140 flex items-center justify-center gap-2 cursor-pointer group hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#141413] active:translate-y-0 active:shadow-[2px_2px_0px_#141413]"
+              className="btn-tactile bg-white text-ink border-2 border-ink h-12 px-6 text-[12px] font-bold uppercase tracking-wider hover:bg-ink hover:text-white flex items-center justify-center gap-2 cursor-pointer group"
             >
-              <GitBranch size={14} className="group-hover:scale-115 transition-transform duration-150" />
+              <GitBranch size={14} className="btn-icon-scale" />
               MLOps Registry
             </Link>
           </div>

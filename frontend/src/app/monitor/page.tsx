@@ -110,29 +110,29 @@ export default function SystemMonitor() {
                   {isWebSerialSupported && (
                     <button
                       onClick={connectHardwareSerial}
-                      className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-white hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5"
+                      className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-white hover:bg-ink hover:text-white flex items-center gap-1.5 cursor-pointer group"
                       title="Connect physical ESP32 via USB Serial"
                     >
-                      <Usb size={12} />
+                      <Usb size={12} className="btn-icon-scale" />
                       Connect ESP32 (USB)
                     </button>
                   )}
                   <button
                     onClick={engageSiliconLoopback}
-                    className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-white hover:bg-hazard hover:text-white transition-colors flex items-center gap-1.5"
+                    className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-white hover:bg-hazard hover:text-white flex items-center gap-1.5 cursor-pointer group"
                     title="Simulate UART 115200 baud streaming on-chip"
                   >
-                    <PlayCircle size={12} />
+                    <PlayCircle size={12} className="btn-icon-scale" />
                     Silicon Loopback
                   </button>
                 </>
               ) : (
                 <button
                   onClick={disconnectSerial}
-                  className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-hazard text-white bg-hazard hover:bg-[#832422] transition-colors flex items-center gap-1.5"
+                  className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-hazard text-white bg-hazard hover:bg-[#832422] flex items-center gap-1.5 cursor-pointer group"
                   title="Disconnect active serial stream"
                 >
-                  <StopCircle size={12} />
+                  <StopCircle size={12} className="btn-icon-scale" />
                   Disconnect Serial
                 </button>
               )}
@@ -142,21 +142,21 @@ export default function SystemMonitor() {
                 <button
                   type="button"
                   onClick={toggleStreamPause}
-                  className={`btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  className={`btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 flex items-center gap-1.5 cursor-pointer group ${
                     isStreamPaused
-                      ? "bg-hazard text-white hover:bg-ink shadow-[2px_2px_0px_#141413]"
+                      ? "bg-hazard text-white hover:bg-ink"
                       : "bg-white text-ink hover:bg-canvas-cream"
                   }`}
                   title={isStreamPaused ? "Resume telemetry simulator stream" : "Pause telemetry simulator stream"}
                 >
-                  {isStreamPaused ? <Play size={11} className="fill-white" /> : <Pause size={11} />}
+                  {isStreamPaused ? <Play size={11} className="fill-white btn-icon-scale" /> : <Pause size={11} className="btn-icon-scale" />}
                   <span>{isStreamPaused ? "Resume Stream" : "Pause Stream"}</span>
                 </button>
               )}
 
               <button
                 onClick={handleSnapshot}
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-white hover:bg-hazard hover:text-white transition-colors"
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-white hover:bg-hazard hover:text-white cursor-pointer"
                 title="Capture telemetry snapshot into session log"
               >
                 {snapped ? "Snapshot Saved" : "Record Snapshot"}
@@ -164,9 +164,10 @@ export default function SystemMonitor() {
 
               <Link
                 href="/history"
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-canvas-cream hover:bg-ink hover:text-white transition-colors"
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1 bg-canvas-cream hover:bg-ink hover:text-white group flex items-center gap-1"
               >
-                View Session Log →
+                <span>View Session Log</span>
+                <span className="btn-icon-nudge inline-block">→</span>
               </Link>
             </div>
 

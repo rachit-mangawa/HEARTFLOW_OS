@@ -341,25 +341,25 @@ export default function Architecture() {
               {/* Diagram Layout Orientation Switcher */}
               <button
                 onClick={() => setDiagramLayout(diagramLayout === "LR" ? "TD" : "LR")}
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-canvas-cream hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-canvas-cream hover:bg-ink hover:text-white flex items-center gap-1.5 cursor-pointer group"
                 title="Toggle diagram layout between compact horizontal pipeline and expanded vertical view"
               >
-                <SlidersHorizontal size={13} className="text-hazard" />
+                <SlidersHorizontal size={13} className="text-hazard btn-icon-rotate" />
                 <span>{diagramLayout === "LR" ? "Horizontal Pipeline (Default)" : "Expanded Vertical"}</span>
               </button>
 
               <button
                 onClick={() => handleCopy("mermaid-spec", diagramLayout === "LR" ? MERMAID_PIPELINE_GRAPH_LR : MERMAID_PIPELINE_GRAPH_TD)}
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-white hover:bg-ink hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3 py-1.5 bg-white hover:bg-ink hover:text-white flex items-center gap-1.5 cursor-pointer group"
               >
                 {copiedId === "mermaid-spec" ? (
                   <>
-                    <CheckCircle2 size={13} className="text-emerald-500" />
+                    <CheckCircle2 size={13} className="text-emerald-500 animate-enter-subtle" />
                     <span>Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Copy size={13} />
+                    <Copy size={13} className="btn-icon-scale" />
                     <span>Copy Diagram Spec</span>
                   </>
                 )}
@@ -516,16 +516,16 @@ export default function Architecture() {
 
             <button
               onClick={() => handleCopy("latex-catalog", LATEX_FORMULATIONS)}
-              className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-canvas-cream hover:bg-ink hover:text-white transition-colors flex items-center gap-2 self-start sm:self-auto"
+              className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-4 py-2 bg-canvas-cream hover:bg-ink hover:text-white flex items-center gap-2 self-start sm:self-auto cursor-pointer group"
             >
               {copiedId === "latex-catalog" ? (
                 <>
-                  <CheckCircle2 size={13} className="text-emerald-500" />
+                  <CheckCircle2 size={13} className="text-emerald-500 animate-enter-subtle" />
                   <span>Copied All LaTeX!</span>
                 </>
               ) : (
                 <>
-                  <Copy size={13} />
+                  <Copy size={13} className="btn-icon-scale" />
                   <span>Copy All LaTeX Formulas</span>
                 </>
               )}

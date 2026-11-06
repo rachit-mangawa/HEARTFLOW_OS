@@ -69,4 +69,8 @@ app.include_router(router, prefix="/heartflow")
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    reload_env = os.environ.get("RELOAD", "true").lower() in ("true", "1", "yes")
+    if reload_env:
+        uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True, reload_dirs=[backend_dir])
+    else:
+        uvicorn.run(app, host="0.0.0.0", port=port)

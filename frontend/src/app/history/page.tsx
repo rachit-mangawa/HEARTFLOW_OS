@@ -435,33 +435,33 @@ ${displayedReportRecords.map((r, i) => `  [${String(i + 1).padStart(2, '0')}] ${
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleOpenReport}
-              className="btn-tactile-hazard px-5 py-2 text-[12px] font-bold tracking-wider uppercase flex items-center gap-2"
+              className="btn-tactile-hazard px-5 py-2 text-[12px] font-bold tracking-wider uppercase flex items-center gap-2 cursor-pointer group"
               title="Generate printable clinical audit report"
             >
-              <FileText size={14} />
+              <FileText size={14} className="btn-icon-scale" />
               Generate Clinical Report
             </button>
 
             {sourceTab === "session" && records.length === 0 && (
               <button
                 onClick={handleLoadSampleRecords}
-                className="btn-tactile border-2 border-ink bg-white text-ink hover:bg-canvas-cream px-4 py-2 text-[12px] font-bold tracking-wider uppercase transition-colors flex items-center gap-1.5"
+                className="btn-tactile border-2 border-ink bg-white text-ink hover:bg-canvas-cream px-4 py-2 text-[12px] font-bold tracking-wider uppercase flex items-center gap-1.5 cursor-pointer group"
                 title="Populate 8 realistic clinical test vector entries"
               >
-                <PlusCircle size={13} className="text-hazard" />
+                <PlusCircle size={13} className="text-hazard btn-icon-scale" />
                 Load Sample Log
               </button>
             )}
 
             <button
               onClick={() => downloadSessionCSV(recordsToAnalyze)}
-              className="btn-tactile border-2 border-ink bg-ink text-white hover:bg-hazard hover:border-hazard px-5 py-2 text-[12px] font-bold tracking-wider uppercase transition-colors"
+              className="btn-tactile border-2 border-ink bg-ink text-white hover:bg-hazard hover:border-hazard px-5 py-2 text-[12px] font-bold tracking-wider uppercase cursor-pointer"
             >
               Export CSV
             </button>
             <button
               onClick={() => downloadSessionJSON(recordsToAnalyze)}
-              className="btn-tactile border-2 border-ink bg-white text-ink hover:bg-canvas-cream px-5 py-2 text-[12px] font-bold tracking-wider uppercase transition-colors"
+              className="btn-tactile border-2 border-ink bg-white text-ink hover:bg-canvas-cream px-5 py-2 text-[12px] font-bold tracking-wider uppercase cursor-pointer"
             >
               Export JSON
             </button>

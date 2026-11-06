@@ -246,10 +246,10 @@ export default function Simulator() {
                       key={preset.name}
                       type="button"
                       onClick={() => handleSelectPreset(preset.data)}
-                      className={`btn-tactile border-2 border-ink p-3.5 sm:p-4 text-left transition-all duration-150 cursor-pointer flex flex-col justify-between gap-2 min-h-24 active:scale-[0.98] ${
+                      className={`btn-tactile border-2 border-ink p-3.5 sm:p-4 text-left cursor-pointer flex flex-col justify-between gap-2 min-h-24 ${
                         isActive
                           ? "bg-ink text-white font-bold"
-                          : "bg-white text-ink hover:bg-canvas-cream hover:-translate-y-0.5"
+                          : "bg-white text-ink hover:bg-canvas-cream"
                       }`}
                     >
                       <div>
@@ -333,10 +333,10 @@ export default function Simulator() {
               <button
                 type="button"
                 onClick={handleRandomize}
-                className="group btn-tactile py-3.5 px-5 border-2 border-ink bg-white hover:bg-canvas-cream text-ink font-bold text-[12px] tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer transition-[transform,background-color] duration-140 ease-out active:scale-[0.98] shadow-[2px_2px_0px_#141413]"
+                className="group btn-tactile py-3.5 px-5 border-2 border-ink bg-white hover:bg-canvas-cream text-ink font-bold text-[12px] tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer"
                 title="Generate random physiological vitals"
               >
-                <Shuffle size={14} className="text-hazard transition-transform duration-300 ease-out group-hover:rotate-45" />
+                <Shuffle size={14} className="text-hazard btn-icon-rotate" />
                 <span>RANDOMIZE</span>
               </button>
 
@@ -344,11 +344,11 @@ export default function Simulator() {
                 type="button"
                 onClick={handlePredict}
                 disabled={loading}
-                className="btn-tactile-hazard py-3.5 px-5 font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 flex-1 cursor-pointer disabled:cursor-not-allowed transition-[transform,background-color] duration-140 ease-out active:scale-[0.98] shadow-[3px_3px_0px_#141413]"
+                className="btn-tactile-hazard py-3.5 px-5 font-bold text-[13px] sm:text-[14px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 flex-1 cursor-pointer disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
-                    <RefreshCw size={14} className="animate-spin text-white" />
+                    <RefreshCw size={14} className="animate-spin-snappy text-white" />
                     <span>PROCESSING REQUEST...</span>
                   </>
                 ) : (

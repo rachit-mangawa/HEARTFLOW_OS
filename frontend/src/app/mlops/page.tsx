@@ -446,18 +446,18 @@ export default function MLOps() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleDownloadTemplate}
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-white hover:bg-canvas-cream transition-all duration-150 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-white hover:bg-canvas-cream flex items-center gap-1.5 cursor-pointer group"
                 title="Download verified CSV template with exact schema"
               >
-                <Download size={13} />
+                <Download size={13} className="btn-icon-down" />
                 Download CSV Template
               </button>
               <button
                 onClick={handleLoadSample}
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-white hover:bg-hazard hover:text-white transition-all duration-150 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-white hover:bg-hazard hover:text-white flex items-center gap-1.5 cursor-pointer group"
                 title="Load verified sample dataset from active records"
               >
-                <FileSpreadsheet size={13} />
+                <FileSpreadsheet size={13} className="btn-icon-scale" />
                 Load Sample Dataset
               </button>
             </div>
@@ -592,7 +592,7 @@ export default function MLOps() {
                 >
                   {status === "uploading" || retrainProgress?.status === "training" ? (
                     <>
-                      <RefreshCw size={15} className="animate-spin" />
+                      <RefreshCw size={15} className="animate-spin-snappy text-white" />
                       <span>RETRAINING ENSEMBLE ({retrainProgress?.progress || 0}%)...</span>
                     </>
                   ) : (
@@ -888,9 +888,10 @@ export default function MLOps() {
                   <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                     <Link
                       href="/simulator"
-                      className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-[#065f46] px-4 py-2.5 bg-white text-[#065f46] hover:bg-[#065f46] hover:text-white transition-colors flex items-center justify-center gap-1.5 w-full sm:w-auto"
+                      className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-[#065f46] px-4 py-2.5 bg-white text-[#065f46] hover:bg-[#065f46] hover:text-white flex items-center justify-center gap-1.5 w-full sm:w-auto group"
                     >
-                      Test in Simulator <ArrowRight size={13} />
+                      <span>Test in Simulator</span>
+                      <ArrowRight size={13} className="btn-icon-nudge" />
                     </Link>
                     <button
                       onClick={() => setRetrainProgress(null)}

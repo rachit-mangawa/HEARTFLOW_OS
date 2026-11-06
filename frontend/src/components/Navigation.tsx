@@ -42,10 +42,10 @@ export default function Navigation() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-2.5 py-1 transition-[transform,background-color,color] duration-140 ease-out active:scale-[0.98] ${
+                className={`px-2.5 py-1 transition-[transform,background-color,color] duration-140 ease-out active:scale-[0.97] ${
                   isActive
                     ? "bg-ink text-canvas-cream shadow-[2px_2px_0px_#9F2F2D] font-black"
-                    : "text-ink hover:text-hazard hover:bg-white"
+                    : "text-ink hover:text-hazard hover:bg-white hover:-translate-y-0.5"
                 }`}
               >
                 {link.label}

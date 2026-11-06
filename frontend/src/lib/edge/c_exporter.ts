@@ -141,7 +141,7 @@ function getModelKernel(model: string, quantize: boolean): string {
     return getSmallNnKernel(quantize);
   }
   if (model === "knn") {
-    return getKnnKernel();
+    return getKnnKernel(quantize);
   }
   // Default: Logistic Regression
   return getLogRegKernel(quantize);
@@ -556,7 +556,86 @@ int predict(const float *raw_features) {
 }`;
 }
 
-function getKnnKernel(): string {
+function getKnnKernel(quantize: boolean = false): string {
+  if (quantize) {
+    return `#define N_EXEMPLARS 10
+#define K_NEIGHBORS 3
+
+static inline void preprocess_vitals_int8(const float *raw, int8_t *q_out) {
+    for (int i = 0; i < N_RAW_FEATURES; i++) {
+        float norm = (raw[i] - SCALER_MEAN[i]) / SCALER_STD[i];
+        int32_t q = (int32_t)(norm * 16.0f + (norm >= 0.0f ? 0.5f : -0.5f));
+        if (q > 127) q = 127;
+        if (q < -128) q = -128;
+        q_out[i] = (int8_t)q;
+    }
+}
+
+// INT8 Exemplar Centroid Vectors (Scaled by 16.0f)
+static const int8_t EXEMPLARS_INT8[N_EXEMPLARS][N_RAW_FEATURES] HF_PROGMEM = {
+    {  0,   0,   0,   0,   0}, // Healthy 1
+    { -5,   6,  -3,  -3,  -5}, // Healthy 2
+    { 42, -64,  13,   8,   8}, // Asthma 1
+    { 35, -56,  11,   6,   5}, // Asthma 2
+    { 16,  -6,  48,  40,  -2}, // Hypertension 1
+    { 13,  -3,  43,  35,   0}, // Hypertension 2
+    { 64, -45,  26,  24,   3}, // Heart Disease 1
+    { 56, -38,  22,  21,   2}, // Heart Disease 2
+    { 19,  -5,  22,  19,  29}, // Diabetes Mellitus 1
+    { 14,  -2,  19,  16,  24}  // Diabetes Mellitus 2
+};
+
+static const uint8_t EXEMPLAR_LABELS[N_EXEMPLARS] HF_PROGMEM = {
+    2, 2, // Healthy
+    0, 0, // Asthma
+    4, 4, // Hypertension
+    3, 3, // Heart Disease
+    1, 1  // Diabetes Mellitus
+};
+
+static inline int predict_int8(const int8_t *q_features) {
+    int32_t dists[N_EXEMPLARS];
+    for (int i = 0; i < N_EXEMPLARS; i++) {
+        int32_t d_sum = 0;
+        for (int f = 0; f < N_RAW_FEATURES; f++) {
+            int32_t diff = (int32_t)q_features[f] - (int32_t)EXEMPLARS_INT8[i][f];
+            d_sum += diff * diff;
+        }
+        dists[i] = d_sum;
+    }
+
+    uint8_t votes[N_CLASSES] = {0};
+    for (int k = 0; k < K_NEIGHBORS; k++) {
+        int min_idx = 0;
+        for (int i = 1; i < N_EXEMPLARS; i++) {
+            if (dists[i] < dists[min_idx]) {
+                min_idx = i;
+            }
+        }
+        uint8_t lbl = EXEMPLAR_LABELS[min_idx];
+        if (lbl < N_CLASSES) {
+            votes[lbl]++;
+        }
+        dists[min_idx] = 2147483647; // INT32_MAX
+    }
+
+    uint8_t best_class = 0;
+    uint8_t max_v = votes[0];
+    for (uint8_t c = 1; c < N_CLASSES; c++) {
+        if (votes[c] > max_v) {
+            max_v = votes[c];
+            best_class = c;
+        }
+    }
+    return (int)best_class;
+}
+
+int predict(const float *raw_features) {
+    int8_t q_features[N_RAW_FEATURES];
+    preprocess_vitals_int8(raw_features, q_features);
+    return predict_int8(q_features);
+}`;
+  }
   return `#define N_EXEMPLARS 10
 #define K_NEIGHBORS 3
 

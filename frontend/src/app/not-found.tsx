@@ -29,16 +29,16 @@ export default function NotFound() {
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/"
-            className="btn-tactile bg-ink text-white px-5 py-2.5 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-hazard transition-colors"
+            className="btn-tactile bg-ink text-white px-5 py-2.5 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-hazard group"
           >
-            <Home size={14} />
+            <Home size={14} className="btn-icon-scale" />
             <span>Root Overview</span>
           </Link>
           <Link
             href="/monitor"
-            className="btn-tactile bg-white text-ink border-2 border-ink px-5 py-2 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-canvas-cream transition-colors"
+            className="btn-tactile bg-white text-ink border-2 border-ink px-5 py-2 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-canvas-cream group"
           >
-            <ArrowLeft size={14} />
+            <ArrowLeft size={14} className="btn-icon-scale" />
             <span>Launch Monitor</span>
           </Link>
         </div>

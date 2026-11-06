@@ -6,7 +6,7 @@
 [![Memory ABI](https://img.shields.io/badge/Memory_ABI-Static_Allocation_Zero_Malloc-6b21a8?style=flat&logo=c&logoColor=white)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
 [![Edge Latency](https://img.shields.io/badge/Inference_Latency-%3C_20_%C2%B5s-1d4ed8?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/simulator)
 [![INT8 Quantization](https://img.shields.io/badge/SRAM_Reduction---76.4%25-c2410c?style=flat)](https://rachit-mangawa.github.io/HEARTFLOW_OS/edge)
-[![CI Tests](https://img.shields.io/badge/CI_Verification-23%2F23_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
+[![CI Tests](https://img.shields.io/badge/CI_Verification-67%2F67_Passing-15803d?style=flat&logo=githubactions&logoColor=white)](https://github.com/rachit-mangawa/HEARTFLOW_OS/actions)
 [![License](https://img.shields.io/badge/License-MIT-374151?style=flat)](LICENSE)
 
 <br/>
@@ -318,16 +318,20 @@ pio device monitor -b 115200
 
 ## Test Verification
 
-The test suite validates the 5 REST endpoints, model inference, SHAP explanations, feature preprocessing, and MLOps batch ingestion across 23 automated tests:
+The test suite validates the REST API endpoints, WebSockets, model inference, SHAP explanations, C99 TinyML exporter, dataset profiling, simulation, async SQLite storage, and MLOps batch ingestion across 67 automated tests:
 
 | Module | Subsystem | Tests | Invariants Verified |
 | :--- | :--- | :---: | :--- |
-| **[`test_api.py`](tests/test_api.py)** | REST Endpoints & Gateways | **9** | Gateway health probe, valid & acute vitals inference, TreeExplainer SHAP values, retrain enable/disable checks, retrain status polling, warmup, and sub-1s fast import. |
-| **[`test_mlops.py`](tests/test_mlops.py)** | Ingestion & Retraining | **6** | 40+ column alias mappings, encoding repair (`°C`), auto-population of canonical columns, missing signal validation, empty CSV handling, and all-NaN row dropping. |
-| **[`test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering | **4** | StandardScaler transformations, data leakage prevention, model dir resolution, and signal alias normalization. |
-| **[`test_backend.py`](tests/test_backend.py)** | Routing & Schemas | **2** | Gateway health check probe and Pydantic input telemetry boundary validation. |
-| **[`test_ensemble.py`](tests/test_ensemble.py)** | Soft-Voting Ensemble | **2** | 5-model ensemble initialization, weight normalization, and probability arbitration. |
-| **TOTAL** | **Full Suite** | **23** | **23/23 passing** |
+| **[`test_api.py`](tests/test_api.py)** | REST Endpoints & WebSocket Gateways | **27** | Readiness probe (`/health`), normal & acute vitals inference (`/predict`), game-theoretic TreeExplainer SHAP values (`/explain`), session audit log logging & retrieval (`/history`), dataset profile, summary, pagination, and download endpoints (`/dataset/*`), parameterized TinyML C header export across all 5 models and INT8 quantization states (`/export_tinyml`), Prometheus metrics (`/metrics`), WebSocket live stream broadcast (`/ws`), cold boot import latency (< 1s), and MLOps retraining gates & status polling. |
+| **[`test_export.py`](tests/test_export.py)** | TinyML C99 Header Exporter | **9** | Standalone zero-malloc C99 header transpilation for all 5 models (RF, Linear SVM, LogReg, MLP, KNN), static RAM footprint bounds, heap allocation avoidance (`malloc`/`free`-free), AST decision tree C serialization, INT8 fixed-point quantization arithmetic, scale factors, and mathematical parity against FP32 scikit-learn reference models. |
+| **[`test_dataset_analytics.py`](tests/test_dataset_analytics.py)** | Dataset Statistics & Profiling | **8** | Continuous feature summary computation (min, max, median, std, percentiles), physiological vitals correlation matrix generation, cohort distributions, out-of-bounds pagination clamping, page size sanity bounds, and error recovery on empty datasets. |
+| **[`test_mlops.py`](tests/test_mlops.py)** | Ingestion & Retraining Pipeline | **6** | 40+ clinical column alias mappings (`HR`, `sys_bp`, `o2_saturation`, etc.), ISO-8859 degree encoding auto-repair (`°C`), auto-population of canonical columns, defensive missing signal validation, all-NaN row dropping, and zero-byte upload protection. |
+| **[`test_simulator.py`](tests/test_simulator.py)** | Vital Signs Telemetry Simulator | **6** | Markov-chain physiological vital sign drift, acute cardiac crisis vector generation (tachycardia, hypoxia, hypertensive crisis), multi-channel synchronized streaming packets, physiological boundary adherence (SpO2 ≤ 100%, HR > 0), and deterministic seed reproducibility. |
+| **[`test_preprocessing.py`](tests/test_preprocessing.py)** | Feature Engineering & Pipelines | **4** | StandardScaler transformations, data leakage prevention (isolation of training vs inference sets), model artifact directory resolution (`resolve_model_dir`), and clinical signal alias normalization. |
+| **[`test_database.py`](tests/test_database.py)** | Async SQLite Storage & Audit Log | **3** | Asynchronous database connection lifecycle (`init_db`, `get_db`), telemetry session record insertion and schema integrity, and chronological history retrieval with pagination and limits. |
+| **[`test_backend.py`](tests/test_backend.py)** | Routing & Schema Validation | **2** | Gateway health check probe and Pydantic input telemetry boundary validation (rejection of malformed data with HTTP 422). |
+| **[`test_ensemble.py`](tests/test_ensemble.py)** | 5-Model Soft-Voting Ensemble | **2** | 5-model ensemble initialization (RF, SVM, LogReg, MLP, KNN), weight normalization, and soft-voting probability arbitration. |
+| **TOTAL** | **Full Automated Verification Suite** | **67** | **67/67 Passing (100% Pass Rate)** |
 
 ```bash
 # Run pytest test suite

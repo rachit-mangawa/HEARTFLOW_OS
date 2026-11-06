@@ -70,10 +70,10 @@ export default function DatasetPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleDownloadCSV}
-                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-white hover:bg-hazard hover:text-white transition-all duration-150 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                className="btn-tactile text-[11px] font-bold uppercase tracking-wider border-2 border-ink px-3.5 py-1.5 bg-white hover:bg-hazard hover:text-white flex items-center gap-1.5 cursor-pointer group"
                 title="Download verified telemetry ground-truth CSV sample"
               >
-                <Download size={13} />
+                <Download size={13} className="btn-icon-down" />
                 Download CSV Sample
               </button>
             </div>

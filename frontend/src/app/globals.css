@@ -84,17 +84,24 @@ h2, h3, h4, h5, h6 {
 
 /* Tactile Physical Button Micro-Interactions (Emil Kowalski Physics) */
 .btn-tactile {
-  transition: transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), background-color 150ms ease, color 150ms ease;
+  position: relative;
+  transition: transform 140ms var(--ease-out),
+              box-shadow 140ms var(--ease-out),
+              background-color 140ms ease,
+              color 140ms ease,
+              border-color 140ms ease;
   box-shadow: 3px 3px 0px 0px var(--ink-black);
 }
 @media (hover: hover) and (pointer: fine) {
   .btn-tactile:hover {
-    box-shadow: 4px 4px 0px 0px var(--ink-black);
+    transform: translate(-1.5px, -1.5px);
+    box-shadow: 4.5px 4.5px 0px 0px var(--ink-black);
   }
 }
 .btn-tactile:active {
-  transform: scale(0.98) translate(1px, 1px);
+  transform: scale(0.97) translate(1px, 1px);
   box-shadow: 1px 1px 0px 0px var(--ink-black);
+  transition-duration: 80ms;
 }
 .btn-tactile:disabled {
   opacity: 0.5;
@@ -104,27 +111,73 @@ h2, h3, h4, h5, h6 {
 }
 
 .btn-tactile-hazard {
+  position: relative;
   background-color: var(--hazard-red);
   color: #FFFFFF;
   border: 2px solid var(--ink-black);
-  transition: transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), background-color 150ms ease;
+  transition: transform 140ms var(--ease-out),
+              box-shadow 140ms var(--ease-out),
+              background-color 140ms ease,
+              border-color 140ms ease;
   box-shadow: 3px 3px 0px 0px var(--ink-black);
 }
 @media (hover: hover) and (pointer: fine) {
   .btn-tactile-hazard:hover {
     background-color: #872624;
-    box-shadow: 4px 4px 0px 0px var(--ink-black);
+    transform: translate(-1.5px, -1.5px);
+    box-shadow: 4.5px 4.5px 0px 0px var(--ink-black);
   }
 }
 .btn-tactile-hazard:active {
-  transform: scale(0.98) translate(1px, 1px);
+  transform: scale(0.97) translate(1px, 1px);
   box-shadow: 1px 1px 0px 0px var(--ink-black);
+  transition-duration: 80ms;
 }
 .btn-tactile-hazard:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Button Child Icon Micro-Interactions */
+.btn-icon-nudge {
+  transition: transform 140ms var(--ease-out);
+}
+.btn-icon-down {
+  transition: transform 140ms var(--ease-out);
+}
+.btn-icon-scale {
+  transition: transform 140ms var(--ease-out);
+}
+.btn-icon-rotate {
+  transition: transform 180ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-tactile:hover .btn-icon-nudge,
+  .btn-tactile-hazard:hover .btn-icon-nudge,
+  .group:hover .btn-icon-nudge {
+    transform: translateX(2.5px);
+  }
+
+  .btn-tactile:hover .btn-icon-down,
+  .btn-tactile-hazard:hover .btn-icon-down,
+  .group:hover .btn-icon-down {
+    transform: translateY(2px);
+  }
+
+  .btn-tactile:hover .btn-icon-scale,
+  .btn-tactile-hazard:hover .btn-icon-scale,
+  .group:hover .btn-icon-scale {
+    transform: scale(1.12);
+  }
+
+  .btn-tactile:hover .btn-icon-rotate,
+  .btn-tactile-hazard:hover .btn-icon-rotate,
+  .group:hover .btn-icon-rotate {
+    transform: rotate(45deg);
+  }
 }
 
 /* Laboratory Calibrated Potentiometer Slider */
@@ -155,6 +208,22 @@ h2, h3, h4, h5, h6 {
   box-shadow: 2px 2px 0px 0px var(--ink-black);
   cursor: ew-resize;
   position: relative;
+  transition: transform 120ms var(--ease-out),
+              background-color 120ms ease,
+              box-shadow 120ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fader-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.06);
+    box-shadow: 3px 3px 0px 0px var(--ink-black);
+  }
+}
+
+.fader-slider:active::-webkit-slider-thumb {
+  transform: scale(0.96);
+  background: var(--hazard-red);
+  box-shadow: 1px 1px 0px 0px var(--ink-black);
 }
 
 .fader-slider:focus-visible::-webkit-slider-thumb {
@@ -168,6 +237,22 @@ h2, h3, h4, h5, h6 {
   border: 2px solid #FFFFFF;
   box-shadow: 2px 2px 0px 0px var(--ink-black);
   cursor: ew-resize;
+  transition: transform 120ms var(--ease-out),
+              background-color 120ms ease,
+              box-shadow 120ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fader-slider:hover::-moz-range-thumb {
+    transform: scale(1.06);
+    box-shadow: 3px 3px 0px 0px var(--ink-black);
+  }
+}
+
+.fader-slider:active::-moz-range-thumb {
+  transform: scale(0.96);
+  background: var(--hazard-red);
+  box-shadow: 1px 1px 0px 0px var(--ink-black);
 }
 
 /* Clinical Report Print Engine - High-Fidelity One-Page Output */

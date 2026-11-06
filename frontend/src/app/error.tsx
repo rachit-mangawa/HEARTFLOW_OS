@@ -45,16 +45,16 @@ export default function ErrorBoundary({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => reset()}
-            className="btn-tactile bg-hazard text-white px-5 py-2.5 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-ink transition-colors cursor-pointer"
+            className="btn-tactile bg-hazard text-white px-5 py-2.5 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-ink cursor-pointer group"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={14} className="btn-icon-rotate" />
             <span>Reset Component State</span>
           </button>
           <Link
             href="/"
-            className="btn-tactile bg-white text-ink border-2 border-ink px-5 py-2 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-canvas-cream transition-colors"
+            className="btn-tactile bg-white text-ink border-2 border-ink px-5 py-2 text-[12px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-canvas-cream group"
           >
-            <Home size={14} />
+            <Home size={14} className="btn-icon-scale" />
             <span>Return to Root</span>
           </Link>
         </div>

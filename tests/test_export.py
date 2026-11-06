@@ -116,6 +116,16 @@ def test_export_c_code_knn(ensemble_eng):
     assert "malloc(" not in code
     assert "free(" not in code
 
+    res_int8 = generate_c_code(ensemble_eng, "knn", quantize=True)
+    assert "code" in res_int8
+    code_int8 = res_int8["code"]
+    assert "REF_INT8[N_SAMPLES][N_FEATURES]" in code_int8
+    assert "predict_from_int8" in code_int8
+    assert "int8_t q_features[6]" in code_int8
+    assert code_int8.count("{") == code_int8.count("}")
+    assert "malloc(" not in code_int8
+    assert "free(" not in code_int8
+
 def test_export_c_code_error_handling(ensemble_eng):
     res_none = generate_c_code(None, "rf", False)
     assert "error" in res_none
@@ -143,8 +153,6 @@ def test_export_c_code_compilation(ensemble_eng):
     with tempfile.TemporaryDirectory() as tmp_dir:
         for model_name in ["rf", "svm", "logreg", "small_nn", "knn"]:
             for quantize in [False, True]:
-                if model_name == "knn" and quantize:
-                    continue
                 res = generate_c_code(ensemble_eng, model_name, quantize)
                 assert "code" in res
                 code = res["code"] + "\nint main(void) { return 0; }\n"
@@ -228,4 +236,21 @@ def test_quantized_inference_parity(ensemble_eng):
     svm_py_preds = svm.predict(norm)
     parity_svm = np.mean(np.array(svm_c_preds) == svm_py_preds)
     assert parity_svm > 0.90, f"SVM INT8 parity below threshold: {parity_svm:.2%}"
+
+    # 3. Test KNN parity
+    from sklearn.neighbors import KNeighborsClassifier
+    knn = ensemble_eng.models["knn"]
+    n_samples = min(knn._fit_X.shape[0], 80)
+    ref_int8 = np.clip(np.round(knn._fit_X[:n_samples] * 16.0), -128, 127).astype(np.int32)
+    knn_labels = np.array(knn._y[:n_samples])
+    knn_c_preds = []
+    for sample in q_in:
+        dists = np.sum((sample - ref_int8) ** 2, axis=1)
+        nearest_indices = np.argsort(dists)[:knn.n_neighbors]
+        nearest_labels = knn_labels[nearest_indices]
+        counts = np.bincount(nearest_labels, minlength=len(knn.classes_))
+        knn_c_preds.append(np.argmax(counts))
+    sub_knn = KNeighborsClassifier(n_neighbors=knn.n_neighbors).fit(knn._fit_X[:n_samples], knn._y[:n_samples])
+    parity_knn = np.mean(np.array(knn_c_preds) == sub_knn.predict(norm))
+    assert parity_knn > 0.90, f"KNN INT8 parity below threshold: {parity_knn:.2%}"
 

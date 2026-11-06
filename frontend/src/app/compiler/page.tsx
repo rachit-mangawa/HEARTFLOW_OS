@@ -271,9 +271,19 @@ export default function CompilerPage() {
                 type="button"
                 onClick={() => handleExport()}
                 disabled={loading}
-                className="btn-tactile-hazard py-2.5 font-bold text-[13px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 w-full cursor-pointer disabled:cursor-not-allowed"
+                className="btn-tactile-hazard py-2.5 font-bold text-[13px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 w-full cursor-pointer disabled:cursor-not-allowed group"
               >
-                {loading ? "Compiling C99 Header..." : code ? "Recompile C Header" : "Compile C Header"}
+                {loading ? (
+                  <>
+                    <Cpu size={14} className="animate-spin-snappy text-white" />
+                    <span>Compiling C99 Header...</span>
+                  </>
+                ) : (
+                  <>
+                    <Cpu size={14} className="btn-icon-scale text-white" />
+                    <span>{code ? "Recompile C Header" : "Compile C Header"}</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

@@ -50,9 +50,9 @@ export default function GeneratedCHeader({
               <button
                 type="button"
                 onClick={onCopy}
-                className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-ink text-ink text-[11px] font-bold uppercase tracking-wider hover:bg-canvas-cream transition-all duration-150 cursor-pointer active:scale-95"
+                className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border-2 border-ink text-ink text-[11px] font-bold uppercase tracking-wider hover:bg-canvas-cream cursor-pointer group"
               >
-                {copied ? <Check size={13} className="text-emerald-600 animate-enter-subtle" /> : <Copy size={13} />}
+                {copied ? <Check size={13} className="text-emerald-600 animate-enter-subtle" /> : <Copy size={13} className="btn-icon-scale" />}
                 {copied ? "Copied" : "Copy"}
               </button>
             )}
@@ -60,9 +60,9 @@ export default function GeneratedCHeader({
               <button
                 type="button"
                 onClick={onDownload}
-                className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 bg-ink border-2 border-ink text-white text-[11px] font-bold uppercase tracking-wider hover:bg-hazard hover:border-hazard transition-all duration-150 cursor-pointer active:scale-95 group"
+                className="btn-tactile inline-flex items-center gap-1.5 px-3 py-1.5 bg-ink border-2 border-ink text-white text-[11px] font-bold uppercase tracking-wider hover:bg-hazard hover:border-hazard cursor-pointer group"
               >
-                <Download size={13} className="group-hover:translate-y-0.5 transition-transform duration-150" />
+                <Download size={13} className="btn-icon-down" />
                 Download
               </button>
             )}

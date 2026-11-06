@@ -229,17 +229,17 @@ export default function PaginatedRecordInspector({
           <button
             onClick={() => setPage(1)}
             disabled={page <= 1}
-            className="btn-tactile min-h-11 min-w-10 flex items-center justify-center p-2 bg-white border-2 border-ink disabled:opacity-40"
+            className="btn-tactile min-h-11 min-w-10 flex items-center justify-center p-2 bg-white border-2 border-ink disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed group"
             title="First Page"
           >
-            <ChevronsLeft size={16} />
+            <ChevronsLeft size={16} className="btn-icon-scale" />
           </button>
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="btn-tactile min-h-11 px-3 py-2 bg-white border-2 border-ink text-[11px] font-bold uppercase flex items-center justify-center gap-1 disabled:opacity-40"
+            className="btn-tactile min-h-11 px-3 py-2 bg-white border-2 border-ink text-[11px] font-bold uppercase flex items-center justify-center gap-1 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed group"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={14} className="btn-icon-scale" />
             PREV
           </button>
 
@@ -250,18 +250,18 @@ export default function PaginatedRecordInspector({
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="btn-tactile min-h-11 px-3 py-2 bg-white border-2 border-ink text-[11px] font-bold uppercase flex items-center justify-center gap-1 disabled:opacity-40"
+            className="btn-tactile min-h-11 px-3 py-2 bg-white border-2 border-ink text-[11px] font-bold uppercase flex items-center justify-center gap-1 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed group"
           >
             NEXT
-            <ChevronRight size={14} />
+            <ChevronRight size={14} className="btn-icon-nudge" />
           </button>
           <button
             onClick={() => setPage(totalPages)}
             disabled={page >= totalPages}
-            className="btn-tactile min-h-11 min-w-10 flex items-center justify-center p-2 bg-white border-2 border-ink disabled:opacity-40"
+            className="btn-tactile min-h-11 min-w-10 flex items-center justify-center p-2 bg-white border-2 border-ink disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed group"
             title="Last Page"
           >
-            <ChevronsRight size={16} />
+            <ChevronsRight size={16} className="btn-icon-scale" />
           </button>
         </div>
       </div>
