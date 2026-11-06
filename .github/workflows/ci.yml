@@ -30,17 +30,17 @@ jobs:
   build-frontend:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
     - name: Install dependencies
-      run: |
-        cd frontend
-        npm ci
+      working-directory: ./frontend
+      run: npm ci
     - name: Type Check & Build
-      run: |
-        cd frontend
-        npm run build
+      working-directory: ./frontend
+      run: npm run build
 
