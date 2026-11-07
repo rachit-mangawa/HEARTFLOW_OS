@@ -142,6 +142,10 @@ export default function Simulator() {
     // Zero-Cloud Local TinyML Ensemble Inference Execution
     try {
       const edgeRes = evaluateEdge(targetData);
+
+      // Tactile micro-pause so the inference skeleton registers smoothly without jarring flicker
+      await new Promise((r) => setTimeout(r, 260));
+
       setPrediction({
         prediction: edgeRes.is_at_risk === 1,
         prediction_label: edgeRes.label,
@@ -395,7 +399,9 @@ export default function Simulator() {
               />
 
               <div className="z-10 p-5 sm:p-6 flex flex-col h-full gap-6">
-                {prediction && submittedData ? (
+                {loading ? (
+                  <SimulatorSkeleton isSlow={isSlow} />
+                ) : prediction && submittedData ? (
                   <div className="animate-enter-subtle flex flex-col gap-6">
                     <div>
                       <div className="text-[11px] font-bold text-slate tracking-widest mb-3 uppercase">
@@ -490,14 +496,7 @@ export default function Simulator() {
                 ) : (
                   <div className="h-full min-h-95 flex items-center justify-center">
                     <div className="text-slate text-[12px] font-bold tracking-widest uppercase border-2 border-dashed border-ink/30 px-6 py-4 text-center max-w-sm bg-canvas-cream/50">
-                      {loading ? (
-                        <div className="flex items-center justify-center gap-2 text-ink">
-                          <Cpu size={14} className="animate-spin text-hazard" />
-                          <span>CALCULATING SHAP ATTRIBUTIONS...</span>
-                        </div>
-                      ) : (
-                        "Awaiting Input · Click Execute Inference to Generate Attributions"
-                      )}
+                      Awaiting Input · Click Execute Inference to Generate Attributions
                     </div>
                   </div>
                 )}
@@ -549,6 +548,84 @@ function InputControl({ label, value, min, max, step = 1, unit, onChange }: Inpu
         <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-mono font-bold text-slate tracking-widest mt-1">
           <span>{min}</span>
           <span>{max}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SimulatorSkeleton({ isSlow = false }: { isSlow?: boolean }) {
+  return (
+    <div className="flex flex-col gap-6 animate-enter-subtle select-none">
+      {/* Telemetry Evaluation Indicator */}
+      <div className="flex items-center justify-between pb-3 border-b-2 border-ink/10">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-hazard animate-loading-pulse inline-block" />
+          <span className="text-[11px] font-bold text-ink uppercase tracking-wider">
+            Evaluating 5-Model Soft-Voting Stack
+          </span>
+        </div>
+        <span className="text-[9px] font-mono text-slate uppercase tracking-wider">
+          {isSlow ? "Cloud slow · Falling back to edge engine" : "Arbitrating posteriors across estimators"}
+        </span>
+      </div>
+
+      {/* Hero Diagnosis Skeleton */}
+      <div className="border-2 border-ink/30 bg-whisper/40 p-4 sm:p-5 flex flex-col gap-3">
+        <div className="h-8 sm:h-10 w-2/3 bg-ink/10 animate-loading-pulse" />
+        <div className="h-3 w-40 bg-ink/10 animate-loading-pulse" />
+      </div>
+
+      {/* Ensemble Diagnostics Breakdown Skeleton */}
+      <div className="border-2 border-ink bg-white flex flex-col text-[11px] font-bold uppercase tracking-wider">
+        <div className="border-b-2 border-ink px-4 py-2 bg-ink text-canvas-cream flex justify-between">
+          <span>ENSEMBLE STACK DIAGNOSTICS</span>
+          <span className="text-hazard">CALIBRATING WEIGHTS</span>
+        </div>
+        <div className="divide-y-2 divide-ink/15">
+          {[
+            { name: "Random Forest", w: "0.25" },
+            { name: "Linear SVM", w: "0.15" },
+            { name: "Logistic Regression", w: "0.20" },
+            { name: "Small Neural Net", w: "0.25" },
+            { name: "KNN (5-NN)", w: "0.15" },
+          ].map((m) => (
+            <div key={m.name} className="flex justify-between items-center p-2.5">
+              <div className="w-[25%] text-slate">{m.name}</div>
+              <div className="w-[35%]">
+                <div className="h-3 w-20 bg-hazard/20 animate-loading-pulse" />
+              </div>
+              <div className="w-[20%] text-right">
+                <div className="h-3 w-14 bg-ink/10 animate-loading-pulse ml-auto" />
+              </div>
+              <div className="w-[20%] text-right text-slate tabular-nums">
+                W: {m.w}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* SHAP Feature Attributions Skeleton */}
+      <div className="border-2 border-ink bg-white p-4 sm:p-5 flex flex-col">
+        <div className="text-[12px] font-black uppercase text-ink tracking-wider mb-4 border-b-2 border-ink pb-2 flex justify-between items-center">
+          <span>SHAPLEY ADDITIVE EXPLANATIONS</span>
+          <span className="text-[10px] text-slate font-mono">CALCULATING MARGINALS</span>
+        </div>
+        <div className="space-y-3 py-2">
+          {[
+            "Heart Rate",
+            "SpO2 Level",
+            "Systolic BP",
+            "Diastolic BP",
+            "Body Temp",
+          ].map((label) => (
+            <div key={label} className="flex items-center justify-between gap-3 text-[11px] font-bold uppercase">
+              <span className="w-24 text-slate">{label}</span>
+              <div className="flex-1 h-3 bg-ink/10 animate-loading-pulse" />
+              <div className="w-12 h-3 bg-hazard/20 animate-loading-pulse" />
+            </div>
+          ))}
         </div>
       </div>
     </div>

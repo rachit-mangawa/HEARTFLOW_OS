@@ -24,16 +24,24 @@ export default function CompilerPage() {
       setLoading(true);
       setError("");
 
+      const startTime = Date.now();
+
       try {
-        // Query the backend /heartflow/export_tinyml endpoint in real time using active/newly generated .pkl files
+        // Query the active TinyML backend export API v1.2
         const { data, error: apiErr } = await apiFetch<{ code?: string; error?: string }>(
           `/heartflow/export_tinyml?model_name=${encodeURIComponent(activeModel)}&quantize=${activeQuantize}`
         );
 
+        // Tactile micro-pause so the compilation skeleton registers without jarring flicker
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 240) {
+          await new Promise((r) => setTimeout(r, 240 - elapsed));
+        }
+
         if (data && data.code && !data.error) {
           setCode(data.code);
         } else {
-          // Fall back gracefully to in-browser AST transpiler
+          // Fall back gracefully to client AST transpiler if backend offline
           const cCode = generateCHeader(activeModel, activeQuantize, activeMcu);
           setCode(cCode);
           if (apiErr) {
@@ -112,7 +120,7 @@ export default function CompilerPage() {
           <div>
             <div className="text-[12px] text-hazard font-bold tracking-widest mb-3 flex items-center gap-2 uppercase">
               <Terminal size={14} />
-              C99 EMBEDDED TRANSPILER · ZERO-MALLOC ABI
+              C99 EMBEDDED TRANSPILER v1.2 · ZERO-MALLOC ABI
             </div>
             <h1 className="text-[clamp(2.5rem,5vw,5rem)] leading-[0.9]">
               C99<br />COMPILER
@@ -138,7 +146,7 @@ export default function CompilerPage() {
                 <Cpu size={15} />
                 Target Configuration
               </h2>
-              <span className="tech-tag text-[9px]">TINYML C99</span>
+              <span className="tech-tag text-[9px]">TINYML C99 v1.2</span>
             </div>
 
             {/* Target Architecture Selection (2x2 Silicon Grid) */}

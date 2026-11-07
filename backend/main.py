@@ -14,10 +14,10 @@ from starlette.responses import Response
 from heartflow_backend.router import router
 
 app = FastAPI(
-    title="TinyML Healthcare API",
+    title="HEARTFLOW_OS API",
     description="HeartFlow OS Clinical Telemetry and Edge Inference Gateway",
-    version="2.0.0",
-    docs_url=None,
+    version="1.2.0",
+    docs_url="https://rachit-mangawa.github.io/HEARTFLOW_OS/docs",
     redoc_url=None,
     openapi_url=None,
 )
@@ -59,7 +59,7 @@ def read_root():
     return {
         "service": "HeartFlow OS Clinical Telemetry Gateway",
         "status": "Online",
-        "version": "2.0.0",
+        "version": "1.2.0",
         "docs": "https://rachit-mangawa.github.io/HEARTFLOW_OS/docs",
     }
 

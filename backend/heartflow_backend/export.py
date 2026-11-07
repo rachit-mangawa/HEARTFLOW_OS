@@ -69,7 +69,7 @@ def generate_c_code(eng, model_name: str, quantize: bool):
     q_text = "INT8 Quantized" if quantize else "FP32 Single-Precision"
 
     L = []
-    L.append(f"// HeartFlow OS TinyML C99 · Model: {model_name.upper()} ({q_text}) · Zero-Malloc · Static RAM: <64B")
+    L.append(f"// HeartFlow OS TinyML C99 v1.2 · Model: {model_name.upper()} ({q_text}) · Zero-Malloc · Static RAM: <64B")
     L.append("#ifndef HEARTFLOW_MODEL_H")
     L.append("#define HEARTFLOW_MODEL_H")
     L.append("")

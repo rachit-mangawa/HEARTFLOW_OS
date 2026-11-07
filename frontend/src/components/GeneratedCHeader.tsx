@@ -78,10 +78,63 @@ export default function GeneratedCHeader({
             <span>{error}</span>
           </div>
         ) : loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate text-[13px] font-bold uppercase tracking-wider gap-3 p-6">
-            <div className="w-8 h-8 border-2 border-hazard border-t-transparent animate-spin" />
-            <div className="text-ink font-mono font-bold">Transpiling AST to C99...</div>
-            <div className="text-[10px] text-slate font-mono">Synthesizing zero-malloc ABI & memory buffers</div>
+          <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 select-none relative overflow-hidden bg-white">
+            {/* Compiling telemetry indicator */}
+            <div className="flex items-center justify-between pb-3 mb-3 border-b-2 border-ink/10">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-hazard animate-loading-pulse inline-block" />
+                <span className="text-[11px] font-bold text-ink uppercase tracking-wider">
+                  Compiling C99 AST
+                </span>
+              </div>
+              <span className="text-[9px] font-mono text-slate uppercase tracking-wider">
+                Synthesizing zero-malloc kernels
+              </span>
+            </div>
+
+            {/* Skeleton C code lines */}
+            <div className="space-y-2.5 font-mono text-[12px] opacity-80 animate-enter-subtle">
+              {/* Header Comment Block */}
+              <div className="space-y-1.5 pb-2">
+                <div className="h-3 w-3/4 bg-ink/10 animate-loading-pulse" />
+                <div className="h-3 w-1/2 bg-ink/10 animate-loading-pulse" />
+              </div>
+
+              {/* Includes & Directives */}
+              <div className="space-y-1.5 py-1">
+                <div className="h-3 w-36 bg-hazard/20 animate-loading-pulse" />
+                <div className="h-3 w-44 bg-hazard/20 animate-loading-pulse" />
+                <div className="h-3 w-28 bg-hazard/20 animate-loading-pulse" />
+              </div>
+
+              {/* Feature Scale & Exemplar Tables */}
+              <div className="space-y-1.5 py-1">
+                <div className="h-3 w-56 bg-ink/15 animate-loading-pulse" />
+                <div className="grid grid-cols-5 gap-1.5 pl-4 py-1">
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                </div>
+                <div className="grid grid-cols-5 gap-1.5 pl-4 py-1">
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                  <div className="h-2.5 bg-ink/10 animate-loading-pulse" />
+                </div>
+              </div>
+
+              {/* Predict Function Signature & Control Flow */}
+              <div className="space-y-1.5 pt-1">
+                <div className="h-3 w-64 bg-ink/20 animate-loading-pulse" />
+                <div className="h-3 w-48 bg-ink/10 animate-loading-pulse ml-4" />
+                <div className="h-3 w-52 bg-ink/10 animate-loading-pulse ml-4" />
+                <div className="h-3 w-28 bg-ink/10 animate-loading-pulse ml-4" />
+                <div className="h-3 w-16 bg-ink/20 animate-loading-pulse" />
+              </div>
+            </div>
           </div>
         ) : code ? (
           <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 sm:p-5 select-text animate-enter-subtle">
@@ -110,7 +163,15 @@ export default function GeneratedCHeader({
 
         {/* Status Bar at Bottom */}
         <div className="border-t-2 border-ink px-4 py-2 bg-canvas-cream flex justify-between items-center text-[10px] font-bold tracking-[0.12em] text-slate uppercase flex-wrap gap-2 shrink-0">
-          {code ? (
+          {loading ? (
+            <>
+              <span className="flex items-center gap-1.5 text-ink">
+                <span className="w-1.5 h-1.5 bg-hazard inline-block animate-loading-pulse" />
+                AST ENGINE ACTIVE
+              </span>
+              <span className="text-hazard font-bold">EMITTING BYTES</span>
+            </>
+          ) : code ? (
             <>
               <span>CRC32: 0x{crc32Hex}</span>
               <span className="text-ink">Zero Dynamic Heap Allocation</span>

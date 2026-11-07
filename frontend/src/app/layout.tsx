@@ -103,15 +103,15 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: `${basePath}/favicon.ico`, sizes: "any" },
-      { url: `${basePath}/favicon-32x32.png`, type: "image/png", sizes: "32x32" },
-      { url: `${basePath}/favicon-16x16.png`, type: "image/png", sizes: "16x16" },
-      { url: `${basePath}/icon.svg`, type: "image/svg+xml" },
+      { url: `${basePath}/favicon.ico?v=2`, sizes: "any" },
+      { url: `${basePath}/favicon-32x32.png?v=2`, type: "image/png", sizes: "32x32" },
+      { url: `${basePath}/favicon-16x16.png?v=2`, type: "image/png", sizes: "16x16" },
+      { url: `${basePath}/icon.svg?v=2`, type: "image/svg+xml" },
     ],
     apple: [
-      { url: `${basePath}/apple-touch-icon.png`, sizes: "180x180", type: "image/png" },
+      { url: `${basePath}/apple-touch-icon.png?v=2`, sizes: "180x180", type: "image/png" },
     ],
-    shortcut: `${basePath}/favicon.ico`,
+    shortcut: `${basePath}/favicon.ico?v=2`,
   },
 };
 
