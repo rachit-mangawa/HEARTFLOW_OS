@@ -1,5 +1,8 @@
 import os
 import sys
+import time
+import threading
+from collections import defaultdict
 
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 if backend_dir not in sys.path:
@@ -10,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, JSONResponse
 from heartflow_backend.router import router
 
 app = FastAPI(
@@ -33,6 +36,8 @@ else:
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "https://idkhowtocodefr-hf-backend.hf.space",
+        "https://rachit-mangawa.github.io",
+        "http://testserver",
     ]
     is_wildcard = False
 
@@ -40,7 +45,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if is_wildcard else configured_origins,
     allow_credentials=not is_wildcard,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -50,9 +55,55 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+        response.headers["Permissions-Policy"] = (
+            "accelerometer=(), autoplay=(), camera=(), encrypted-media=(), "
+            "fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), "
+            "microphone=(), midi=(), payment=(), sync-xhr=(), usb=()"
+        )
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, requests_per_minute: int = 300):
+        super().__init__(app)
+        self.requests_per_minute = requests_per_minute
+        self.clients = defaultdict(list)
+        self.lock = threading.Lock()
+
+    async def dispatch(self, request: Request, call_next):
+        if os.environ.get("P1_RATE_LIMIT_ENABLED", "1") == "0":
+            return await call_next(request)
+
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        now = time.time()
+        window_start = now - 60.0
+
+        path = request.url.path
+        limit = self.requests_per_minute
+        if path.endswith("/retrain"):
+            limit = 10
+        elif path.endswith("/explain"):
+            limit = 60
+
+        with self.lock:
+            valid_timestamps = [t for t in self.clients[client_ip] if t > window_start]
+            if len(valid_timestamps) >= limit:
+                return JSONResponse(
+                    status_code=429,
+                    headers={"Retry-After": "60"},
+                    content={"detail": "Rate limit exceeded. Please wait before retrying."}
+                )
+            valid_timestamps.append(now)
+            self.clients[client_ip] = valid_timestamps
+
+        return await call_next(request)
+
+app.add_middleware(RateLimitMiddleware)
 
 @app.get("/")
 def read_root():

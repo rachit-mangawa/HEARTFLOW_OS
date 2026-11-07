@@ -250,6 +250,13 @@ def get_paginated_rows(dataset_path: str, page: int = 1, limit: int = 25, diseas
     import pandas as pd
     import numpy as np
 
+    page = max(1, int(page or 1))
+    limit = max(1, min(int(limit or 25), 100))
+    if search:
+        search = str(search)[:100]
+    if disease:
+        disease = str(disease)[:100]
+
     df = pd.read_csv(dataset_path, encoding='utf-8', encoding_errors='replace')
     cols = list(df.columns)
     for i, c in enumerate(cols):

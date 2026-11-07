@@ -17,10 +17,11 @@ def get_db_path() -> str:
     return str(get_p1_dir() / "patient_history.db")
 
 def resolve_model_path(filename: str) -> str:
-    p1_file = get_p1_dir() / filename
+    safe_name = os.path.basename(filename)
+    p1_file = get_p1_dir() / safe_name
     if p1_file.exists():
         return str(p1_file)
-    return str(ASSETS_DIR / filename)
+    return str(ASSETS_DIR / safe_name)
 
 def resolve_model_dir() -> str:
     p1_dir = get_p1_dir()

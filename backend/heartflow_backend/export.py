@@ -60,16 +60,23 @@ def _emit_tree_ast_c(tree, node_id, indent="    ", quantize=False, scale_factor=
 
 def generate_c_code(eng, model_name: str, quantize: bool):
     import numpy as np
-    if not eng or model_name not in eng.models:
+    import re
+    if not eng or not isinstance(model_name, str):
+        return {"error": "Invalid engine or model name"}
+
+    clean_model_name = re.sub(r"[^a-zA-Z0-9_]", "", model_name).lower()
+    if not clean_model_name or clean_model_name not in eng.models:
         return {"error": f"Model {model_name} not found"}
 
-    model = eng.models[model_name]
+    model = eng.models[clean_model_name]
+    model_name = clean_model_name
     means, scales, class_names = _get_scaler_and_classes(eng)
     n_classes = len(class_names)
     q_text = "INT8 Quantized" if quantize else "FP32 Single-Precision"
 
+    safe_model_comment = re.sub(r"[\r\n\*/]", "", model_name.upper())
     L = []
-    L.append(f"// HeartFlow OS TinyML C99 v1.2 · Model: {model_name.upper()} ({q_text}) · Zero-Malloc · Static RAM: <64B")
+    L.append(f"// HeartFlow OS TinyML C99 v1.2 · Model: {safe_model_comment} ({q_text}) · Zero-Malloc · Static RAM: <64B")
     L.append("#ifndef HEARTFLOW_MODEL_H")
     L.append("#define HEARTFLOW_MODEL_H")
     L.append("")
@@ -82,7 +89,11 @@ def generate_c_code(eng, model_name: str, quantize: bool):
     L.append("#define N_SCALED_FEATURES 6")
     L.append("")
 
-    c_names_str = ", ".join([f'"{name}"' for name in class_names])
+    safe_class_names = [
+        name.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ").replace("\r", "")
+        for name in class_names
+    ]
+    c_names_str = ", ".join([f'"{name}"' for name in safe_class_names])
     L.append(f"static const char * const CLASS_NAMES[N_CLASSES] = {{{c_names_str}}};")
     L.append("")
 

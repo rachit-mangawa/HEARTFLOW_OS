@@ -3,7 +3,7 @@ import asyncio
 import logging
 import threading
 from typing import Optional
-from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, WebSocket, WebSocketDisconnect, Query
 from fastapi.responses import FileResponse, JSONResponse
 from .schemas import PatientData
 from .paths import resolve_dataset_path
@@ -11,6 +11,20 @@ from .paths import resolve_dataset_path
 logger = logging.getLogger("heartflow")
 
 router = APIRouter()
+
+def get_allowed_origins() -> list[str]:
+    cors_origins_raw = os.environ.get("ALLOWED_ORIGINS", "").strip()
+    if cors_origins_raw:
+        return [orig.strip() for orig in cors_origins_raw.split(",") if orig.strip()]
+    return [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://idkhowtocodefr-hf-backend.hf.space",
+        "https://rachit-mangawa.github.io",
+        "http://testserver",
+    ]
 
 _ml_engine = None
 _engine_lock = threading.Lock()
@@ -79,8 +93,8 @@ def predict(data: PatientData, background_tasks: BackgroundTasks):
         
         return result
     except Exception as e:
-        import traceback
-        raise HTTPException(status_code=500, detail=f"Backend Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}")
+        logger.error(f"Inference execution error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Inference processing failed. Please check server logs.")
 
 @router.post("/explain")
 def explain(data: PatientData):
@@ -115,7 +129,8 @@ def explain(data: PatientData):
             vals = shap_values[0]
         return {"shap_values": vals.tolist(), "feature_names": X_proc.columns.tolist()}
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"SHAP explanation computation error: {e}", exc_info=True)
+        return {"error": "SHAP explanation calculation failed."}
 
 @router.get("/metrics")
 def get_metrics():
@@ -187,10 +202,10 @@ def download_dataset():
 
 @router.get("/dataset")
 def get_dataset(
-    page: Optional[int] = None,
-    limit: Optional[int] = None,
-    disease: Optional[str] = None,
-    search: Optional[str] = None,
+    page: Optional[int] = Query(default=None, ge=1),
+    limit: Optional[int] = Query(default=None, ge=1, le=100),
+    disease: Optional[str] = Query(default=None, max_length=100),
+    search: Optional[str] = Query(default=None, max_length=100),
     all: bool = False
 ):
     eng = get_engine()
@@ -213,11 +228,15 @@ def get_dataset(
             df.columns = [c.strip() for c in df.columns]
             return df.to_dict(orient="records")
         except Exception as e:
-            return {"error": f"Failed to read dataset: {str(e)}"}
+            logger.error(f"Dataset reading failure: {e}", exc_info=True)
+            return {"error": "Failed to read dataset."}
     return {"error": "Dataset not found"}
 
 @router.get("/export_tinyml")
-def export_tinyml(model_name: str = "rf", quantize: bool = False):
+def export_tinyml(
+    model_name: str = Query(default="rf", max_length=50),
+    quantize: bool = False
+):
     eng = get_engine().get_ensemble()
     if not eng:
         return {"error": "Models untrained or engine offline"}
@@ -229,9 +248,27 @@ def retrain(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     if os.getenv("P1_ENABLE_RETRAIN", "1") == "0":
         return JSONResponse(status_code=403, content={"error": "Retraining is disabled in this environment", "retrain_enabled": False})
 
-    content = file.file.read()
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Payload Too Large")
+    filename = (file.filename or "").lower()
+    if not (filename.endswith(".csv") or filename.endswith(".txt")):
+        raise HTTPException(status_code=400, detail="Invalid file format: only CSV files are accepted for retraining.")
+
+    max_size = 50 * 1024 * 1024  # 50 MB
+    chunk_size = 1024 * 1024      # 1 MB
+    chunks = []
+    total_bytes = 0
+
+    while True:
+        chunk = file.file.read(chunk_size)
+        if not chunk:
+            break
+        total_bytes += len(chunk)
+        if total_bytes > max_size:
+            raise HTTPException(status_code=413, detail="Payload Too Large: File exceeds 50MB limit.")
+        chunks.append(chunk)
+
+    content = b"".join(chunks)
+    if not content.strip():
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
     engine = get_engine()
     def bg_task():
@@ -254,6 +291,18 @@ async def websocket_feed(websocket: WebSocket):
         max_ws = int(os.getenv("P1_MAX_WS", "5"))
     except ValueError:
         max_ws = 5
+
+    origin = websocket.headers.get("origin")
+    allowed_origins = get_allowed_origins()
+    is_wildcard = "*" in allowed_origins
+
+    if origin and not is_wildcard:
+        clean_origin = origin.rstrip("/")
+        clean_allowed = [o.rstrip("/") for o in allowed_origins]
+        if clean_origin not in clean_allowed:
+            logger.warning(f"WebSocket rejected: unauthorized origin '{origin}'")
+            await websocket.close(code=1008, reason="Origin not permitted")
+            return
 
     with _ws_lock:
         if _active_ws_count >= max_ws:
