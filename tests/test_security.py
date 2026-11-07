@@ -1,5 +1,12 @@
+import sys
+from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
 from main import app
 
 @pytest.fixture(scope="module")
